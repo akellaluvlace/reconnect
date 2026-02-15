@@ -7,10 +7,10 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 3 — Supabase Core (schema, auth, RLS)
-**Status:** STARTING
-**Next task:** 3.1 Database Schema Migration (Owner: Backend)
-**Blockers:** None — Steps 1+2 complete, monorepo committed
+**Step:** 5 — Web App Shell + Core UI (COMPLETE)
+**Status:** Next up: Step 7 (Playbook Creation)
+**Next task:** 7.1 Playbook Creation Wizard (Owner: Frontend + AI Engineer)
+**Blockers:** None
 
 > Update this section at end of every session.
 
