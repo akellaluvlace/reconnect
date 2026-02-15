@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
 **Last Updated:** 2026-02-15
-**Current Macro Step:** 1 (Pre-Development Setup)
-**Active Micro Steps:** None yet
+**Current Macro Step:** 5 complete — choosing next step
+**Active Micro Steps:** None (session end)
 
 ---
 
@@ -41,11 +41,9 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 
 | Micro Step | Owner | Branch | Status |
 |------------|-------|--------|--------|
-| 1.1 Client Prerequisites | Architect | - | PENDING |
-| 1.2 Dev Environment | DevOps | - | PENDING |
-| 1.3 Service Accounts | DevOps | - | PENDING |
-| 1.4 Git Repository | DevOps | - | PENDING |
-| 1.5 Project Structure | Architect | - | PENDING |
+| All Step 1-3 + 5 micro steps | Various | master | COMPLETE |
+| Code review (25 issues) | QA | master | COMPLETE — all fixed |
+| Next: Step 4, 6, or 7 | TBD | TBD | PENDING |
 
 ---
 
@@ -53,11 +51,11 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 
 | Step | Name | File | Micro Steps | Status |
 |------|------|------|-------------|--------|
-| 1 | Pre-Development Setup | [step-01](../steps/step-01-pre-development.md) | 5 | NOT STARTED |
-| 2 | Monorepo Foundation | [step-02](../steps/step-02-monorepo-foundation.md) | 6 | NOT STARTED |
-| 3 | Supabase Core | [step-03](../steps/step-03-supabase-core.md) | 6 | NOT STARTED |
+| 1 | Pre-Development Setup | [step-01](../steps/step-01-pre-development.md) | 5 | COMPLETE |
+| 2 | Monorepo Foundation | [step-02](../steps/step-02-monorepo-foundation.md) | 6 | COMPLETE |
+| 3 | Supabase Core | [step-03](../steps/step-03-supabase-core.md) | 6 | COMPLETE |
 | 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | NOT STARTED |
-| 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | NOT STARTED |
+| 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | COMPLETE + REVIEWED |
 | 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 6 | NOT STARTED |
 | 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | NOT STARTED |
 | 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 9 | NOT STARTED |
@@ -105,8 +103,8 @@ Completed planning updates:
 
 ## Next Actions
 
-1. **Architect:** Begin Step 1.1 (Verify Client Prerequisites)
-2. **DevOps:** Prepare for Step 1.2-1.4 (pending 1.1 completion or parallel start)
+1. **Client:** Complete external service setup (see `EXTERNAL_SETUP.md` at project root)
+2. **Next session:** Pick Step 4 (Landing Page), Step 6 (AI Platform), or Step 7 (Playbook Creation)
 3. **Ask client:** Resolve RCN-020, RCN-032, RCN-040 (share link password, public scope, Drive ownership)
 
 ---

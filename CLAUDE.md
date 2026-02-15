@@ -7,9 +7,9 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 5 — Web App Shell + Core UI (COMPLETE)
-**Status:** Next up: Step 7 (Playbook Creation)
-**Next task:** 7.1 Playbook Creation Wizard (Owner: Frontend + AI Engineer)
+**Step:** 5 — Web App Shell + Core UI (COMPLETE, reviewed + all 25 issues fixed)
+**Status:** Steps 1-3 + 5 complete. Next: Step 4 (Landing Page) or Step 6 (AI Platform) or Step 7 (Playbook Creation)
+**Next task:** Client to set up external services (see EXTERNAL_SETUP.md), then continue build
 **Blockers:** None
 
 > Update this section at end of every session.
@@ -94,8 +94,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-02-15 (d):** Code review fix session — fixed all 25 issues (3 critical, 7 high, 8 medium, 7 low). Added user bootstrap trigger, ai_synthesis policies, error boundaries, middleware auth fix, OAuth callback email verification. Migration pushed. Typecheck 6/6, lint 2/2.
+- **2026-02-15 (c):** Completed Steps 2+3+5. Monorepo foundation, Supabase schema+RLS (33 dashboard issues → 0), web app shell (auth, dashboard, 22 shadcn components, 20+ pages, Zustand stores). Comprehensive code review found 25 issues.
 - **2026-02-15 (b):** Root cleanup — moved 11 MDs to docs/, created CLAUDE.md master key file, updated all cross-references.
-- **2026-02-15 (a):** Client questionnaire integrated into all docs. Opus 4.5 → 4.6. issuesFound.md: 10 resolved, 14 partial, 6 open. All planning docs consistent.
+- **2026-02-15 (a):** Client questionnaire integrated into all docs. Opus 4.5 → 4.6. issuesFound.md: 10 resolved, 14 partial, 6 open.
 - **2026-02-03:** Created 8 agent definitions, 10 step files (70 micro-steps), swarm operating system. Full project scaffold.
 
 > Keep max 5 entries. Remove oldest when adding new.

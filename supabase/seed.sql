@@ -1,0 +1,3 @@
+-- Rec+onnect MVP — Seed Data
+-- This file runs on `supabase db reset` (local development only).
+-- Production data is never seeded this way.

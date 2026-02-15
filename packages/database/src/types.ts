@@ -570,10 +570,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      candidate_belongs_to_user_org: {
+        Args: { cand_id: string }
+        Returns: boolean
+      }
       get_user_org_id: { Args: never; Returns: string }
       get_user_role: { Args: never; Returns: string }
       is_org_admin: { Args: never; Returns: boolean }
       is_org_manager_or_admin: { Args: never; Returns: boolean }
+      playbook_belongs_to_user_org: {
+        Args: { pb_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
