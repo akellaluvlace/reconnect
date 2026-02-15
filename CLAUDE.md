@@ -7,10 +7,10 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 1 — Pre-Development Setup
-**Status:** NOT STARTED
-**Next task:** 1.1 Client Prerequisites (Owner: Architect)
-**Blockers:** Ask client — RCN-020 (share link passwords?), RCN-032 (share link data scope?), RCN-040 (Google Drive MVP scope?)
+**Step:** 3 — Supabase Core (schema, auth, RLS)
+**Status:** STARTING
+**Next task:** 3.1 Database Schema Migration (Owner: Backend)
+**Blockers:** None — Steps 1+2 complete, monorepo committed
 
 > Update this section at end of every session.
 
@@ -75,6 +75,7 @@ Read files ONLY when the situation matches:
 4. Verify: run DoD commands from the step file (lint, typecheck, tests)
 5. Report: state what was done, what passed, any blockers
 6. If blocked: document exact error + what you tried + options
+7. **NEVER sign commits** with `Co-Authored-By` or any attribution line. Plain commit messages only.
 
 Full rules: `docs/CLAUDE_SWARM.md` (8 agents, merge gates, compliance gates)
 
