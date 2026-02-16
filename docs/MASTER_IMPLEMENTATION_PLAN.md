@@ -52,7 +52,7 @@ AI Primary:   Claude Opus 4.6 (deep research, full effort) + Claude Sonnet 4.5 (
 AI Feedback:  Claude Opus 4.6 (compliant feedback synthesis)
 Transcription: Whisper API (OpenAI)
 Email:        Resend (email-only notifications)
-Storage:      Google Drive API
+Recording Storage: Google Drive API (org-level — core backbone for interview recordings + AI analysis pipeline)
 Analytics:    Google Analytics 4
 Monorepo:     Turborepo
 Platform:     Desktop-only (min 1024px), Light mode first
@@ -1446,9 +1446,21 @@ interface FeedbackSynthesis {
 
 ---
 
-## 9. Week 7: Google Drive + Polish
+## 9. Week 7: Google Drive Integration + Polish
+
+> **CRITICAL**: Google Drive is the CORE STORAGE BACKBONE for interview recordings.
+> The AI analysis pipeline (Whisper transcription → Claude synthesis) depends on recordings
+> being stored in Drive. This is NOT an export feature — it IS the recording infrastructure.
 
 ### 9.1 Day 1-3: Google Drive Integration
+
+#### Ownership Model (Client Decision 2026-02-16)
+- **Org-level**: One Google Drive account per organization
+- **Admin connects once**: OAuth with offline access, refresh token stored per org
+- **All recordings go to org Drive**: Organized in folder structure per playbook/candidate
+- **Users set up Meet links**: Through the same Google integration
+- **Revocation**: When admin disconnects, Drive link breaks; existing files remain on Drive (org owns them)
+- **AI pipeline dependency**: Whisper pulls audio from Drive → transcribes → Claude analyzes transcript
 
 #### Task 21.1: OAuth Flow Setup
 ```typescript
@@ -1460,21 +1472,27 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI
 );
 
+// Org-level auth: admin connects once for the whole organization
 export function getAuthUrl() {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/drive.file'],
+    scope: [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/calendar.events', // Meet link creation
+    ],
+    prompt: 'consent',
   });
 }
 ```
 
 #### Task 21.2: Features
-- [ ] OAuth authorization flow
-- [ ] Save recordings to Drive
-- [ ] Export playbooks as documents
-- [ ] Export candidate summaries
-- [ ] Folder organization
-- [ ] Revoke access option
+- [ ] Org-level OAuth authorization flow (admin connects, tokens stored per org)
+- [ ] Save interview recordings to org Drive (automatic after recording)
+- [ ] Folder organization: org → playbook → candidate → stage
+- [ ] Google Meet link creation for scheduled interviews
+- [ ] AI pipeline integration: recording URL from Drive → Whisper → transcript → Claude
+- [ ] Revoke access option (admin only)
+- [ ] Connection status dashboard in org settings
 
 ### 9.2 Day 3-4: Bug Fixes & Optimization
 

@@ -7,10 +7,12 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 5 — Web App Shell + Core UI (COMPLETE, reviewed + all 25 issues fixed)
-**Status:** Steps 1-3 + 5 complete. Next: Step 4 (Landing Page) or Step 6 (AI Platform) or Step 7 (Playbook Creation)
-**Next task:** Client to set up external services (see EXTERNAL_SETUP.md), then continue build
-**Blockers:** None
+**Step:** 4 — Landing Page (COMPLETE)
+**Status:** Steps 1-5 complete. Step 4 landing page built with premium design. Deep audit done. All P0 blockers resolved.
+**Next task:** Schema migration #7 (Drive tables, recording metadata, GDPR) then Step 7 (Playbook Creation)
+**Blockers:** External services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — client setting up this week. Not blocking migration or Step 7.
+
+**Corrected build order:** ~~4~~ → Migration #7 → 7 → 6 → 8 → 10.1-10.2 → 9 → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -35,7 +37,12 @@ These are non-negotiable client decisions. Do not ask about them — they're set
 - **NO AI hire/no-hire recommendation** — highlights only, human decides
 - **Email-only notifications** — no in-app, use Resend
 - **Auth:** Email+password + Google OAuth + Microsoft OAuth — NO LinkedIn
-- **No PDF/CSV export** — everything stays in system, Google Drive export only
+- **No PDF/CSV export** — everything stays in system
+- **Google Drive = core storage backbone** — org-level (1 account per org, admin connects once). ALL interview recordings stored on Drive. AI pipeline (Whisper → Claude) pulls recordings from Drive for transcription + analysis. Users set up Meet links through this integration. This is NOT an export feature — it IS the recording infrastructure.
+- **Share links: token-only URL** — no password protection, secure random token + rate limiting
+- **Share link data scope: minimal** — collaborator sees: candidate first name + role, their stage, focus areas + questions, their feedback form. NO access to other feedback, salary, CV, AI synthesis, scores, or full playbook
+- **Magic link auth: Supabase Auth OTP** — clicking magic link creates temporary Supabase auth session. Existing RLS policies work unchanged via `auth.uid()`.
+- **AI synthesis: transcript + feedback** — Claude analyzes BOTH the full interview transcript AND structured feedback forms. Token counting required (150K soft limit). Transcript stays server-side only.
 - **1-year data retention** then auto reachout to candidate to opt in/out
 - **JSONB feedback:** `ratings` (array of {category, score 1-4}), `pros`/`cons` (JSONB arrays), `focus_areas_confirmed` (boolean, required)
 - **AI constraints:** 2-3 focus areas per stage, 3-5 questions per focus area
@@ -94,10 +101,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-02-16 (c):** Landing page design polish. Hero image swap (AI-gen interview photo with navy/gold blending), solution section redesigned to alternating 2-col layout with Streamline Brooklyn illustrations + gold tint CSS, How It Works rewritten as 2x2 icon cards with hover effects. Removed boilerplate SVGs. All checks clean.
+- **2026-02-16 (b):** Step 4 Landing Page COMPLETE. Premium design (navy/gold/cream), 7 sections (hero, solution, how-it-works, CTA, contact, header, footer), scroll animations, SEO+JSON-LD+GA4, static export. Typecheck+lint+build all clean.
+- **2026-02-16 (a):** Deep architecture audit. Resolved 3 P0 blockers (Drive ownership, share link scope, share link password). Locked 3 tech decisions (magic link auth, transcript+feedback synthesis, UUID[] assigned_stages). Found 5 DB schema gaps + step ordering fix. Updated all docs.
 - **2026-02-15 (d):** Code review fix session — fixed all 25 issues (3 critical, 7 high, 8 medium, 7 low). Added user bootstrap trigger, ai_synthesis policies, error boundaries, middleware auth fix, OAuth callback email verification. Migration pushed. Typecheck 6/6, lint 2/2.
 - **2026-02-15 (c):** Completed Steps 2+3+5. Monorepo foundation, Supabase schema+RLS (33 dashboard issues → 0), web app shell (auth, dashboard, 22 shadcn components, 20+ pages, Zustand stores). Comprehensive code review found 25 issues.
-- **2026-02-15 (b):** Root cleanup — moved 11 MDs to docs/, created CLAUDE.md master key file, updated all cross-references.
-- **2026-02-15 (a):** Client questionnaire integrated into all docs. Opus 4.5 → 4.6. issuesFound.md: 10 resolved, 14 partial, 6 open.
-- **2026-02-03:** Created 8 agent definitions, 10 step files (70 micro-steps), swarm operating system. Full project scaffold.
 
 > Keep max 5 entries. Remove oldest when adding new.

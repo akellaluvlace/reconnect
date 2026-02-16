@@ -8,13 +8,13 @@
 
 ## Goal
 
-Make it reliable + shippable: Drive export, performance, security, beta testing, handover.
+Make it reliable + shippable: Google Drive recording storage (core AI pipeline backbone), performance, security, beta testing, handover.
 
 ---
 
 ## Deliverables
 
-- Google Drive OAuth + upload/export flows
+- Google Drive OAuth + recording storage (org-level, core backbone for AI analysis pipeline)
 - Bug fixing + optimization (bundle, query speed, UX polish)
 - Security checklist pass (auth on all routes, rate limiting AI, safe uploads, logs)
 - Prod deployment + beta plan (5–10 testers)
@@ -33,7 +33,10 @@ Make it reliable + shippable: Drive export, performance, security, beta testing,
 
 ## Micro Steps
 
-### 10.1 — Implement Google Drive OAuth
+### 10.1 — Implement Google Drive OAuth (Org-Level)
+
+> **CRITICAL**: Google Drive is the core storage backbone for interview recordings.
+> The AI pipeline (Whisper → Claude) depends on this. Not an export feature.
 
 **Owner:** Backend
 **Supporting:** Security
@@ -44,14 +47,22 @@ Make it reliable + shippable: Drive export, performance, security, beta testing,
 - `apps/web/src/app/api/google-drive/**`
 - `apps/web/src/lib/google-drive/**`
 
+**Architecture (Client Decision 2026-02-16):**
+- **Org-level**: One Google Drive account per organization
+- **Admin connects once**: OAuth with offline access, refresh token stored per org (NOT per user)
+- **All recordings go to org Drive**: Automatic upload after each interview recording
+- **Google Meet links**: Users create Meet links through the same Google integration
+- **AI pipeline**: Recording on Drive → Whisper pulls audio → transcribes → Claude analyzes
+- **Revocation**: Admin disconnects → Drive link breaks, existing files remain (org owns them)
+
 **Tasks:**
 - [ ] Set up Google Cloud project:
-  - Enable Google Drive API
+  - Enable Google Drive API + Google Calendar API (for Meet links)
   - Create OAuth 2.0 credentials
   - Configure consent screen
   - Add authorized redirect URIs
 
-- [ ] Create OAuth flow:
+- [ ] Create org-level OAuth flow:
 ```typescript
 // apps/web/src/lib/google-drive/client.ts
 import { google } from 'googleapis';
@@ -62,10 +73,14 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI
 );
 
+// Org-level: admin connects once for the whole organization
 export function getAuthUrl() {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: ['https://www.googleapis.com/auth/drive.file'],
+    scope: [
+      'https://www.googleapis.com/auth/drive.file',
+      'https://www.googleapis.com/auth/calendar.events',
+    ],
     prompt: 'consent',
   });
 }
@@ -77,18 +92,20 @@ export async function getTokens(code: string) {
 ```
 
 - [ ] Create OAuth routes:
-  - GET /api/google-drive/auth → Redirect to Google
-  - GET /api/google-drive/callback → Handle callback, store tokens
-  - GET /api/google-drive/status → Check connection status
-  - POST /api/google-drive/disconnect → Revoke access
+  - GET /api/google-drive/auth → Redirect to Google (admin only)
+  - GET /api/google-drive/callback → Handle callback, store tokens per org
+  - GET /api/google-drive/status → Check org connection status
+  - POST /api/google-drive/disconnect → Revoke access (admin only)
 
-- [ ] Store refresh tokens securely in database
+- [ ] Store refresh tokens securely per org in database (encrypted)
+- [ ] DB schema: `org_google_tokens` table (org_id FK, encrypted refresh_token, access_token, expiry, connected_by, connected_at)
 
 **Security Checklist:**
-- [ ] Minimal scopes requested (drive.file only)
+- [ ] Minimal scopes requested (drive.file + calendar.events)
 - [ ] Tokens encrypted at rest
 - [ ] Revocation works
 - [ ] No tokens exposed to client
+- [ ] Only admin can connect/disconnect
 
 **DoD Commands:**
 ```bash
@@ -96,54 +113,73 @@ pnpm lint && pnpm typecheck
 # Test OAuth flow
 ```
 
-**Output:** Google Drive OAuth working
+**Output:** Org-level Google Drive OAuth working
 
 ---
 
-### 10.2 — Implement Drive Upload/Export
+### 10.2 — Implement Recording Storage + Meet Integration
+
+> This is the critical path — recordings must land on Drive for the AI pipeline to work.
 
 **Owner:** Backend
-**Supporting:** Frontend
+**Supporting:** Frontend, AI Engineer
 **Status:** PENDING
-**Branch:** `step10-2-drive-upload`
+**Branch:** `step10-2-drive-recording-storage`
 
 **Allowed Paths:**
 - `apps/web/src/app/api/google-drive/upload/route.ts`
+- `apps/web/src/app/api/google-drive/meet/route.ts`
 - `apps/web/src/components/settings/google-drive-settings.tsx`
+- `apps/web/src/lib/google-drive/**`
 
 **Tasks:**
-- [ ] Create upload route:
+- [ ] Create recording upload route (automatic after interview):
 ```typescript
 // POST /api/google-drive/upload
 export async function POST(req: NextRequest) {
-  const { file_url, file_name, mime_type, folder_id } = await req.json();
+  const { recording_url, playbook_id, candidate_name, stage_name } = await req.json();
 
-  // Get user's Drive tokens
-  // Download file from Supabase Storage
-  // Upload to Google Drive
-  // Return Drive file ID and URL
+  // Get ORG's Drive tokens (not user's)
+  // Download recording from Supabase Storage
+  // Create folder structure: org → playbook → candidate → stage
+  // Upload to org's Google Drive
+  // Store Drive file ID + URL on interview record
+  // Return Drive file ID and URL (needed by Whisper pipeline)
 }
 ```
 
-- [ ] Implement exports:
-  - Save interview recordings to Drive
-  - Export playbook as document to Drive
-  - Export candidate summary to Drive
-  - Create organized folder structure
+- [ ] Recording storage flow:
+  - Interview recorded in-app → saved to Supabase Storage (temp)
+  - Auto-upload to org's Google Drive (permanent storage)
+  - Drive file URL stored on interview record in DB
+  - Whisper API pulls from Drive URL for transcription
+  - After transcription, transcript stored in DB for Claude analysis
   - NOTE: NO PDF export, NO CSV export (client decision — all stays in system)
 
-- [ ] Create Google Drive settings UI:
+- [ ] Google Meet link creation:
+  - POST /api/google-drive/meet → Create Meet link for scheduled interview
+  - Store Meet link on interview record
+  - Users can create Meet links from interview scheduling UI
+
+- [ ] Folder organization (automatic):
+  - `{Org Name}/`
+  - `{Org Name}/{Playbook Title}/`
+  - `{Org Name}/{Playbook Title}/{Candidate Name}/`
+  - `{Org Name}/{Playbook Title}/{Candidate Name}/{Stage Name} - {date}.webm`
+
+- [ ] Create Google Drive settings UI (org settings, admin only):
   - Connect/disconnect button
-  - Connection status
-  - Default folder selection
-  - Export buttons
+  - Connection status + connected account email
+  - Root folder selection
+  - Storage usage indicator
 
 **DoD Commands:**
 ```bash
-# Test upload flow
+pnpm lint && pnpm typecheck
+# Test: record → upload to Drive → verify file exists → Whisper can access URL
 ```
 
-**Output:** Drive upload/export working
+**Output:** Recording storage pipeline working end-to-end
 
 ---
 

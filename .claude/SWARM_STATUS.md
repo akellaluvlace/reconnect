@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-02-15
-**Current Macro Step:** 5 complete — choosing next step
-**Active Micro Steps:** None (session end)
+**Last Updated:** 2026-02-16
+**Current Macro Step:** 4 — Landing Page (COMPLETE)
+**Active Micro Steps:** 4.1-4.8 (all complete)
 
 ---
 
@@ -43,7 +43,9 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 |------------|-------|--------|--------|
 | All Step 1-3 + 5 micro steps | Various | master | COMPLETE |
 | Code review (25 issues) | QA | master | COMPLETE — all fixed |
-| Next: Step 4, 6, or 7 | TBD | TBD | PENDING |
+| Deep architecture audit | Architect | — | COMPLETE (2026-02-16) |
+| Step 4: Landing Page | UI Builder | master | COMPLETE (2026-02-16) |
+| Step 4: Design polish | UI Builder | master | COMPLETE (2026-02-16) — hero image, solution illustrations, how-it-works redesign |
 
 ---
 
@@ -54,7 +56,7 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | 1 | Pre-Development Setup | [step-01](../steps/step-01-pre-development.md) | 5 | COMPLETE |
 | 2 | Monorepo Foundation | [step-02](../steps/step-02-monorepo-foundation.md) | 6 | COMPLETE |
 | 3 | Supabase Core | [step-03](../steps/step-03-supabase-core.md) | 6 | COMPLETE |
-| 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | NOT STARTED |
+| 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | COMPLETE |
 | 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | COMPLETE + REVIEWED |
 | 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 6 | NOT STARTED |
 | 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | NOT STARTED |
@@ -72,11 +74,11 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 
 | Issue | Status | When to Resolve |
 |-------|--------|-----------------|
-| RCN-022A: Collaborator identity model | PARTIALLY RESOLVED | Lock during Step 3 |
-| RCN-027: Magic link session model | PARTIALLY RESOLVED | Lock during Step 3 |
-| RCN-020: Share link password protection | OPEN | Ask client |
-| RCN-032: Share link public data scope | OPEN | Ask client |
-| RCN-040: Google Drive ownership model | OPEN | Ask client |
+| RCN-022A: Collaborator identity model | PARTIALLY RESOLVED | Lock during build |
+| RCN-027: Magic link session model | PARTIALLY RESOLVED | Lock during build |
+| RCN-020: Share link password protection | RESOLVED (2026-02-16) | Token-only URL, no password |
+| RCN-032: Share link public data scope | RESOLVED (2026-02-16) | Minimal scope (name, stage, questions, their feedback form only) |
+| RCN-040: Google Drive ownership model | RESOLVED (2026-02-16) | Org-level Drive, core storage for recordings+AI |
 
 ---
 
@@ -103,9 +105,10 @@ Completed planning updates:
 
 ## Next Actions
 
-1. **Client:** Complete external service setup (see `EXTERNAL_SETUP.md` at project root)
-2. **Next session:** Pick Step 4 (Landing Page), Step 6 (AI Platform), or Step 7 (Playbook Creation)
-3. **Ask client:** Resolve RCN-020, RCN-032, RCN-040 (share link password, public scope, Drive ownership)
+1. **NOW:** Schema migration #7 (Drive tables, recording metadata, GDPR retention) OR Step 7 (Playbook Creation)
+2. **Client:** Setting up external services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — expected this week
+3. **Corrected build order:** ~~4~~ → Migration #7 → 7 → 6 → 8 → 10.1-10.2 → 9 → 10.3-10.8
+4. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
 
 ---
 

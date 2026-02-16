@@ -1,26 +1,196 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ──────────────────────────────────────────
+   Rec+onnect Landing — Design Tokens
+   Aesthetic: Refined Authority
+   Navy + Gold + Generous Space
+   ────────────────────────────────────────── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-navy-950: #060d1b;
+  --color-navy-900: #0a1628;
+  --color-navy-800: #0f1f3a;
+  --color-navy-700: #162a4d;
+  --color-navy-600: #1e3a68;
+
+  --color-gold-400: #f2c14e;
+  --color-gold-500: #e8a849;
+  --color-gold-600: #d4953e;
+
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #faf7f2;
+  --color-cream-200: #f3ede3;
+
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+
+  --font-display: var(--font-urbanist);
+  --font-body: var(--font-jakarta);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base ───────────────────────────────── */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), system-ui, sans-serif;
+  color: var(--color-slate-700);
+  background: var(--color-cream-50);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-gold-500);
+  color: var(--color-navy-950);
+}
+
+/* ── Noise Texture (SVG data URI) ──────── */
+
+.bg-noise {
+  position: relative;
+}
+
+.bg-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ── Scroll Animations ─────────────────── */
+
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.animate-delay-1 {
+  transition-delay: 0.1s;
+}
+.animate-delay-2 {
+  transition-delay: 0.2s;
+}
+.animate-delay-3 {
+  transition-delay: 0.3s;
+}
+.animate-delay-4 {
+  transition-delay: 0.4s;
+}
+
+/* ── Hero Gradient Mesh ────────────────── */
+
+.hero-gradient {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(30, 58, 104, 0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(22, 42, 77, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 80% at 50% 50%, var(--color-navy-900) 0%, var(--color-navy-950) 100%);
+}
+
+/* ── Gold Shimmer on Headlines ─────────── */
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, var(--color-gold-400) 0%, var(--color-gold-600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Card Hover ────────────────────────── */
+
+.card-hover {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px -12px rgba(10, 22, 40, 0.08),
+    0 8px 16px -8px rgba(10, 22, 40, 0.04);
+}
+
+/* ── Button Glow ───────────────────────── */
+
+.btn-gold-glow {
+  position: relative;
+}
+
+.btn-gold-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--color-gold-400), var(--color-gold-600));
+  opacity: 0;
+  z-index: -1;
+  filter: blur(12px);
+  transition: opacity 0.3s ease;
+}
+
+.btn-gold-glow:hover::after {
+  opacity: 0.4;
+}
+
+/* ── Divider Wave ──────────────────────── */
+
+.section-wave {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.section-wave svg {
+  display: block;
+  width: calc(100% + 2px);
+  height: 64px;
+}
+
+/* ── Step Connector Line ───────────────── */
+
+.step-connector {
+  position: absolute;
+  top: 28px;
+  left: calc(50% + 28px);
+  width: calc(100% - 56px);
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold-500) 0%, var(--color-cream-200) 100%);
+}
+
+/* ── Illustration Gold Tint ───────────── */
+
+.illustration-gold {
+  filter: sepia(0.15) saturate(1.4) hue-rotate(5deg) brightness(0.95);
+  transition: filter 0.4s ease;
+}
+
+.illustration-gold:hover {
+  filter: sepia(0.25) saturate(1.8) hue-rotate(5deg) brightness(1);
+}
+
+/* ── Form Focus Ring ───────────────────── */
+
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-gold-500);
 }

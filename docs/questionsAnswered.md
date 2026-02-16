@@ -100,6 +100,28 @@ Section 12: Data Retention & GDPR (Due Week 4)
 12.5	Export playbooks to PDF	No
 12.6	Export data to CSV	No (all stays in system)
 12.7	Default timezone	Europe/Dublin (Dublin)
+Section 12A: Google Drive & Interview Storage (Due Week 6)
+#	Question	Answer
+12A.1	Google Drive ownership model	Org-level: one account per organization. Admin connects once, all recordings go to that Drive.
+12A.2	What gets stored on Drive	Interview recordings (audio), so AI can pull them for transcription and analysis. This is the core storage backbone — NOT an export feature.
+12A.3	Users and Google Meet	Users connect and set up Meet links through the org's Google integration.
+12A.4	Drive folder structure	Organized by org, per playbook/candidate. Managed automatically.
+12A.5	Revocation/offboarding	When org admin disconnects, Drive link breaks. Existing files remain on Drive (org owns them).
+Section 12A2: AI Analysis Scope (Due Week 5)
+#	Question	Answer
+12A2.1	What does Claude analyze for synthesis?	BOTH: full interview transcript (from Whisper) + structured feedback forms (ratings, pros/cons, notes). Richer analysis.
+12A2.2	Privacy constraint	Transcript stays server-side only. Never exposed to other interviewers. EU AI Act compliant (text-only).
+12A2.3	Context window management	Token counting before Claude call. 150K soft limit on 200K window. Summarize transcript if too long.
+Section 12A3: Magic Link Authentication (Due Week 5)
+#	Question	Answer
+12A3.1	Magic link auth model	Supabase Auth OTP — clicking magic link creates temporary Supabase auth session. auth.uid() works.
+12A3.2	Impact on RLS	Existing RLS policies work unchanged. Collaborators get auth.uid() like any other user.
+12A3.3	Collaborator assigned_stages	UUID[] column on collaborators table (simple array, not join table).
+Section 12B: Share Links & Collaborator Access (Due Week 5)
+#	Question	Answer
+12B.1	Share link password protection	No — token-only URL is sufficient. Secure random token, no password needed.
+12B.2	Share link data scope (what collaborator sees)	Minimal: candidate first name + role title, assigned stage name, focus areas + suggested questions, their feedback form only. NO access to: other feedback, salary, CV, AI synthesis, full playbook.
+12B.3	Rationale	GDPR-safe minimal scope. Easy to widen later (add fields). Hard to restrict later (users notice removal).
 Section 13: Technical & Infrastructure (Due Week 7)
 #	Question	Answer
 13.1	Preferred platform domain	nameTBC.com

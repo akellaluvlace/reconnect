@@ -196,8 +196,8 @@ Owner: Auth Agent + DB/RLS Agent + API Agent
 
 Acceptance criteria: A collaborator entering via invite flow can submit feedback and feedback rows have a valid, auditable author reference.
 
-**Resolution Status:** PARTIALLY RESOLVED
-**Resolution:** Client confirmed YES to magic link for collaborators without full accounts (5.6), and that interviewers see only their own feedback (5.3). This confirms the product intent: external collaborators submit feedback via magic links. However, the critical technical question remains OPEN: whether magic-link collaborators become shadow auth users or use a guest write path. The dev team must decide the schema/RLS approach before building the feedback flow.
+**Resolution Status:** RESOLVED
+**Resolution:** Decision locked (2026-02-16): Use Supabase Auth OTP magic links. Clicking magic link creates a temporary Supabase auth session → collaborator gets `auth.uid()` → existing RLS policies work unchanged. Feedback rows use normal `interviewer_id` FK referencing `auth.users`. No guest write path needed. See questionsAnswered.md 12A3.1-12A3.2.
 
 RCN-027 (P0) — Magic link access session model is undefined (token ≠ session)
 
@@ -219,8 +219,8 @@ Owner: Auth Agent + Security Agent
 
 Acceptance criteria: Every protected read/write request has deterministic identity (auth session or defined token session w/ server enforcement).
 
-**Resolution Status:** PARTIALLY RESOLVED
-**Resolution:** Client confirmed magic link for collaborators (5.6) and email+password as primary login (8.1). The product decision is clear: magic links are the intended mechanism. The OPEN portion is the technical session model -- how the magic link translates into a session/identity at runtime. This is a prerequisite blocker for RCN-022A and must be resolved by the dev team.
+**Resolution Status:** RESOLVED
+**Resolution:** Decision locked (2026-02-16): Use Supabase Auth OTP for magic links. Clicking creates a Supabase auth session automatically. Collaborator gets `auth.uid()`, existing RLS works. No custom token session needed. See questionsAnswered.md 12A3.1.
 
 RCN-025 (P0) — auth.users → public.users "profile row" creation guarantee missing (race condition)
 
@@ -256,8 +256,8 @@ Resolution: Remove from roadmap or add password_hash + UX + rate limiting.
 
 Owner: DB/RLS Agent + Security Agent
 
-**Resolution Status:** OPEN
-**Resolution:** Client answers do not address share link password protection specifically. Client confirmed magic links for collaborators (5.6) but did not specify whether share links should be password-protected. This needs an explicit client decision: include password protection in MVP or defer. Recommend asking the client directly.
+**Resolution Status:** RESOLVED
+**Resolution:** Client confirmed (2026-02-16): token-only URL is sufficient. No password protection needed. Secure random token in URL with rate limiting. No password_hash column required in schema. See questionsAnswered.md 12B.1.
 
 RCN-021 (P1) — Feedback structure ambiguity vs UI expectations (arrays vs TEXT)
 
@@ -288,8 +288,8 @@ Owner: DB/RLS Agent + API Agent
 
 Acceptance criteria: Stage assignment is persisted, queryable, and enforced in RLS/API to limit collaborator access per stage.
 
-**Resolution Status:** PARTIALLY RESOLVED
-**Resolution:** Client confirmed magic link collaborators (5.6) and interviewers see only their own feedback (5.3), which validates stage-level access control as a product requirement. The fix is purely technical (add the missing column/join table to the schema). Dev team should implement this as part of the collaborator model work.
+**Resolution Status:** RESOLVED
+**Resolution:** Client confirmed (2026-02-16): Add `assigned_stages UUID[]` column to collaborators table. Simple array, not join table. Matches existing patterns. Will be added in migration #7. See questionsAnswered.md 12A3.3.
 
 RCN-023 (P1) — Candidate data retention + erasure is stated but not implemented as a mechanism
 
@@ -379,8 +379,8 @@ Resolution: Define "public view schema" and enforce in API/RLS.
 
 Owner: Compliance Agent + API Agent
 
-**Resolution Status:** PARTIALLY RESOLVED
-**Resolution:** Client confirmed internal only, no candidate-facing components (4.3), interviewers see only their own feedback while HM sees all (5.3), salary visible to managers+admin only (5.4), and build GDPR flow (12.3). These answers inform what SHOULD be restricted but do not explicitly define what is visible on a share link page. The client confirmed magic links (5.6) but not the exact data scope of shared views. Recommend asking client to specify exactly which data elements appear on share link pages.
+**Resolution Status:** RESOLVED
+**Resolution:** Client confirmed (2026-02-16): minimal scope for share links. Collaborator sees: candidate first name + role title, their assigned stage name, focus areas + suggested questions, and their feedback form only. NOT visible: other people's feedback, salary expectations, CV/resume, AI synthesis, scores, full playbook details. GDPR-safe default — easy to widen later, hard to restrict. See questionsAnswered.md 12B.2.
 
 RCN-033 (P2) — Transcript "confidence scoring" mentioned but not defined as measurable output
 
@@ -410,8 +410,8 @@ Resolution: Pick model (org admin vs per-user vs shared drive) and implement acc
 
 Owner: Integrations Agent + Compliance Agent
 
-**Resolution Status:** OPEN
-**Resolution:** Client answers do not address Google Drive ownership model. No export features were requested (no PDF 12.5, no CSV 12.6), which may suggest Drive integration is lower priority. However, the spec includes it. Recommend asking client: is Google Drive export needed for MVP, and if so, whose Drive account is used?
+**Resolution Status:** RESOLVED
+**Resolution:** Client confirmed (2026-02-16): Org-level Google Drive. One account per organization — admin connects once, ALL interview recordings go to that Drive. This is the CORE STORAGE BACKBONE, not an export feature. Users also connect and set up Google Meet links through this integration. The AI pipeline (Whisper transcription → Claude analysis) pulls recordings from Drive. This is the most important feature in the system. When admin disconnects, Drive link breaks but existing files remain on Drive (org owns them). See questionsAnswered.md 12A.1-12A.5.
 
 RCN-041 (P1) — OAuth callback + deployment environment assumptions aren't standardized
 
@@ -564,9 +564,9 @@ Before implementing Step 1 UI/API, lock decisions + migrations for:
 
 ~~RCN-014: AI runtime/async strategy~~ **RESOLVED** — jobs table + polling (Step 6/8)
 
-RCN-022A + RCN-027: collaborator identity/session model (unblocks RLS + feedback writes) — **PARTIALLY RESOLVED, lock during Step 3**
+RCN-022A + RCN-027: collaborator identity/session model (unblocks RLS + feedback writes) — **RESOLVED: Supabase Auth OTP**
 
-RCN-026: assigned_stages schema alignment (prevents schema drift) — **PARTIALLY RESOLVED, fix during Step 3**
+RCN-026: assigned_stages schema alignment (prevents schema drift) — **RESOLVED: UUID[] column in migration #7**
 
 ---
 
@@ -579,31 +579,28 @@ RCN-026: assigned_stages schema alignment (prevents schema drift) — **PARTIALL
 
 | Status | Count |
 |---|---|
-| **RESOLVED** | 10 |
-| **PARTIALLY RESOLVED** | 14 |
-| **OPEN** | 6 |
+| **RESOLVED** | 16 |
+| **PARTIALLY RESOLVED** | 11 |
+| **OPEN** | 3 |
 | **Total Issues** | 30 |
 
 ### Breakdown by Severity
 
 | Severity | RESOLVED | PARTIALLY RESOLVED | OPEN |
 |---|---|---|---|
-| **P0 (Blocker)** | 4 (RCN-001, RCN-002, RCN-010, RCN-025) | 4 (RCN-014, RCN-022A, RCN-027, RCN-030) | 1 (RCN-020) |
-| **P1 (High Churn)** | 4 (RCN-003, RCN-013, RCN-021, RCN-061) | 7 (RCN-011, RCN-012, RCN-022, RCN-026, RCN-023, RCN-042, RCN-050, RCN-051) | 2 (RCN-031, RCN-032) |
+| **P0 (Blocker)** | 7 (RCN-001, RCN-002, RCN-010, RCN-025, RCN-020, RCN-022A, RCN-027) | 2 (RCN-014, RCN-030) | 0 |
+| **P1 (High Churn)** | 6 (RCN-003, RCN-013, RCN-021, RCN-061, RCN-032, RCN-026) | 6 (RCN-011, RCN-012, RCN-022, RCN-023, RCN-042, RCN-050, RCN-051) | 1 (RCN-031) |
 | **P2 (Should Align)** | 2 (RCN-028, RCN-062) | 1 (RCN-060) | 2 (RCN-024, RCN-033) |
 
 *Note: "Missing Entirely" items counted as 6 additional entries (2 OPEN, 4 PARTIALLY RESOLVED).*
 
 ### Key Findings
 
-1. **10 issues now RESOLVED** (up from 0) by locking purely technical decisions: architecture (Next.js App Router), API layer (route handlers primary), transcription endpoints, user creation trigger, async job model, feedback schema, RLS safety, tooling, and Edge Function role.
+1. **16 issues now RESOLVED** (up from 13) — added RCN-022A (collaborator feedback: Supabase Auth OTP shadow users), RCN-027 (magic link session: Supabase Auth OTP), RCN-026 (assigned_stages UUID[] column).
 
 2. **Client answers most impactful for:** RBAC/permissions (RCN-022, RCN-051), collaborator model (RCN-022A, RCN-027), data retention (RCN-023), notification scope (RCN-042), and feedback structure (RCN-021).
 
 3. **Remaining client decisions needed:**
-   - Share link password protection (RCN-020) -- ask client directly
-   - Share link public data scope (RCN-032) -- ask client directly
-   - Google Drive ownership model (RCN-040) -- ask client if Drive is MVP scope
    - Transcript quality scoring priority (RCN-033) -- ask client if MVP or defer
 
 4. **Remaining technical decisions (dev team):**
@@ -611,4 +608,4 @@ RCN-026: assigned_stages schema alignment (prevents schema drift) — **PARTIALL
    - RCN-041: OAuth callback environments for Vercel preview/prod
    - RCN-024: Audit log event taxonomy
 
-5. **Critical path blockers reduced:** Only RCN-020 (share link password) remains P0+OPEN. P0 blockers RCN-022A and RCN-027 (collaborator identity/session model) are PARTIALLY RESOLVED — product intent confirmed, technical implementation approach to be locked during Step 3.
+5. **Zero P0 blockers remain OPEN.** All P0 issues are RESOLVED or PARTIALLY RESOLVED. RCN-022A and RCN-027 are now RESOLVED (Supabase Auth OTP). Only P0 PARTIALLY RESOLVED: RCN-014 (Vercel timeout/AI contract) and RCN-030 (recording consent capture).
