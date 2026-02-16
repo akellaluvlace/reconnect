@@ -8,22 +8,22 @@ export function HeroSection() {
       {/* Hero photo — spans most of section, seamlessly blended */}
       <div className="absolute inset-0 pointer-events-none">
         <Image
-          src="/illustrations/hero-interview.png"
+          src="/illustrations/hero-interview.jpg"
           alt=""
-          width={1200}
-          height={800}
-          className="absolute inset-0 w-full h-full object-cover object-[center_30%] brightness-[0.75] saturate-[0.85]"
+          width={1920}
+          height={1080}
+          className="absolute inset-0 w-full h-full object-cover object-[35%_30%] brightness-[0.5] saturate-[0.65]"
           priority
           aria-hidden="true"
         />
-        {/* Navy color blend over entire image */}
-        <div className="absolute inset-0 bg-navy-950/10 mix-blend-multiply" />
-        {/* Smooth fade — heavier on left for text readability, lighter on right to show image */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-navy-950)] via-[var(--color-navy-950)]/50 via-35% to-transparent" />
+        {/* Navy color blend */}
+        <div className="absolute inset-0 bg-navy-950/20 mix-blend-multiply" />
+        {/* Fade — solid left edge, quick reveal so both people are visible */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-navy-950)] via-[var(--color-navy-950)]/40 via-30% to-transparent" />
         {/* Bottom fade for wave divider */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[var(--color-navy-950)] to-transparent" />
-        {/* Top subtle fade for header area */}
-        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[var(--color-navy-950)]/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[var(--color-navy-950)] to-transparent" />
+        {/* Top fade for header area */}
+        <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-[var(--color-navy-950)]/50 to-transparent" />
       </div>
 
       {/* Decorative Elements */}
@@ -39,8 +39,6 @@ export function HeroSection() {
             Hire with{" "}
             <span className="text-gold-gradient">clarity</span>
             .
-            <br />
-            Not chaos.
           </h1>
 
           {/* Supporting Text */}

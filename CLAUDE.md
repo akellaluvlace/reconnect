@@ -101,10 +101,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-02-16 (d):** Landing page content expansion. Added 5 new sections: stats bar (with gold-tinted illustration + Irish market stats), problem section (3 pain points), trust badges (EU AI Act/GDPR/Human Oversight/EU Data), FAQ accordion (8 questions from research), CTA rewrite ("Join the founding 50" with scarcity + perks). Removed "Not chaos" from hero. Renamed How It Works → Why Rec+onnect (feature differentiators). Build clean.
 - **2026-02-16 (c):** Landing page design polish. Hero image swap (AI-gen interview photo with navy/gold blending), solution section redesigned to alternating 2-col layout with Streamline Brooklyn illustrations + gold tint CSS, How It Works rewritten as 2x2 icon cards with hover effects. Removed boilerplate SVGs. All checks clean.
 - **2026-02-16 (b):** Step 4 Landing Page COMPLETE. Premium design (navy/gold/cream), 7 sections (hero, solution, how-it-works, CTA, contact, header, footer), scroll animations, SEO+JSON-LD+GA4, static export. Typecheck+lint+build all clean.
 - **2026-02-16 (a):** Deep architecture audit. Resolved 3 P0 blockers (Drive ownership, share link scope, share link password). Locked 3 tech decisions (magic link auth, transcript+feedback synthesis, UUID[] assigned_stages). Found 5 DB schema gaps + step ordering fix. Updated all docs.
 - **2026-02-15 (d):** Code review fix session — fixed all 25 issues (3 critical, 7 high, 8 medium, 7 low). Added user bootstrap trigger, ai_synthesis policies, error boundaries, middleware auth fix, OAuth callback email verification. Migration pushed. Typecheck 6/6, lint 2/2.
-- **2026-02-15 (c):** Completed Steps 2+3+5. Monorepo foundation, Supabase schema+RLS (33 dashboard issues → 0), web app shell (auth, dashboard, 22 shadcn components, 20+ pages, Zustand stores). Comprehensive code review found 25 issues.
 
 > Keep max 5 entries. Remove oldest when adding new.
