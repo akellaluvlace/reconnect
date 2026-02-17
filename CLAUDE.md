@@ -7,8 +7,8 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 4 — Landing Page (COMPLETE)
-**Status:** Steps 1-5 complete. Step 4 landing page built with premium design. Deep audit done. All P0 blockers resolved.
+**Step:** 4 — Landing Page (COMPLETE + POLISHED)
+**Status:** Steps 1-5 complete. Landing page fully redesigned: gold→teal theme, showcase stats column, CTA watermark illustration, FAQ/contact/footer refreshed, scroll animations everywhere.
 **Next task:** Schema migration #7 (Drive tables, recording metadata, GDPR) then Step 7 (Playbook Creation)
 **Blockers:** External services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — client setting up this week. Not blocking migration or Step 7.
 
@@ -101,10 +101,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-02-16 (d):** Landing page content expansion. Added 5 new sections: stats bar (with gold-tinted illustration + Irish market stats), problem section (3 pain points), trust badges (EU AI Act/GDPR/Human Oversight/EU Data), FAQ accordion (8 questions from research), CTA rewrite ("Join the founding 50" with scarcity + perks). Removed "Not chaos" from hero. Renamed How It Works → Why Rec+onnect (feature differentiators). Build clean.
-- **2026-02-16 (c):** Landing page design polish. Hero image swap (AI-gen interview photo with navy/gold blending), solution section redesigned to alternating 2-col layout with Streamline Brooklyn illustrations + gold tint CSS, How It Works rewritten as 2x2 icon cards with hover effects. Removed boilerplate SVGs. All checks clean.
-- **2026-02-16 (b):** Step 4 Landing Page COMPLETE. Premium design (navy/gold/cream), 7 sections (hero, solution, how-it-works, CTA, contact, header, footer), scroll animations, SEO+JSON-LD+GA4, static export. Typecheck+lint+build all clean.
-- **2026-02-16 (a):** Deep architecture audit. Resolved 3 P0 blockers (Drive ownership, share link scope, share link password). Locked 3 tech decisions (magic link auth, transcript+feedback synthesis, UUID[] assigned_stages). Found 5 DB schema gaps + step ordering fix. Updated all docs.
-- **2026-02-15 (d):** Code review fix session — fixed all 25 issues (3 critical, 7 high, 8 medium, 7 low). Added user bootstrap trigger, ai_synthesis policies, error boundaries, middleware auth fix, OAuth callback email verification. Migration pushed. Typecheck 6/6, lint 2/2.
+- **2026-02-17 (a):** Landing page design overhaul. Gold→teal theme migration (FAQ, CTA, contact, footer, globals). Showcase: stats column with Phosphor icons + image carousel with smooth crossfade. CTA: dark teal bg with watermark SVG illustration. FAQ: centered layout, all-closed default, white bg. Contact: removed image, added phone/LinkedIn/Instagram placeholders. Problem: removed counter animations. Added AnimateOnScroll to hero, showcase, footer — smooth reveal on scroll everywhere. Team/FAQ visually separated.
+- **2026-02-16 (d):** Landing page content expansion. Added 5 new sections: stats bar, problem section (3 pain points), trust badges, FAQ accordion, CTA rewrite ("Join the founding 50"). Build clean.
+- **2026-02-16 (c):** Landing page design polish. Hero image swap, solution section redesigned, How It Works rewritten as 2x2 icon cards. All checks clean.
+- **2026-02-16 (b):** Step 4 Landing Page COMPLETE. Premium design (navy/gold/cream), 7 sections, scroll animations, SEO+JSON-LD+GA4, static export.
+- **2026-02-16 (a):** Deep architecture audit. Resolved 3 P0 blockers. Locked 3 tech decisions. Found 5 DB schema gaps + step ordering fix.
 
 > Keep max 5 entries. Remove oldest when adding new.

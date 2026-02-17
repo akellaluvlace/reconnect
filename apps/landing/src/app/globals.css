@@ -1,17 +1,23 @@
 @import "tailwindcss";
 
 /* ──────────────────────────────────────────
-   Rec+onnect Landing — Design Tokens
-   Aesthetic: Refined Authority
-   Navy + Gold + Generous Space
+   Rec+onnect Landing — Premium Design System
+   Stripe warmth + Linear depth + Vercel space
    ────────────────────────────────────────── */
 
 @theme inline {
-  --color-navy-950: #060d1b;
-  --color-navy-900: #0a1628;
-  --color-navy-800: #0f1f3a;
-  --color-navy-700: #162a4d;
-  --color-navy-600: #1e3a68;
+  /* ── Teal (primary brand) ──────────────── */
+  --color-teal-950: #042f2e;
+  --color-teal-900: #134e4a;
+  --color-teal-800: #115e59;
+  --color-teal-700: #0f766e;
+  --color-teal-600: #0d9488;
+  --color-teal-500: #14b8a6;
+  --color-teal-400: #2dd4bf;
+  --color-teal-300: #5eead4;
+  --color-teal-200: #99f6e4;
+  --color-teal-100: #ccfbf1;
+  --color-teal-50: #f0fdfa;
 
   --color-gold-400: #f2c14e;
   --color-gold-500: #e8a849;
@@ -21,20 +27,36 @@
   --color-cream-100: #faf7f2;
   --color-cream-200: #f3ede3;
 
-  --color-slate-300: #cbd5e1;
-  --color-slate-400: #94a3b8;
-  --color-slate-500: #64748b;
-  --color-slate-600: #475569;
-  --color-slate-700: #334155;
+  /* Colored neutrals — tinted toward navy, not pure gray */
+  --color-slate-300: #c4ccda;
+  --color-slate-400: #8d99ae;
+  --color-slate-500: #5d6b82;
+  --color-slate-600: #3f4e66;
+  --color-slate-700: #2a3750;
 
   --font-display: var(--font-urbanist);
   --font-body: var(--font-jakarta);
+
+  /* ── Easing Curves (purpose-specific) ──── */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+
+  /* ── Border Tokens ─────────────────────── */
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-light-subtle: rgba(4, 47, 46, 0.04);
+  --border-light-default: rgba(4, 47, 46, 0.07);
+  --border-light-strong: rgba(4, 47, 46, 0.12);
 }
 
 /* ── Base ───────────────────────────────── */
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 
 body {
@@ -43,14 +65,64 @@ body {
   background: var(--color-cream-50);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+/* ── Typography Premium ─────────────────── */
+
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
+  font-feature-settings: "liga" 1, "calt" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 ::selection {
-  background: var(--color-gold-500);
-  color: var(--color-navy-950);
+  background: var(--color-teal-400);
+  color: var(--color-teal-950);
 }
 
-/* ── Noise Texture (SVG data URI) ──────── */
+/* Custom scrollbar — dark sections */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-teal-950);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Focus-Visible (keyboard only) ──────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-teal-500);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Form Focus Ring ─────────────────────── */
+
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-teal-500);
+}
+
+/* ── Noise Texture (Improved) ────────────── */
 
 .bg-noise {
   position: relative;
@@ -60,20 +132,22 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.03;
+  opacity: 0.025;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
-  background-size: 256px 256px;
+  background-size: 200px 200px;
+  mix-blend-mode: overlay;
 }
 
-/* ── Scroll Animations ─────────────────── */
+/* ── Scroll Animations (tighter stagger) ── */
 
 .animate-on-scroll {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(20px);
+  transition: opacity 0.6s var(--ease-quart),
+    transform 0.6s var(--ease-quart);
 }
 
 .animate-on-scroll.is-visible {
@@ -81,55 +155,222 @@ body {
   transform: translateY(0);
 }
 
-.animate-delay-1 {
-  transition-delay: 0.1s;
-}
-.animate-delay-2 {
-  transition-delay: 0.2s;
-}
-.animate-delay-3 {
-  transition-delay: 0.3s;
-}
-.animate-delay-4 {
-  transition-delay: 0.4s;
-}
+/* 80ms stagger — ripple, not slideshow */
+.animate-delay-1 { transition-delay: 0.08s; }
+.animate-delay-2 { transition-delay: 0.16s; }
+.animate-delay-3 { transition-delay: 0.24s; }
+.animate-delay-4 { transition-delay: 0.32s; }
 
-/* ── Hero Gradient Mesh ────────────────── */
+/* ── Hero Gradient Mesh ──────────────────── */
 
 .hero-gradient {
   background:
-    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(30, 58, 104, 0.5) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(22, 42, 77, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse 90% 80% at 50% 50%, var(--color-navy-900) 0%, var(--color-navy-950) 100%);
+    radial-gradient(ellipse 80% 60% at 20% 80%, rgba(13, 148, 136, 0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(17, 94, 89, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 80% at 50% 50%, var(--color-teal-900) 0%, var(--color-teal-950) 100%);
 }
 
-/* ── Gold Shimmer on Headlines ─────────── */
+@keyframes meshDrift {
+  0%, 100% { background-position: 0% 50%, 100% 0%, 50% 50%; }
+  25% { background-position: 20% 80%, 80% 30%, 40% 60%; }
+  50% { background-position: 50% 20%, 60% 80%, 60% 40%; }
+  75% { background-position: 80% 60%, 20% 50%, 50% 50%; }
+}
+
+.hero-gradient-animated {
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 70%, rgba(13, 148, 136, 0.45) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 75% 25%, rgba(17, 94, 89, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, var(--color-teal-900) 0%, var(--color-teal-950) 100%);
+  background-size: 200% 200%, 200% 200%, 100% 100%;
+  animation: meshDrift 20s ease-in-out infinite;
+}
+
+/* ── Gold Shimmer (Animated) ─────────────── */
 
 .text-gold-gradient {
-  background: linear-gradient(135deg, var(--color-gold-400) 0%, var(--color-gold-600) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-gold-400) 0%,
+    var(--color-gold-500) 40%,
+    var(--color-gold-600) 60%,
+    var(--color-gold-400) 100%
+  );
+  background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: goldShimmer 4s linear infinite;
 }
 
-/* ── Card Hover ────────────────────────── */
-
-.card-hover {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.text-teal-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-teal-300) 0%,
+    var(--color-teal-400) 40%,
+    var(--color-teal-500) 60%,
+    var(--color-teal-300) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldShimmer 4s linear infinite;
 }
 
-.card-hover:hover {
-  transform: translateY(-4px);
+@keyframes goldShimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ── Card System (3 Tiers) ───────────────── */
+
+/* Tier 1: Dark surface card */
+.card-dark {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
   box-shadow:
-    0 20px 40px -12px rgba(10, 22, 40, 0.08),
-    0 8px 16px -8px rgba(10, 22, 40, 0.04);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 8px 16px rgba(0, 0, 0, 0.2),
+    0 24px 48px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.4s var(--ease-expo),
+    border-color 0.4s var(--ease-cubic),
+    box-shadow 0.4s var(--ease-cubic),
+    background 0.3s var(--ease-cubic);
 }
 
-/* ── Button Glow ───────────────────────── */
+.card-dark:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.4),
+    0 12px 24px rgba(0, 0, 0, 0.25),
+    0 32px 64px rgba(0, 0, 0, 0.15);
+}
+
+/* Tier 2: Light surface card */
+.card-light {
+  background: white;
+  border: 1px solid var(--border-light-default);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 2px rgba(4, 47, 46, 0.04),
+    0 4px 12px rgba(4, 47, 46, 0.03),
+    0 16px 40px rgba(4, 47, 46, 0.02);
+  transition:
+    transform 0.4s var(--ease-expo),
+    border-color 0.3s var(--ease-cubic),
+    box-shadow 0.4s var(--ease-cubic);
+}
+
+.card-light:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-light-strong);
+  box-shadow:
+    0 2px 4px rgba(4, 47, 46, 0.05),
+    0 8px 20px rgba(4, 47, 46, 0.04),
+    0 24px 56px rgba(4, 47, 46, 0.03);
+}
+
+/* Tier 3: Featured card with gradient border */
+.card-featured {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 168, 73, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.4s var(--ease-expo),
+    box-shadow 0.4s var(--ease-cubic);
+}
+
+.card-featured::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(232, 168, 73, 0.4), transparent 50%, rgba(232, 168, 73, 0.15)) border-box;
+  mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) padding-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease-cubic);
+}
+
+.card-featured:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(232, 168, 73, 0.12),
+    0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Glassmorphism (Refined) ─────────────── */
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border-default);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.4s var(--ease-expo),
+    border-color 0.3s var(--ease-cubic),
+    background 0.3s var(--ease-cubic),
+    box-shadow 0.4s var(--ease-cubic);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.glass-card-gold {
+  background: rgba(232, 168, 73, 0.04);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(232, 168, 73, 0.12);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(232, 168, 73, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.4s var(--ease-expo),
+    border-color 0.3s var(--ease-cubic),
+    background 0.3s var(--ease-cubic);
+}
+
+.glass-card-gold:hover {
+  transform: translateY(-2px);
+  background: rgba(232, 168, 73, 0.07);
+  border-color: rgba(232, 168, 73, 0.25);
+}
+
+/* ── Button System ───────────────────────── */
 
 .btn-gold-glow {
   position: relative;
+  box-shadow: 0 0 20px rgba(232, 168, 73, 0.12);
 }
 
 .btn-gold-glow::after {
@@ -140,57 +381,190 @@ body {
   background: linear-gradient(135deg, var(--color-gold-400), var(--color-gold-600));
   opacity: 0;
   z-index: -1;
-  filter: blur(12px);
-  transition: opacity 0.3s ease;
+  filter: blur(16px);
+  transition: opacity 0.3s var(--ease-cubic);
 }
 
 .btn-gold-glow:hover::after {
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
-/* ── Divider Wave ──────────────────────── */
+.btn-gold-glow:active {
+  transform: scale(0.97);
+  transition-duration: 0.05s;
+}
 
-.section-wave {
+/* ── Nav Link Underline Grow ─────────────── */
+
+.link-underline-grow {
+  position: relative;
+  text-decoration: none;
+}
+
+.link-underline-grow::after {
+  content: "";
   position: absolute;
-  bottom: -1px;
+  bottom: -2px;
   left: 0;
   width: 100%;
-  overflow: hidden;
-  line-height: 0;
+  height: 1.5px;
+  background: #14b8a6;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s var(--ease-expo);
 }
 
-.section-wave svg {
-  display: block;
-  width: calc(100% + 2px);
-  height: 64px;
+.link-underline-grow:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
-/* ── Step Connector Line ───────────────── */
+/* ── Stat Number ─────────────────────────── */
 
-.step-connector {
+.stat-number {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  background: linear-gradient(135deg, var(--color-gold-400) 0%, var(--color-gold-600) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Illustration Gold Tint ─────────────── */
+
+/* Dark background: invert to white, then tint gold */
+.illustration-on-dark {
+  filter: brightness(0) invert(1) sepia(1) hue-rotate(5deg) saturate(0.3) brightness(1.2);
+  opacity: 0.2;
+  transition: opacity 0.5s var(--ease-cubic);
+}
+
+*:hover > .illustration-on-dark {
+  opacity: 0.35;
+}
+
+/* Light background: desaturate and tint warm */
+.illustration-on-light {
+  filter: sepia(15%) saturate(0.6) brightness(1.05);
+  opacity: 0.85;
+}
+
+/* ── Glow Orbs (Animated) ────────────────── */
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(25px, -15px) scale(1.04); }
+  66% { transform: translate(-15px, 10px) scale(0.96); }
+}
+
+.glow-orb-gold {
   position: absolute;
-  top: 28px;
-  left: calc(50% + 28px);
-  width: calc(100% - 56px);
-  height: 2px;
-  background: linear-gradient(90deg, var(--color-gold-500) 0%, var(--color-cream-200) 100%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 168, 73, 0.1) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orbFloat 20s ease-in-out infinite;
 }
 
-/* ── Illustration Gold Tint ───────────── */
-
-.illustration-gold {
-  filter: sepia(0.15) saturate(1.4) hue-rotate(5deg) brightness(0.95);
-  transition: filter 0.4s ease;
+.glow-orb-teal {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, transparent 70%);
+  filter: blur(60px);
+  pointer-events: none;
+  animation: orbFloat 20s ease-in-out infinite;
 }
 
-.illustration-gold:hover {
-  filter: sepia(0.25) saturate(1.8) hue-rotate(5deg) brightness(1);
+.glow-orb-blue {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.18) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+  animation: orbFloat 25s ease-in-out infinite reverse;
 }
 
-/* ── Form Focus Ring ───────────────────── */
+/* ── Dot Grid Background ─────────────────── */
 
-input:focus,
-textarea:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-gold-500);
+.bg-dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(20, 184, 166, 0.12) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 65% 55% at 50% 50%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 50%, #000 30%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Section Divider Lines ───────────────── */
+
+.divider-gold {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(232, 168, 73, 0.2), transparent);
+}
+
+.divider-teal {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(20, 184, 166, 0.2), transparent);
+}
+
+/* ── Conic Gradient Border (for badges) ──── */
+
+@property --conic-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.conic-border {
+  position: relative;
+  border-radius: 9999px;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--conic-angle),
+    transparent 55%,
+    rgba(20, 184, 166, 0.5) 75%,
+    rgba(20, 184, 166, 0.8) 85%,
+    transparent 100%
+  );
+  animation: conicSpin 6s linear infinite;
+}
+
+@keyframes conicSpin {
+  to { --conic-angle: 360deg; }
+}
+
+.conic-border > * {
+  border-radius: 9999px;
+}
+
+/* ── Crossfade for showcase ────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Card Hover (legacy compat) ──────────── */
+
+.card-hover {
+  transition:
+    transform 0.3s var(--ease-expo),
+    box-shadow 0.3s var(--ease-cubic),
+    border-color 0.3s var(--ease-cubic);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 32px -8px rgba(4, 47, 46, 0.08),
+    0 4px 12px -4px rgba(4, 47, 46, 0.04);
 }

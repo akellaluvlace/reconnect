@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 const navLinks = [
   { label: "Solution", href: "#solution" },
-  { label: "How it works", href: "#how-it-works" },
+  { label: "FAQ", href: "#faq" },
   { label: "Contact", href: "#contact" },
 ];
 
@@ -26,7 +26,7 @@ export function Header() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         scrolled
-          ? "bg-white/90 backdrop-blur-xl border-b border-cream-200 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+          ? "bg-white/90 backdrop-blur-xl border-b border-[var(--border-light-subtle)] shadow-[0_1px_3px_rgba(10,22,40,0.04),0_4px_12px_rgba(10,22,40,0.02)]"
           : "bg-transparent"
       )}
     >
@@ -37,11 +37,15 @@ export function Header() {
             href="/"
             className={cn(
               "font-display text-xl font-bold tracking-tight transition-colors duration-300",
-              scrolled ? "text-navy-900" : "text-white"
+              "text-teal-950"
             )}
           >
             Rec
-            <span className="text-gold-500">+</span>
+            <span
+              className="text-teal-500 transition-colors duration-300"
+            >
+              +
+            </span>
             onnect
           </Link>
 
@@ -52,10 +56,8 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200",
-                  scrolled
-                    ? "text-slate-600 hover:text-navy-900 hover:bg-cream-100"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                  "link-underline-grow px-4 py-2 text-sm font-medium transition-colors duration-200",
+                  "text-teal-800/50 hover:text-teal-950"
                 )}
               >
                 {link.label}
@@ -63,22 +65,20 @@ export function Header() {
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-3">
+          {/* CTA */}
+          <div className="flex items-center gap-4">
             <a
               href="/login"
               className={cn(
                 "text-sm font-medium transition-colors duration-200",
-                scrolled
-                  ? "text-slate-600 hover:text-navy-900"
-                  : "text-white/70 hover:text-white"
+                "text-teal-800/50 hover:text-teal-950"
               )}
             >
               Sign In
             </a>
             <Button
               href="#book-demo"
-              variant="gold"
+              variant="outline-dark"
               size="sm"
             >
               Book a Demo

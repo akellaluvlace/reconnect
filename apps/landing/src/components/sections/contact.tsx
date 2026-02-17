@@ -3,7 +3,7 @@
 import { Container } from "@/components/ui/container";
 import { AnimateOnScroll } from "@/components/animate-on-scroll";
 import { Button } from "@/components/ui/button";
-import { Mail, Send } from "lucide-react";
+import { EnvelopeSimple, Phone, LinkedinLogo, InstagramLogo, PaperPlaneTilt } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 
 export function ContactSection() {
@@ -11,119 +11,187 @@ export function ContactSection() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Future: POST to API endpoint
     setSubmitted(true);
   }
 
   return (
-    <section id="contact" className="py-24 lg:py-32 bg-cream-50">
-      <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
-          {/* Left — Info */}
-          <AnimateOnScroll>
-            <div>
-              <span className="text-sm font-semibold font-display tracking-widest uppercase text-gold-600">
-                Get in Touch
-              </span>
-              <h2 className="mt-4 font-display text-3xl lg:text-4xl font-bold text-navy-900 tracking-tight leading-tight">
-                Let&apos;s talk about your hiring needs
-              </h2>
-              <p className="mt-6 text-slate-500 leading-relaxed">
-                Whether you&apos;re hiring for one role or building a full
-                recruitment process, we&apos;d love to show you how Rec+onnect
-                can help.
-              </p>
+    <section id="contact" className="py-28 bg-cream-50 relative overflow-hidden">
+      {/* Subtle noise */}
+      <div className="bg-noise absolute inset-0 pointer-events-none" />
 
-              <div className="mt-10 flex items-center gap-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-navy-900 text-gold-500">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm text-slate-400">Email us directly</p>
-                  <a
-                    href="mailto:hello@reconnect.io"
-                    className="font-medium text-navy-900 hover:text-gold-600 transition-colors"
-                  >
-                    hello@reconnect.io
-                  </a>
+      <Container className="relative z-10">
+        <div className="grid grid-cols-12 gap-16 items-start">
+          {/* Left — Info (5 cols) */}
+          <div className="col-span-12 lg:col-span-5">
+            <AnimateOnScroll>
+              <div>
+                <span className="text-xs font-semibold font-display tracking-[0.15em] uppercase text-teal-600">
+                  Get in Touch
+                </span>
+                <h2 className="mt-4 font-display text-[clamp(2rem,4vw,3rem)] font-bold text-teal-900 tracking-[-0.025em] leading-[1.1]">
+                  Ready to talk?
+                </h2>
+                <p className="mt-6 text-slate-500 leading-relaxed">
+                  Whether you&apos;re hiring for one role or building out your
+                  entire interview process, we&apos;d love to show you
+                  how Rec+onnect works.
+                </p>
+
+                <div className="mt-10 space-y-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
+                      <EnvelopeSimple size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Email us directly</p>
+                      <a
+                        href="mailto:hello@reconnect.io"
+                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        hello@reconnect.io
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
+                      <Phone size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Call us</p>
+                      <a
+                        href="tel:+353000000000"
+                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        +353 (0) 00 000 0000
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
+                      <LinkedinLogo size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">LinkedIn</p>
+                      <a
+                        href="#"
+                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        Rec+onnect
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
+                      <InstagramLogo size={24} weight="duotone" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Instagram</p>
+                      <a
+                        href="#"
+                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
+                      >
+                        @reconnect.io
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </AnimateOnScroll>
+            </AnimateOnScroll>
+          </div>
 
-          {/* Right — Form */}
-          <AnimateOnScroll delay={2}>
-            <div className="rounded-2xl bg-white p-8 lg:p-10 border border-cream-200 shadow-sm">
-              {submitted ? (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 text-green-600 mb-4">
-                    <Send className="w-7 h-7" />
+          {/* Right — Form (7 cols) */}
+          <div className="col-span-12 lg:col-span-7">
+            <AnimateOnScroll delay={2}>
+              <div className="card-light rounded-[20px] p-8 lg:p-10">
+                {submitted ? (
+                  <div className="text-center py-16">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 text-green-600 mb-5">
+                      <PaperPlaneTilt size={32} weight="duotone" />
+                    </div>
+                    <h3 className="font-display text-xl font-bold text-teal-900">
+                      Message sent
+                    </h3>
+                    <p className="mt-2 text-slate-500">
+                      We&apos;ll be in touch within 24 hours.
+                    </p>
                   </div>
-                  <h3 className="font-display text-xl font-bold text-navy-900">
-                    Message sent
-                  </h3>
-                  <p className="mt-2 text-slate-500">
-                    We&apos;ll be in touch within 24 hours.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label
-                      htmlFor="name"
-                      className="block text-sm font-medium text-navy-900 mb-2"
-                    >
-                      Name
-                    </label>
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      placeholder="Your name"
-                      className="w-full h-12 px-4 rounded-xl border border-cream-200 bg-cream-50 text-navy-900 placeholder:text-slate-400 transition-colors focus:border-gold-500 focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-navy-900 mb-2"
-                    >
-                      Email
-                    </label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      placeholder="you@company.com"
-                      className="w-full h-12 px-4 rounded-xl border border-cream-200 bg-cream-50 text-navy-900 placeholder:text-slate-400 transition-colors focus:border-gold-500 focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="message"
-                      className="block text-sm font-medium text-navy-900 mb-2"
-                    >
-                      Message
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      required
-                      rows={4}
-                      placeholder="Tell us about the role or team you're hiring for..."
-                      className="w-full px-4 py-3 rounded-xl border border-cream-200 bg-cream-50 text-navy-900 placeholder:text-slate-400 transition-colors focus:border-gold-500 focus:bg-white resize-none"
-                    />
-                  </div>
-                  <Button type="submit" variant="gold" size="lg" className="w-full">
-                    Send Message
-                    <Send className="ml-2 w-4 h-4" />
-                  </Button>
-                </form>
-              )}
-            </div>
-          </AnimateOnScroll>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-display font-medium text-teal-900 mb-2"
+                      >
+                        Name
+                      </label>
+                      <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        required
+                        placeholder="Your name"
+                        className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-display font-medium text-teal-900 mb-2"
+                      >
+                        Email
+                      </label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="you@company.com"
+                        className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="company"
+                        className="block text-sm font-display font-medium text-teal-900 mb-2"
+                      >
+                        Company
+                      </label>
+                      <input
+                        id="company"
+                        name="company"
+                        type="text"
+                        placeholder="Your company name"
+                        className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="message"
+                        className="block text-sm font-display font-medium text-teal-900 mb-2"
+                      >
+                        Message
+                      </label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        required
+                        rows={4}
+                        placeholder="Tell us about the role or team you're hiring for..."
+                        className="w-full px-5 py-4 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)] resize-none"
+                      />
+                    </div>
+                    <Button type="submit" variant="outline-dark" size="lg" className="w-full">
+                      Send Message
+                      <PaperPlaneTilt size={18} weight="bold" className="ml-2" />
+                    </Button>
+                  </form>
+                )}
+              </div>
+            </AnimateOnScroll>
+          </div>
         </div>
       </Container>
     </section>
