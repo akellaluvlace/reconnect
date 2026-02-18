@@ -1,7 +1,7 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-02-18
-**Current Macro Step:** Step 6 COMPLETE — ready for Step 7
+**Last Updated:** 2026-02-19
+**Current Macro Step:** Step 6 COMPLETE + QA REVIEWED — ready for Step 7
 **Active Micro Steps:** None (between steps)
 
 ---
@@ -58,6 +58,8 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | Phase 0 Round 2: Code simplifier | QA | master | COMPLETE (2026-02-18) — 4 simplifications: requireRole dedup, PUBLIC_PATHS const |
 | Phase 0 Round 2: Comment analyzer | QA | master | COMPLETE (2026-02-18) — 3 critical: SynthesisType comment, deprecated transcript note |
 | Phase 0 Round 2: Step file audit | QA | master | COMPLETE (2026-02-18) — 18 anti-patterns fixed in steps 7-10 code examples |
+| Step 6: AI Intelligence Engine | AI Engineer | master | COMPLETE (2026-02-19) — 6 schemas, 5 pipelines, 6 API routes, 77 tests |
+| Step 6: Deep QA review | QA | master | COMPLETE (2026-02-19) — 7 agents, 90+ findings, 30+ fixed, migration #16 deployed |
 
 ---
 
@@ -70,7 +72,7 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | 3 | Supabase Core | [step-03](../steps/step-03-supabase-core.md) | 6 | COMPLETE |
 | 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | COMPLETE |
 | 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | COMPLETE + REVIEWED |
-| 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 7 | COMPLETE |
+| 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 7 | COMPLETE + QA REVIEWED |
 | 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | NOT STARTED |
 | 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 9 | NOT STARTED |
 | 9 | Chapters: Alignment + Debrief | [step-09](../steps/step-09-chapters-alignment-debrief.md) | 10 | NOT STARTED |
@@ -90,7 +92,7 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | RCN-027: Magic link session model | PARTIALLY RESOLVED | Lock during build |
 | RCN-020: Share link password protection | RESOLVED (2026-02-16) | Token-only URL, no password |
 | RCN-024: Audit log event taxonomy | OPEN | No event list defined. Resolution target: Step 8 |
-| RCN-031: Prompt injection mitigation | OPEN | AI synthesis pipeline hardening. Resolution target: Step 6 |
+| RCN-031: Prompt injection mitigation | RESOLVED (2026-02-19) | sanitizeInput() applied to all prompt templates |
 | RCN-032: Share link public data scope | RESOLVED (2026-02-16) | Minimal scope (name, stage, questions, their feedback form only) |
 | RCN-040: Google Drive ownership model | RESOLVED (2026-02-16) | Org-level Drive, core storage for recordings+AI |
 
@@ -119,8 +121,8 @@ Completed planning updates:
 
 ## Next Actions
 
-1. **NOW:** Step 7 (Playbook Creation) — all micro steps can start, 7.4 unblocked (Step 6 complete).
-2. **Step 6 COMPLETE:** Full AI Intelligence Engine built — 6 schemas, 5 pipelines, 6 API routes, 74 tests green.
+1. **NOW:** Step 7 (Playbook Creation) — all micro steps can start, 7.4 unblocked (Step 6 complete + QA reviewed).
+2. **Step 6 COMPLETE + QA:** AI Intelligence Engine built and reviewed — 6 schemas, 5 pipelines, 6 API routes, 77 tests green, 30+ QA fixes applied.
 3. **Client:** External API keys still needed for live testing (Anthropic, Tavily, OpenAI, Resend, Google Cloud).
 4. **Build order:** [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
 5. **P1 remaining:** /share/[token] route stub (admin route guards DONE in Phase 0)
@@ -131,7 +133,7 @@ Completed planning updates:
 | Layer | Status | Tests | Tools |
 |-------|--------|-------|-------|
 | Database (SQL) | COMPLETE | 233/233 green | psql + custom framework |
-| AI package | COMPLETE | 74/74 green | Vitest |
+| AI package | COMPLETE | 77/77 green | Vitest |
 | E2E (browser) | PLANNED | 0 | Playwright MCP (installed) |
 | Unit tests | PLANNED | 0 | Vitest (installed in @reconnect/ai) |
 | Components | PLANNED | 0 | React Testing Library (not yet installed) |
