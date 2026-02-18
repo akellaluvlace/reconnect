@@ -17,6 +17,27 @@ function getClient(): Anthropic {
   return _client;
 }
 
+/** Convert SDK errors to our error hierarchy */
+function handleApiError(error: unknown): never {
+  if (error instanceof AIError) throw error;
+
+  if (error instanceof Anthropic.APIError) {
+    if (error.status === 429) {
+      const retryAfter = error.headers?.["retry-after"];
+      throw new AIRateLimitError(
+        retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined,
+      );
+    }
+    throw new AIError(error.message, "API_ERROR", { cause: error });
+  }
+
+  throw new AIError(
+    error instanceof Error ? error.message : "Unknown Anthropic API error",
+    "API_ERROR",
+    { cause: error },
+  );
+}
+
 /**
  * Call Claude with structured output using Zod schema validation.
  * Uses messages.parse() + zodOutputFormat() for guaranteed schema-valid responses.
@@ -54,20 +75,7 @@ export async function callClaude<T extends z.ZodType>(options: {
       model: config.model,
     };
   } catch (error) {
-    if (error instanceof AIError) throw error;
-
-    const apiError = error as { status?: number; headers?: Record<string, string>; message?: string };
-    if (apiError.status === 429) {
-      const retryAfter = apiError.headers?.["retry-after"];
-      throw new AIRateLimitError(
-        retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined,
-      );
-    }
-
-    throw new AIError(
-      apiError.message ?? "Unknown Anthropic API error",
-      "API_ERROR",
-    );
+    handleApiError(error);
   }
 }
 
@@ -99,21 +107,9 @@ export async function callClaudeText(options: {
 
     return { content: block.text, model: config.model };
   } catch (error) {
-    if (error instanceof AIError) throw error;
-
-    const apiError = error as { status?: number; headers?: Record<string, string>; message?: string };
-    if (apiError.status === 429) {
-      const retryAfter = apiError.headers?.["retry-after"];
-      throw new AIRateLimitError(
-        retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined,
-      );
-    }
-
-    throw new AIError(
-      apiError.message ?? "Unknown Anthropic API error",
-      "API_ERROR",
-    );
+    handleApiError(error);
   }
 }
 
+/** @internal Exported for testing only — do not use directly in app code */
 export { getClient };

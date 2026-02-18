@@ -11,7 +11,7 @@ export const FeedbackSynthesisSchema = z.object({
   key_concerns: z.array(z.string()),
   discussion_points: z.array(z.string()),
   rating_overview: z.object({
-    average_score: z.number(),
+    average_score: z.number().min(1).max(4),
     total_feedback_count: z.number(),
     score_distribution: z.array(
       z.object({

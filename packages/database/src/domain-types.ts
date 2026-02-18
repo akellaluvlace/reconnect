@@ -40,23 +40,37 @@ export interface SalaryExpectation {
 }
 
 export interface FocusArea {
-  area: string;
-  description?: string;
+  name: string;
+  description: string;
+  weight: 1 | 2 | 3 | 4;
 }
 
 export interface SuggestedQuestion {
   question: string;
-  focus_area?: string;
-  difficulty?: string;
+  purpose: string;
+  look_for: string[];
+  focus_area: string;
 }
 
 export interface JobDescription {
-  title?: string;
-  summary?: string;
-  responsibilities?: string[];
-  requirements?: string[];
-  nice_to_have?: string[];
-  benefits?: string[];
+  title: string;
+  summary: string;
+  responsibilities: string[];
+  requirements: {
+    required: string[];
+    preferred: string[];
+  };
+  benefits: string[];
+  salary_range?: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  location?: string;
+  remote_policy?: string;
+  seniority_signals?: string[];
+  confidence: number;
+  /** @deprecated Use raw_text only for manually-entered JDs, not AI-generated ones */
   raw_text?: string;
 }
 

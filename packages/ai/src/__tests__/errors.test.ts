@@ -9,9 +9,9 @@ import {
 
 describe("Error classes", () => {
   it("AIError has correct name and code", () => {
-    const err = new AIError("test", "TEST_CODE");
+    const err = new AIError("test", "API_ERROR");
     expect(err.name).toBe("AIError");
-    expect(err.code).toBe("TEST_CODE");
+    expect(err.code).toBe("API_ERROR");
     expect(err.message).toBe("test");
     expect(err).toBeInstanceOf(Error);
   });

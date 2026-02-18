@@ -8,7 +8,7 @@ import {
 } from "../schemas";
 import { MARKET_INSIGHTS_PROMPTS } from "../prompts/market-insights";
 import { PROMPT_VERSIONS } from "../config";
-import { withRetry, withModelEscalation } from "../retry";
+import { withRetry } from "../retry";
 import {
   runDeepResearch,
   type DeepResearchInput,
@@ -63,28 +63,25 @@ export async function generateDeepInsights(
   // Run 6-step deep research pipeline
   const research = await runDeepResearch(researchInput);
 
-  // Step 5: Cross-reference synthesis (Opus)
-  const synthesisResult = await withModelEscalation(
-    (endpoint) =>
-      callClaude({
-        endpoint,
-        schema: MarketInsightsSchema,
-        prompt: MARKET_INSIGHTS_PROMPTS.synthesis(
-          research.extractions.map((e) => ({
-            url: e.url,
-            data: e,
-          })),
-          {
-            role: input.role,
-            level: input.level,
-            industry: input.industry,
-            location: input.location,
-          },
-        ),
-        systemPrompt: MARKET_INSIGHTS_PROMPTS.synthesisSystem,
-      }),
-    "marketInsights",
-    "marketInsights", // Opus for synthesis — no escalation needed
+  // Step 5: Cross-reference synthesis (Opus — highest capability for cross-referencing)
+  const synthesisResult = await withRetry(() =>
+    callClaude({
+      endpoint: "marketInsights",
+      schema: MarketInsightsSchema,
+      prompt: MARKET_INSIGHTS_PROMPTS.synthesis(
+        research.extractions.map((e) => ({
+          url: e.url,
+          data: e,
+        })),
+        {
+          role: input.role,
+          level: input.level,
+          industry: input.industry,
+          location: input.location,
+        },
+      ),
+      systemPrompt: MARKET_INSIGHTS_PROMPTS.synthesisSystem,
+    }),
   );
 
   // Step 6: Validation — schema already validated by callClaude

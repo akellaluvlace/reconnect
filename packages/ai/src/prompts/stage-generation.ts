@@ -1,5 +1,6 @@
 import { PROMPT_VERSIONS } from "../config";
 import { COMPLIANCE_SYSTEM_PROMPT } from "./compliance";
+import { sanitizeInput } from "../sanitize";
 
 export interface StageGenerationInput {
   role: string;
@@ -36,9 +37,9 @@ JD CONTEXT (use to tailor interview focus):
       : "";
 
     return `Design an interview process for:
-- Role: ${input.role}
-- Level: ${input.level}
-- Industry: ${input.industry}
+- Role: ${sanitizeInput(input.role)}
+- Level: ${sanitizeInput(input.level)}
+- Industry: ${sanitizeInput(input.industry)}
 - Number of stages: ${input.stage_count ?? "3-5 (recommend based on seniority)"}
 ${jdSection}
 
@@ -78,11 +79,11 @@ Questions should be open-ended and probe for depth of experience.`,
 
   user: (input: QuestionGenerationInput) =>
     `Generate 3-5 interview questions for:
-- Role: ${input.role} (${input.level})
-- Focus area: ${input.focus_area}
-- Description: ${input.focus_area_description}
-- Stage type: ${input.stage_type}
-${input.existing_questions?.length ? `- Avoid overlap with: ${input.existing_questions.join("; ")}` : ""}
+- Role: ${sanitizeInput(input.role)} (${sanitizeInput(input.level)})
+- Focus area: ${sanitizeInput(input.focus_area)}
+- Description: ${sanitizeInput(input.focus_area_description)}
+- Stage type: ${sanitizeInput(input.stage_type)}
+${input.existing_questions?.length ? `- Avoid overlap with: ${input.existing_questions.map(q => sanitizeInput(q)).join("; ")}` : ""}
 
 Each question needs: question text, purpose, and look_for (array of specific things to evaluate in the answer).`,
 } as const;

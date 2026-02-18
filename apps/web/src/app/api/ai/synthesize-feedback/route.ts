@@ -4,23 +4,23 @@ import { createClient } from "@/lib/supabase/server";
 import { synthesizeFeedback, AIError } from "@reconnect/ai";
 
 const RatingSchema = z.object({
-  category: z.string(),
-  score: z.number().min(1).max(4),
+  category: z.string().min(1).max(200),
+  score: z.number().int().min(1).max(4),
 });
 
 const FeedbackFormSchema = z.object({
-  interviewer_name: z.string().min(1),
-  ratings: z.array(RatingSchema),
-  pros: z.array(z.string()),
-  cons: z.array(z.string()),
-  notes: z.string().optional(),
+  interviewer_name: z.string().min(1).max(200),
+  ratings: z.array(RatingSchema).max(20),
+  pros: z.array(z.string().max(500)).max(20),
+  cons: z.array(z.string().max(500)).max(20),
+  notes: z.string().max(5000).optional(),
 });
 
 const RequestSchema = z.object({
-  candidate_name: z.string().min(1),
-  role: z.string().min(1),
-  stage_name: z.string().min(1),
-  feedback_forms: z.array(FeedbackFormSchema).min(1),
+  candidate_name: z.string().min(1).max(200),
+  role: z.string().min(1).max(200),
+  stage_name: z.string().min(1).max(200),
+  feedback_forms: z.array(FeedbackFormSchema).min(1).max(10),
   interview_id: z.string().uuid().optional(),
 });
 
@@ -37,7 +37,8 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    console.warn("Invalid JSON in synthesize-feedback request:", parseError);
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

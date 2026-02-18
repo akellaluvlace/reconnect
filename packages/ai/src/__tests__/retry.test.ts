@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { withRetry, withModelEscalation } from "../retry";
-import { AIRateLimitError, AIError } from "../errors";
+import { AIRateLimitError, AIError, AIValidationError } from "../errors";
 
 describe("withRetry", () => {
   it("returns immediately on success", async () => {
@@ -10,7 +10,7 @@ describe("withRetry", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it("retries on failure and succeeds", async () => {
+  it("retries on transient failure and succeeds", async () => {
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new Error("fail"))
@@ -28,6 +28,30 @@ describe("withRetry", () => {
       withRetry(fn, { maxRetries: 2, baseDelay: 10 }),
     ).rejects.toThrow("always fails");
     expect(fn).toHaveBeenCalledTimes(3); // initial + 2 retries
+  });
+
+  it("does NOT retry non-transient errors (AIValidationError)", async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValue(
+        new AIValidationError([{ message: "schema mismatch" }]),
+      );
+
+    await expect(withRetry(fn, { baseDelay: 10 })).rejects.toThrow(
+      "AI response validation failed",
+    );
+    expect(fn).toHaveBeenCalledTimes(1); // no retries
+  });
+
+  it("does NOT retry config errors", async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValue(new AIError("API key missing", "CONFIG_ERROR"));
+
+    await expect(withRetry(fn, { baseDelay: 10 })).rejects.toThrow(
+      "API key missing",
+    );
+    expect(fn).toHaveBeenCalledTimes(1); // no retries
   });
 
   it("respects retryAfter for rate limits", async () => {
@@ -68,7 +92,7 @@ describe("withModelEscalation", () => {
     expect(fn).toHaveBeenCalledWith("jdGeneration");
   });
 
-  it("falls back to secondary model on failure", async () => {
+  it("falls back to secondary model on transient failure", async () => {
     const fn = vi
       .fn()
       .mockRejectedValueOnce(new AIError("fail", "API_ERROR"))
@@ -79,6 +103,19 @@ describe("withModelEscalation", () => {
     expect(fn).toHaveBeenCalledTimes(2);
     expect(fn).toHaveBeenCalledWith("jdGeneration");
     expect(fn).toHaveBeenCalledWith("marketInsights");
+  });
+
+  it("does NOT escalate on non-transient errors", async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValue(
+        new AIValidationError([{ message: "schema mismatch" }]),
+      );
+
+    await expect(
+      withModelEscalation(fn, "jdGeneration", "marketInsights"),
+    ).rejects.toThrow("AI response validation failed");
+    expect(fn).toHaveBeenCalledTimes(1); // no fallback attempt
   });
 
   it("throws if both models fail", async () => {

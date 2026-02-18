@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { generateStages, AIError } from "@reconnect/ai";
 
 const RequestSchema = z.object({
-  role: z.string().min(1),
-  level: z.string().min(1),
-  industry: z.string().min(1),
+  role: z.string().min(1).max(200),
+  level: z.string().min(1).max(100),
+  industry: z.string().min(1).max(200),
   stage_count: z.number().min(1).max(10).optional(),
   jd_context: z
     .object({
@@ -30,7 +30,8 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    console.warn("Invalid JSON in generate-stages request:", parseError);
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

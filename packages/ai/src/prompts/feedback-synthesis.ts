@@ -1,5 +1,6 @@
 import { PROMPT_VERSIONS } from "../config";
 import { COMPLIANCE_SYSTEM_PROMPT } from "./compliance";
+import { sanitizeInput } from "../sanitize";
 
 export interface FeedbackSynthesisInput {
   candidate_name: string;
@@ -45,7 +46,7 @@ ${f.notes ? `Notes: ${f.notes}` : ""}`,
       ? `\nTRANSCRIPT SUMMARY (text-only analysis):\n${input.transcript_summary}`
       : "";
 
-    return `Synthesize interview feedback for ${input.candidate_name} — ${input.role}, ${input.stage_name}:
+    return `Synthesize interview feedback for ${sanitizeInput(input.candidate_name)} — ${sanitizeInput(input.role)}, ${sanitizeInput(input.stage_name)}:
 
 FEEDBACK:
 ${feedbackSection}

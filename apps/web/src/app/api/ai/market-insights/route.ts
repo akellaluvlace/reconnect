@@ -6,15 +6,16 @@ import {
   generateCacheKey,
   type MarketInsightsInput,
   PROMPT_VERSIONS,
+  AI_CONFIG,
   AIError,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
 
 const RequestSchema = z.object({
-  role: z.string().min(1),
-  level: z.string().min(1),
-  industry: z.string().min(1),
-  location: z.string().min(1),
+  role: z.string().min(1).max(200),
+  level: z.string().min(1).max(100),
+  industry: z.string().min(1).max(200),
+  location: z.string().min(1).max(200),
   market_focus: z.enum(["irish", "global"]).optional(),
 });
 
@@ -31,7 +32,8 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    console.warn("Invalid JSON in market-insights request:", parseError);
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest) {
   const orgId = userData.organization_id;
 
   // Check cache for quick phase
-  const { data: cached } = await supabase
+  const { data: cached, error: cacheError } = await supabase
     .from("ai_research_cache")
     .select("results, sources, created_at")
     .eq("organization_id", orgId)
@@ -71,6 +73,10 @@ export async function POST(req: NextRequest) {
     .eq("phase", "quick")
     .gt("expires_at", new Date().toISOString())
     .single();
+
+  if (cacheError && cacheError.code !== "PGRST116") {
+    console.error("Cache read error:", cacheError);
+  }
 
   if (cached) {
     // Check if deep research also cached
@@ -94,6 +100,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Phase 1: Generate quick insights
+  const modelUsed = AI_CONFIG.marketInsightsQuick.model;
+
   try {
     const quickInsights = await generateQuickInsights(input);
 
@@ -101,20 +109,26 @@ export async function POST(req: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    await supabase.from("ai_research_cache").upsert(
-      {
-        organization_id: orgId,
-        cache_key: cacheKey,
-        phase: "quick",
-        search_params: input as unknown as Json,
-        results: quickInsights as unknown as Json,
-        sources: [] as Json,
-        model_used: "claude-sonnet-4-5-20250929",
-        prompt_version: PROMPT_VERSIONS.marketInsights,
-        expires_at: expiresAt.toISOString(),
-      },
-      { onConflict: "organization_id,cache_key,phase" },
-    );
+    const { error: upsertError } = await supabase
+      .from("ai_research_cache")
+      .upsert(
+        {
+          organization_id: orgId,
+          cache_key: cacheKey,
+          phase: "quick",
+          search_params: input as unknown as Json,
+          results: quickInsights as unknown as Json,
+          sources: [] as Json,
+          model_used: modelUsed,
+          prompt_version: PROMPT_VERSIONS.marketInsights,
+          expires_at: expiresAt.toISOString(),
+        },
+        { onConflict: "organization_id,cache_key,phase" },
+      );
+
+    if (upsertError) {
+      console.error("Failed to cache quick insights:", upsertError);
+    }
 
     return NextResponse.json({
       data: quickInsights,
@@ -122,7 +136,7 @@ export async function POST(req: NextRequest) {
       cached: false,
       cache_key: cacheKey,
       metadata: {
-        model_used: "claude-sonnet-4-5-20250929",
+        model_used: modelUsed,
         prompt_version: PROMPT_VERSIONS.marketInsights,
         generated_at: new Date().toISOString(),
       },

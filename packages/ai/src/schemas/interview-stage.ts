@@ -3,7 +3,7 @@ import { z } from "zod";
 export const FocusAreaSchema = z.object({
   name: z.string(),
   description: z.string(),
-  weight: z.number().min(1).max(4),
+  weight: z.number().int().min(1).max(4),
 });
 
 export const SuggestedQuestionSchema = z.object({

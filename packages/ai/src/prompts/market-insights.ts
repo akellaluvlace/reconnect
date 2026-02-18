@@ -1,5 +1,6 @@
 import { PROMPT_VERSIONS } from "../config";
 import { COMPLIANCE_SYSTEM_PROMPT } from "./compliance";
+import { sanitizeInput } from "../sanitize";
 
 export const MARKET_INSIGHTS_PROMPTS = {
   version: PROMPT_VERSIONS.marketInsights,
@@ -18,10 +19,10 @@ Provide preliminary market insights based on your training data. Be honest about
     market_focus: "irish" | "global";
   }) =>
     `Analyze the current job market for:
-- Role: ${input.role}
-- Level: ${input.level}
-- Industry: ${input.industry}
-- Location: ${input.location}
+- Role: ${sanitizeInput(input.role)}
+- Level: ${sanitizeInput(input.level)}
+- Industry: ${sanitizeInput(input.industry)}
+- Location: ${sanitizeInput(input.location)}
 - Market focus: ${input.market_focus}
 
 Provide salary data in EUR (or appropriate local currency), competitive landscape, time-to-hire estimates, candidate availability, required/emerging/declining skills, and market trends.
@@ -37,10 +38,10 @@ Set phase to "quick" since this is a preliminary analysis.`,
     market_focus: "irish" | "global";
   }) =>
     `Generate 8-12 targeted web search queries to research the job market for:
-- Role: ${input.role}
-- Level: ${input.level}
-- Industry: ${input.industry}
-- Location: ${input.location}
+- Role: ${sanitizeInput(input.role)}
+- Level: ${sanitizeInput(input.level)}
+- Industry: ${sanitizeInput(input.industry)}
+- Location: ${sanitizeInput(input.location)}
 - Market focus: ${input.market_focus}
 
 Generate diverse queries covering:
@@ -75,7 +76,7 @@ Relevance: Exact role/level match = 1.0, similar role = 0.6, tangential = 0.3`,
     sources: Array<{ url: string; title: string; content: string }>,
     context: { role: string; level: string; industry: string },
   ) =>
-    `Score these web sources for researching "${context.role}" (${context.level}) in "${context.industry}":
+    `Score these web sources for researching "${sanitizeInput(context.role)}" (${sanitizeInput(context.level)}) in "${sanitizeInput(context.industry)}":
 
 ${sources.map((s, i) => `Source ${i + 1}:
 URL: ${s.url}
@@ -93,7 +94,7 @@ If a field is not present in the source, omit it.`,
     source: { url: string; content: string },
     context: { role: string; level: string },
   ) =>
-    `Extract recruitment market data from this source relevant to "${context.role}" (${context.level}"):
+    `Extract recruitment market data from this source relevant to "${sanitizeInput(context.role)}" (${sanitizeInput(context.level)}"):
 
 URL: ${source.url}
 Content: ${source.content.slice(0, 3000)}
@@ -119,7 +120,7 @@ Synthesize data from multiple sources into a coherent market analysis.
       location: string;
     },
   ) =>
-    `Synthesize these data extractions into a comprehensive market analysis for "${context.role}" (${context.level}) in "${context.industry}", ${context.location}:
+    `Synthesize these data extractions into a comprehensive market analysis for "${sanitizeInput(context.role)}" (${sanitizeInput(context.level)}) in "${sanitizeInput(context.industry)}", ${sanitizeInput(context.location)}:
 
 ${extractions.map((e, i) => `Source ${i + 1} (${e.url}):
 ${JSON.stringify(e.data, null, 2)}`).join("\n\n")}

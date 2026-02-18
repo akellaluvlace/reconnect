@@ -4,10 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { generateJobDescription, AIError } from "@reconnect/ai";
 
 const RequestSchema = z.object({
-  role: z.string().min(1),
-  level: z.string().min(1),
-  industry: z.string().min(1),
-  company_context: z.string().optional(),
+  role: z.string().min(1).max(200),
+  level: z.string().min(1).max(100),
+  industry: z.string().min(1).max(200),
+  company_context: z.string().max(2000).optional(),
   style: z.enum(["formal", "creative", "concise"]),
   currency: z.string().optional(),
   market_context: z
@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    console.warn("Invalid JSON in generate-jd request:", parseError);
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

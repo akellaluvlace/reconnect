@@ -12,10 +12,15 @@ export {
   AIRateLimitError,
   AISearchError,
   AITimeoutError,
+  type AIErrorCode,
 } from "./errors";
+
+// Sanitization
+export { sanitizeInput, wrapUserContent } from "./sanitize";
 
 // Retry
 export { withRetry, withModelEscalation } from "./retry";
+
 
 // Schemas (also available via @reconnect/ai/schemas)
 export * from "./schemas";

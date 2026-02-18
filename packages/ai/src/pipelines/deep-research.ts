@@ -1,4 +1,4 @@
-import { callClaude, callClaudeText } from "../client";
+import { callClaude } from "../client";
 import {
   SearchQueriesSchema,
   SourceScoringSchema,
@@ -109,10 +109,20 @@ async function extractFromSources(
   );
 
   const extractions: SourceExtractionOutput[] = [];
+  let failCount = 0;
   for (const result of results) {
     if (result.status === "fulfilled") {
       extractions.push(result.value.data);
+    } else {
+      failCount++;
+      console.warn("[AI Extract] Source extraction failed:", result.reason);
     }
+  }
+
+  if (failCount > 0) {
+    console.warn(
+      `[AI Extract] ${failCount}/${topSources.length} extractions failed, ${extractions.length} succeeded`,
+    );
   }
 
   return extractions;
@@ -136,6 +146,7 @@ export async function runDeepResearch(
   const searchResults = await executeSearches(queries);
 
   if (searchResults.length === 0) {
+    console.warn("[AI DeepResearch] No search results found — synthesis will use model knowledge only");
     return { extractions: [], sources: [], source_count: 0 };
   }
 

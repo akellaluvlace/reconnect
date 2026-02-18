@@ -69,6 +69,7 @@ export async function searchWebParallel(
 
   const allResults: SearchResult[] = [];
   const seenUrls = new Set<string>();
+  let failCount = 0;
 
   for (const result of results) {
     if (result.status === "fulfilled") {
@@ -78,8 +79,22 @@ export async function searchWebParallel(
           allResults.push(item);
         }
       }
+    } else {
+      failCount++;
+      console.warn("[AI Search] Query failed:", result.reason);
     }
-    // Silently skip failed queries — partial results are acceptable
+  }
+
+  if (failCount > 0) {
+    console.warn(
+      `[AI Search] ${failCount}/${queries.length} queries failed, ${allResults.length} unique results from successful queries`,
+    );
+  }
+
+  if (failCount === queries.length) {
+    throw new AISearchError(
+      `All ${queries.length} search queries failed — check TAVILY_API_KEY and network connectivity`,
+    );
   }
 
   return allResults;

@@ -1,9 +1,17 @@
-import { AIRateLimitError } from "./errors";
+import { AIRateLimitError, AIValidationError, AIError } from "./errors";
 import type { AIEndpoint } from "./config";
 
-const MODEL_ESCALATION: Partial<Record<string, AIEndpoint>> = {
-  "claude-sonnet-4-5-20250929": "marketInsights", // escalate to Opus config
-};
+/** Check if an error is transient (worth retrying) */
+function isTransientError(error: unknown): boolean {
+  // Validation errors are deterministic — retrying won't help
+  if (error instanceof AIValidationError) return false;
+  // Config errors (missing API key) are deterministic
+  if (error instanceof AIError && error.code === "CONFIG_ERROR") return false;
+  // Rate limits are transient
+  if (error instanceof AIRateLimitError) return true;
+  // All other errors (API errors, network errors) — retry
+  return true;
+}
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -15,13 +23,14 @@ export async function withRetry<T>(
 ): Promise<T> {
   const { maxRetries = 3, baseDelay = 1000, maxDelay = 16000 } = options;
 
-  let lastError: Error | undefined;
-
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      lastError = error as Error;
+      // Don't retry non-transient errors
+      if (!isTransientError(error)) {
+        throw error;
+      }
 
       if (attempt === maxRetries) {
         throw error;
@@ -36,18 +45,19 @@ export async function withRetry<T>(
         continue;
       }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, baseDelay * Math.pow(2, attempt)),
-      );
+      const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError;
+  // Unreachable — loop always returns or throws
+  throw new AIError("Retry exhausted", "API_ERROR");
 }
 
 /**
  * Wraps a pipeline function to try with the original model first,
  * then escalate to a more capable model on failure.
+ * Only escalates on transient/API errors, not validation or config errors.
  */
 export async function withModelEscalation<T>(
   fn: (endpoint: AIEndpoint) => Promise<T>,
@@ -56,9 +66,15 @@ export async function withModelEscalation<T>(
 ): Promise<T> {
   try {
     return await fn(primaryEndpoint);
-  } catch {
+  } catch (error) {
+    // Don't escalate non-transient errors — they'll fail on the fallback too
+    if (!isTransientError(error)) {
+      throw error;
+    }
+    console.warn(
+      `[AI] Primary model (${primaryEndpoint}) failed, escalating to ${fallbackEndpoint}:`,
+      error instanceof Error ? error.message : error,
+    );
     return await fn(fallbackEndpoint);
   }
 }
-
-export { MODEL_ESCALATION };

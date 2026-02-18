@@ -8,7 +8,7 @@ export const MarketInsightsSchema = z.object({
     median: z.number(),
     currency: z.string(),
     confidence: z.number().min(0).max(1),
-  }),
+  }).refine(s => s.min <= s.max, { message: "salary.min must be <= salary.max" }),
   competition: z.object({
     companies_hiring: z.array(z.string()),
     job_postings_count: z.number(),

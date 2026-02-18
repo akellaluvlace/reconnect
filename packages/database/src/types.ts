@@ -17,39 +17,39 @@ export type Database = {
       ai_research_cache: {
         Row: {
           cache_key: string
-          created_at: string | null
+          created_at: string
           expires_at: string
           id: string
-          model_used: string | null
+          model_used: string
           organization_id: string
           phase: string
-          prompt_version: string | null
+          prompt_version: string
           results: Json
           search_params: Json
           sources: Json
         }
         Insert: {
           cache_key: string
-          created_at?: string | null
+          created_at?: string
           expires_at: string
           id?: string
-          model_used?: string | null
+          model_used: string
           organization_id: string
           phase?: string
-          prompt_version?: string | null
+          prompt_version: string
           results: Json
           search_params: Json
           sources?: Json
         }
         Update: {
           cache_key?: string
-          created_at?: string | null
+          created_at?: string
           expires_at?: string
           id?: string
-          model_used?: string | null
+          model_used?: string
           organization_id?: string
           phase?: string
-          prompt_version?: string | null
+          prompt_version?: string
           results?: Json
           search_params?: Json
           sources?: Json

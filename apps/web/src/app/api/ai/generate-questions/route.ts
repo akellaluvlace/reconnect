@@ -4,12 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { generateQuestions, AIError } from "@reconnect/ai";
 
 const RequestSchema = z.object({
-  role: z.string().min(1),
-  level: z.string().min(1),
-  focus_area: z.string().min(1),
-  focus_area_description: z.string().min(1),
-  stage_type: z.string().min(1),
-  existing_questions: z.array(z.string()).optional(),
+  role: z.string().min(1).max(200),
+  level: z.string().min(1).max(100),
+  focus_area: z.string().min(1).max(200),
+  focus_area_description: z.string().min(1).max(1000),
+  stage_type: z.string().min(1).max(100),
+  existing_questions: z.array(z.string().max(500)).max(20).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -25,7 +25,8 @@ export async function POST(req: NextRequest) {
   let body: unknown;
   try {
     body = await req.json();
-  } catch {
+  } catch (parseError) {
+    console.warn("Invalid JSON in generate-questions request:", parseError);
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 

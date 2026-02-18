@@ -1,5 +1,6 @@
 import { PROMPT_VERSIONS } from "../config";
 import { COMPLIANCE_SYSTEM_PROMPT } from "./compliance";
+import { sanitizeInput } from "../sanitize";
 
 export interface JDGenerationInput {
   role: string;
@@ -35,10 +36,10 @@ MARKET CONTEXT (from research — use to inform your output):
       : "";
 
     return `Generate a job description for:
-- Role: ${input.role}
-- Level: ${input.level}
-- Industry: ${input.industry}
-${input.company_context ? `- Company Context: ${input.company_context}` : ""}
+- Role: ${sanitizeInput(input.role)}
+- Level: ${sanitizeInput(input.level)}
+- Industry: ${sanitizeInput(input.industry)}
+${input.company_context ? `- Company Context: ${sanitizeInput(input.company_context)}` : ""}
 - Style: ${input.style}
 - Currency: ${input.currency ?? "EUR"}
 ${marketSection}
