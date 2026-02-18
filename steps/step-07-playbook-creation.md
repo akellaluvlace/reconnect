@@ -329,23 +329,29 @@ export function WizardStep3() {
     setError(null);
 
     try {
-      // Call AI endpoints
+      // Call proprietary AI pipelines via API routes
+      // Phase 1: Quick insights + JD generation in parallel
       const [jdResponse, insightsResponse] = await Promise.all([
         fetch('/api/ai/generate-jd', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             role: draft.basicInfo.title,
             level: draft.roleDetails.level,
             industry: draft.roleDetails.industry,
             style: 'formal',
+            currency: 'EUR',
           }),
         }),
         fetch('/api/ai/market-insights', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             role: draft.basicInfo.title,
             level: draft.roleDetails.level,
             industry: draft.roleDetails.industry,
+            location: draft.roleDetails.location ?? 'Ireland',
+            market_focus: 'irish',
           }),
         }),
       ]);
@@ -356,11 +362,19 @@ export function WizardStep3() {
 
       const jdData = await jdResponse.json();
       const insightsData = await insightsResponse.json();
+      // insightsData includes: phase, cache_key, metadata (model_used, prompt_version)
+      // jdData includes: data (typed JobDescriptionOutput), metadata
 
       setGeneratedContent({
         jobDescription: jdData.data,
         marketInsights: insightsData.data,
       });
+
+      // Phase 2: Trigger deep research in background (updates UI when ready)
+      if (insightsData.cache_key) {
+        fetch(`/api/ai/market-insights/${insightsData.cache_key}?action=trigger`)
+          .catch(() => {}); // Fire and forget — UI polls for completion
+      }
 
       // Save to database
       const playbook = await savePlaybook();
