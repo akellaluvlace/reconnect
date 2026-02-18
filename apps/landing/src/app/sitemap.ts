@@ -6,7 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: "https://reconnect.io",
-      lastModified: new Date(),
+      lastModified: new Date("2026-02-18"),
       changeFrequency: "weekly",
       priority: 1,
     },

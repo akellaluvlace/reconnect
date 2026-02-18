@@ -289,7 +289,7 @@ Owner: DB/RLS Agent + API Agent
 Acceptance criteria: Stage assignment is persisted, queryable, and enforced in RLS/API to limit collaborator access per stage.
 
 **Resolution Status:** RESOLVED
-**Resolution:** Client confirmed (2026-02-16): Add `assigned_stages UUID[]` column to collaborators table. Simple array, not join table. Matches existing patterns. Will be added in migration #7. See questionsAnswered.md 12A3.3.
+**Resolution:** Client confirmed (2026-02-16): Add `assigned_stages UUID[]` column to collaborators table. Simple array, not join table. Matches existing patterns. **Update (2026-02-18):** `assigned_stages UUID[]` is ALREADY present in the initial schema (migration 1, line 234 of step-03). No action needed in migration #7. See questionsAnswered.md 12A3.3.
 
 RCN-023 (P1) — Candidate data retention + erasure is stated but not implemented as a mechanism
 
@@ -566,7 +566,7 @@ Before implementing Step 1 UI/API, lock decisions + migrations for:
 
 RCN-022A + RCN-027: collaborator identity/session model (unblocks RLS + feedback writes) — **RESOLVED: Supabase Auth OTP**
 
-RCN-026: assigned_stages schema alignment (prevents schema drift) — **RESOLVED: UUID[] column in migration #7**
+RCN-026: assigned_stages schema alignment (prevents schema drift) — **RESOLVED: UUID[] column already in initial schema (migration 1)**
 
 ---
 

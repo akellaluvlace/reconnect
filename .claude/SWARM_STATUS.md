@@ -78,6 +78,8 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | RCN-022A: Collaborator identity model | PARTIALLY RESOLVED | Lock during build |
 | RCN-027: Magic link session model | PARTIALLY RESOLVED | Lock during build |
 | RCN-020: Share link password protection | RESOLVED (2026-02-16) | Token-only URL, no password |
+| RCN-024: Audit log event taxonomy | OPEN | No event list defined. Resolution target: Step 8 |
+| RCN-031: Prompt injection mitigation | OPEN | AI synthesis pipeline hardening. Resolution target: Step 6 |
 | RCN-032: Share link public data scope | RESOLVED (2026-02-16) | Minimal scope (name, stage, questions, their feedback form only) |
 | RCN-040: Google Drive ownership model | RESOLVED (2026-02-16) | Org-level Drive, core storage for recordings+AI |
 
@@ -108,7 +110,8 @@ Completed planning updates:
 
 1. **NOW:** Schema migration #7 (Drive tables, recording metadata, GDPR retention) OR Step 7 (Playbook Creation)
 2. **Client:** Setting up external services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — expected this week
-3. **Corrected build order:** ~~4~~ → Migration #7 → 7 → 6 → 8 → 10.1-10.2 → 9 → 10.3-10.8
+3. **Corrected build order:** Migration #7 → [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
+   - Note: `assigned_stages UUID[]` is already in initial schema (migration 1) — does NOT need migration #7
 4. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
 
 ---

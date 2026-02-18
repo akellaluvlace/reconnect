@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { Container } from "@/components/ui/container";
 import { AnimateOnScroll } from "@/components/animate-on-scroll";

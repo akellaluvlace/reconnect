@@ -47,10 +47,12 @@ function FaqAccordionItem({
   item,
   isOpen,
   onToggle,
+  index,
 }: {
   item: FaqItem;
   isOpen: boolean;
   onToggle: () => void;
+  index: number;
 }) {
   return (
     <div
@@ -61,9 +63,11 @@ function FaqAccordionItem({
       }`}
     >
       <button
+        id={`faq-trigger-${index}`}
         onClick={onToggle}
         className="flex items-center justify-between w-full p-6 lg:p-8 text-left cursor-pointer"
         aria-expanded={isOpen}
+        aria-controls={`faq-panel-${index}`}
       >
         <span className="font-display text-lg font-semibold text-teal-900 pr-8 tracking-[-0.01em]">
           {item.question}
@@ -77,6 +81,9 @@ function FaqAccordionItem({
         />
       </button>
       <div
+        id={`faq-panel-${index}`}
+        role="region"
+        aria-labelledby={`faq-trigger-${index}`}
         className={`grid transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
           isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
@@ -123,6 +130,7 @@ export function FaqSection() {
             >
               <FaqAccordionItem
                 item={faq}
+                index={i}
                 isOpen={openIndex === i}
                 onToggle={() => setOpenIndex(openIndex === i ? null : i)}
               />

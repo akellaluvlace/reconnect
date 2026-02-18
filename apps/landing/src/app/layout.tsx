@@ -41,14 +41,7 @@ export const metadata: Metadata = {
       "AI-powered strategic recruitment platform. Create hiring playbooks with market insights, interview planning, and team coordination.",
     url: "https://reconnect.io",
     siteName: "Rec+onnect",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Rec+onnect — Hire with clarity. Not chaos.",
-      },
-    ],
+    images: [],
     locale: "en_IE",
     type: "website",
   },
@@ -57,7 +50,7 @@ export const metadata: Metadata = {
     title: "Rec+onnect — Hire with clarity. Not chaos.",
     description:
       "AI-powered strategic recruitment platform for the Irish market.",
-    images: ["/og-image.png"],
+    images: [],
   },
   robots: {
     index: true,

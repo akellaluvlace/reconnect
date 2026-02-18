@@ -1,5 +1,7 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ShieldCheck, Landmark, MapPin } from "lucide-react";
+import { ArrowRight, ShieldCheck, Bank, MapPin } from "@phosphor-icons/react";
 import { AnimateOnScroll } from "@/components/animate-on-scroll";
 
 export function HeroSection() {
@@ -131,14 +133,14 @@ export function HeroSection() {
             <div className="mt-11 flex items-center gap-5">
               <Button href="#book-demo" variant="outline-dark" size="lg">
                 Book a Demo
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight size={20} weight="bold" className="ml-2" />
               </Button>
               <a
                 href="#solution"
                 className="group flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-teal-700 transition-colors duration-300"
               >
                 See how it works
-                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight size={16} weight="bold" className="transition-transform duration-300 group-hover:translate-x-1" />
               </a>
             </div>
 
@@ -147,17 +149,17 @@ export function HeroSection() {
               <div className="w-full h-px bg-gradient-to-r from-teal-500/15 via-teal-400/8 to-transparent mb-6" />
               <div className="flex items-center gap-8 text-[13px] text-slate-500 font-medium tracking-wide">
                 <span className="flex items-center gap-2">
-                  <ShieldCheck className="w-[18px] h-[18px] text-teal-500" strokeWidth={1.5} />
+                  <ShieldCheck size={18} weight="duotone" className="text-teal-500" />
                   GDPR compliant
                 </span>
                 <span className="w-1 h-1 rounded-full bg-slate-300/60" />
                 <span className="flex items-center gap-2">
-                  <Landmark className="w-[18px] h-[18px] text-teal-500" strokeWidth={1.5} />
+                  <Bank size={18} weight="duotone" className="text-teal-500" />
                   EU AI Act ready
                 </span>
                 <span className="w-1 h-1 rounded-full bg-slate-300/60" />
                 <span className="flex items-center gap-2">
-                  <MapPin className="w-[18px] h-[18px] text-teal-500" strokeWidth={1.5} />
+                  <MapPin size={18} weight="duotone" className="text-teal-500" />
                   Built for Ireland
                 </span>
               </div>

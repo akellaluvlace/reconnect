@@ -13,11 +13,11 @@ Each macro step is fully detailed in the `../steps/` directory:
 
 | Step | File | Status |
 |------|------|--------|
-| 1 | [step-01-pre-development.md](../steps/step-01-pre-development.md) | NOT STARTED |
-| 2 | [step-02-monorepo-foundation.md](../steps/step-02-monorepo-foundation.md) | NOT STARTED |
-| 3 | [step-03-supabase-core.md](../steps/step-03-supabase-core.md) | NOT STARTED |
-| 4 | [step-04-landing-page.md](../steps/step-04-landing-page.md) | NOT STARTED |
-| 5 | [step-05-web-app-shell.md](../steps/step-05-web-app-shell.md) | NOT STARTED |
+| 1 | [step-01-pre-development.md](../steps/step-01-pre-development.md) | COMPLETE |
+| 2 | [step-02-monorepo-foundation.md](../steps/step-02-monorepo-foundation.md) | COMPLETE |
+| 3 | [step-03-supabase-core.md](../steps/step-03-supabase-core.md) | COMPLETE |
+| 4 | [step-04-landing-page.md](../steps/step-04-landing-page.md) | COMPLETE |
+| 5 | [step-05-web-app-shell.md](../steps/step-05-web-app-shell.md) | COMPLETE |
 | 6 | [step-06-ai-platform.md](../steps/step-06-ai-platform.md) | NOT STARTED |
 | 7 | [step-07-playbook-creation.md](../steps/step-07-playbook-creation.md) | NOT STARTED |
 | 8 | [step-08-chapters-discovery-process.md](../steps/step-08-chapters-discovery-process.md) | NOT STARTED |

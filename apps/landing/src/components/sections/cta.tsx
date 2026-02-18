@@ -30,29 +30,14 @@ export function CtaSection() {
       {/* Glow orbs */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="glow-orb-teal w-[600px] h-[400px] top-1/4 left-1/3" />
-        <div className="glow-orb-blue w-[400px] h-[350px] bottom-[10%] right-[15%]" />
+        <div className="glow-orb-teal w-[400px] h-[350px] bottom-[10%] right-[15%]" />
       </div>
 
       <Container size="wide" className="relative z-10">
-        <div className="grid grid-cols-12 gap-12 lg:gap-20 items-center">
-          {/* Left — Illustration watermark */}
-          <div className="col-span-12 lg:col-span-5 flex items-center justify-center">
+        <div className="grid grid-cols-12 gap-12 lg:gap-16 items-center">
+          {/* Left — CTA content */}
+          <div className="col-span-12 lg:col-span-6">
             <AnimateOnScroll>
-              <div className="w-[360px] h-[360px] lg:w-[400px] lg:h-[400px]">
-                <Image
-                  src="/illus/Development-Beta-Testing--Streamline-Bruxelles.svg"
-                  alt="Productive team collaboration"
-                  width={540}
-                  height={540}
-                  className="w-full h-full object-contain opacity-[0.12]"
-                />
-              </div>
-            </AnimateOnScroll>
-          </div>
-
-          {/* Right — CTA content */}
-          <div className="col-span-12 lg:col-span-7 lg:col-start-7">
-            <AnimateOnScroll delay={1}>
               <div>
                 {/* Scarcity badge */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-teal-400/20 bg-teal-900/40 mb-8">
@@ -98,6 +83,73 @@ export function CtaSection() {
                     <br />
                     Beta launches Q2 2026
                   </p>
+                </div>
+              </div>
+            </AnimateOnScroll>
+          </div>
+
+          {/* Right — Blob + Image */}
+          <div className="col-span-12 lg:col-span-6 flex items-center justify-center">
+            <AnimateOnScroll>
+              <div className="relative w-[400px] h-[400px] lg:w-[460px] lg:h-[460px]">
+                {/* Moon — behind hand, teal-tinted, faded edges */}
+                <div
+                  className="absolute -inset-[25%] flex items-center justify-center opacity-[0.35] animate-[moon-drift_20s_ease-in-out_infinite]"
+                  style={{
+                    maskImage:
+                      "radial-gradient(circle, #000 30%, transparent 68%)",
+                    WebkitMaskImage:
+                      "radial-gradient(circle, #000 30%, transparent 68%)",
+                  }}
+                >
+                  <Image
+                    src="/illustrations/mike-petrucci-uIf6H1or1nE-unsplash.png"
+                    alt=""
+                    width={560}
+                    height={560}
+                    className="w-full h-full object-contain"
+                    style={{
+                      filter: "brightness(0.5) saturate(0.2) sepia(0.5) hue-rotate(130deg)",
+                    }}
+                    aria-hidden="true"
+                  />
+                </div>
+
+                {/* Image — with radial fade mask on bottom-right corner */}
+                <div
+                  className="absolute inset-[5%]"
+                  style={{
+                    maskImage:
+                      "radial-gradient(ellipse 85% 85% at 38% 32%, #000 40%, transparent 72%)",
+                    WebkitMaskImage:
+                      "radial-gradient(ellipse 85% 85% at 38% 32%, #000 40%, transparent 72%)",
+                  }}
+                >
+                  {/* Contour glow — duplicate image, blurred + teal-tinted, pulsing */}
+                  <div
+                    className="absolute inset-0 animate-[glow-pulse_5s_ease-in-out_infinite]"
+                    style={{
+                      filter: "blur(6px) brightness(1.3) sepia(1) hue-rotate(120deg) saturate(1.5)",
+                    }}
+                  >
+                    <Image
+                      src="/illustrations/diego-ph-fIq0tET6llw-unsplash.png"
+                      alt=""
+                      width={460}
+                      height={460}
+                      className="w-full h-full object-contain"
+                      aria-hidden="true"
+                    />
+                  </div>
+
+                  {/* Actual image on top */}
+                  <Image
+                    src="/illustrations/diego-ph-fIq0tET6llw-unsplash.png"
+                    alt="Innovation — hand holding lightbulb"
+                    width={460}
+                    height={460}
+                    className="relative z-10 w-full h-full object-contain"
+                  />
                 </div>
               </div>
             </AnimateOnScroll>

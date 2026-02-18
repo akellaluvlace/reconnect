@@ -408,7 +408,7 @@ textarea:focus {
   left: 0;
   width: 100%;
   height: 1.5px;
-  background: #14b8a6;
+  background: var(--color-teal-500);
   transform: scaleX(0);
   transform-origin: right;
   transition: transform 0.3s var(--ease-expo);
@@ -454,11 +454,6 @@ textarea:focus {
 
 /* ── Glow Orbs (Animated) ────────────────── */
 
-@keyframes float2 {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(2deg); }
-}
-
 @keyframes orbFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33% { transform: translate(25px, -15px) scale(1.04); }
@@ -483,14 +478,6 @@ textarea:focus {
   animation: orbFloat 20s ease-in-out infinite;
 }
 
-.glow-orb-blue {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(13, 148, 136, 0.18) 0%, transparent 70%);
-  filter: blur(80px);
-  pointer-events: none;
-  animation: orbFloat 25s ease-in-out infinite reverse;
-}
 
 /* ── Dot Grid Background ─────────────────── */
 
@@ -546,6 +533,19 @@ textarea:focus {
   border-radius: 9999px;
 }
 
+/* ── CTA glow pulse ────────────── */
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes moon-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(3px, -2px) scale(1.005); }
+  66% { transform: translate(-2px, 3px) scale(0.995); }
+}
+
 /* ── Crossfade for showcase ────────────── */
 
 @keyframes fadeIn {
@@ -553,18 +553,3 @@ textarea:focus {
   to { opacity: 1; }
 }
 
-/* ── Card Hover (legacy compat) ──────────── */
-
-.card-hover {
-  transition:
-    transform 0.3s var(--ease-expo),
-    box-shadow 0.3s var(--ease-cubic),
-    border-color 0.3s var(--ease-cubic);
-}
-
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 12px 32px -8px rgba(4, 47, 46, 0.08),
-    0 4px 12px -4px rgba(4, 47, 46, 0.04);
-}

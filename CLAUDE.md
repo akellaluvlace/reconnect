@@ -7,12 +7,12 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 4 — Landing Page (COMPLETE + POLISHED)
-**Status:** Steps 1-5 complete. Landing page fully redesigned: gold→teal theme, showcase stats column, CTA watermark illustration, FAQ/contact/footer refreshed, scroll animations everywhere.
-**Next task:** Schema migration #7 (Drive tables, recording metadata, GDPR) then Step 7 (Playbook Creation)
+**Step:** Migration #7 (in progress)
+**Status:** Steps 1-5 complete. Landing page fully redesigned (teal theme). Migration #7 being written (Drive tables, recording metadata, GDPR).
+**Next task:** Migration #7 (in progress) → Step 6 + Step 7 (parallel start)
 **Blockers:** External services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — client setting up this week. Not blocking migration or Step 7.
 
-**Corrected build order:** ~~4~~ → Migration #7 → 7 → 6 → 8 → 10.1-10.2 → 9 → 10.3-10.8
+**Corrected build order:** Migration #7 → [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
 
 > Update this section at end of every session.
 
