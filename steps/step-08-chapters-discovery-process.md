@@ -321,21 +321,10 @@ cd apps/web && pnpm dev
 
 **Allowed Paths:**
 - `apps/web/src/components/process/question-bank.tsx`
-- `supabase/migrations/**_question_bank.sql`
 
 **Tasks:**
-- [ ] Create question_bank table (optional for MVP):
-```sql
-CREATE TABLE question_bank (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID REFERENCES organizations(id),
-  category TEXT,
-  question TEXT NOT NULL,
-  purpose TEXT,
-  look_for JSONB DEFAULT '[]',
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
+- [ ] `cms_questions` table already exists (migration #8). Wire up the UI:
+
 
 - [ ] Create QuestionBank component:
   - View AI-suggested questions
@@ -368,9 +357,38 @@ cd apps/web && pnpm dev
 - [ ] Create reorder route:
 ```typescript
 // POST /api/playbooks/[id]/stages/reorder
-export async function POST(req: NextRequest, { params }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> } // ← Next.js 15+: params is Promise
+) {
+  const { id } = await params;
+  // Validate UUID
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return NextResponse.json({ error: 'Invalid playbook ID' }, { status: 400 });
+  }
+
+  const supabase = await createClient(); // ← MUST await
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) console.error("[stages/reorder] Auth error:", authError.message);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   // Receive array of { id, order_index }
-  // Update all stages in transaction
+  const body = await req.json();
+  // Update all stages — Supabase doesn't support transactions in JS client,
+  // so update one by one with error collection
+  for (const stage of body.stages) {
+    const { error } = await supabase
+      .from('interview_stages')
+      .update({ order_index: stage.order_index })
+      .eq('id', stage.id)
+      .eq('playbook_id', id);
+    if (error) {
+      console.error("[stages/reorder] Update failed:", error.message);
+      return NextResponse.json({ error: 'Reorder failed' }, { status: 500 });
+    }
+  }
+
+  return NextResponse.json({ success: true });
 }
 ```
 

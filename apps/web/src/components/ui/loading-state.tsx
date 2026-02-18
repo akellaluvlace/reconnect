@@ -18,13 +18,3 @@ export function LoadingState() {
     </div>
   );
 }
-
-export function LoadingCard() {
-  return (
-    <div className="rounded-lg border p-6 space-y-3">
-      <Skeleton className="h-5 w-1/3" />
-      <Skeleton className="h-4 w-2/3" />
-      <Skeleton className="h-4 w-1/2" />
-    </div>
-  );
-}

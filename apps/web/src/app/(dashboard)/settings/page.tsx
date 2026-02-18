@@ -2,19 +2,24 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, User, Plug, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { requireRole } from "@/lib/auth/require-auth";
 
-const sections = [
-  { name: "Organization", description: "Company details and preferences", href: "/settings/organization", icon: Building2 },
-  { name: "Profile", description: "Your personal settings", href: "/settings/profile", icon: User },
-  { name: "Integrations", description: "Connected services", href: "/settings/integrations", icon: Plug },
-  { name: "Admin", description: "CMS controls (admin only)", href: "/settings/admin/skills", icon: ShieldCheck },
-];
+export default async function SettingsPage() {
+  const { role } = await requireRole(["admin", "manager", "interviewer"]);
 
-export default function SettingsPage() {
+  const sections = [
+    { name: "Organization", description: "Company details and preferences", href: "/settings/organization", icon: Building2 },
+    { name: "Profile", description: "Your personal settings", href: "/settings/profile", icon: User },
+    { name: "Integrations", description: "Connected services", href: "/settings/integrations", icon: Plug },
+    ...(role === "admin"
+      ? [{ name: "Admin", description: "CMS controls (admin only)", href: "/settings/admin/skills", icon: ShieldCheck }]
+      : []),
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" description="Manage your account and organization" />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-2">
         {sections.map((section) => (
           <Link key={section.name} href={section.href}>
             <Card className="transition-colors hover:bg-muted/50">

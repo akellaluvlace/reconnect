@@ -65,13 +65,20 @@ Make it reliable + shippable: Google Drive recording storage (core AI pipeline b
 - [ ] Create org-level OAuth flow:
 ```typescript
 // apps/web/src/lib/google-drive/client.ts
-import { google } from 'googleapis';
+import { google, type Auth } from 'googleapis';
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
-);
+const clientId = process.env.GOOGLE_CLIENT_ID;
+const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+if (!clientId || !clientSecret || !redirectUri) {
+  throw new Error(
+    `Missing Google OAuth config: CLIENT_ID=${clientId ? "set" : "MISSING"}, ` +
+    `CLIENT_SECRET=${clientSecret ? "set" : "MISSING"}, REDIRECT_URI=${redirectUri ? "set" : "MISSING"}`
+  );
+}
+
+const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 
 // Org-level: admin connects once for the whole organization
 export function getAuthUrl() {
@@ -85,8 +92,11 @@ export function getAuthUrl() {
   });
 }
 
-export async function getTokens(code: string) {
+export async function getTokens(code: string): Promise<Auth.Credentials> {
   const { tokens } = await oauth2Client.getToken(code);
+  if (!tokens.access_token) {
+    throw new Error("Google OAuth returned no access token");
+  }
   return tokens;
 }
 ```
@@ -98,7 +108,7 @@ export async function getTokens(code: string) {
   - POST /api/google-drive/disconnect → Revoke access (admin only)
 
 - [ ] Store refresh tokens securely per org in database (encrypted)
-- [ ] DB schema: `org_google_tokens` table (org_id FK, encrypted refresh_token, access_token, expiry, connected_by, connected_at)
+- [ ] DB schema: `org_drive_connections` table already exists (migration #7). Wire up OAuth to store/refresh tokens there.
 
 **Security Checklist:**
 - [ ] Minimal scopes requested (drive.file + calendar.events)
@@ -137,14 +147,38 @@ pnpm lint && pnpm typecheck
 ```typescript
 // POST /api/google-drive/upload
 export async function POST(req: NextRequest) {
+  const supabase = await createClient(); // ← MUST await (Next.js 15+)
+
+  // Auth + admin check
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) console.error("[drive/upload] Auth error:", authError.message);
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { recording_url, playbook_id, candidate_name, stage_name } = await req.json();
 
   // Get ORG's Drive tokens (not user's)
   // Download recording from Supabase Storage
   // Create folder structure: org → playbook → candidate → stage
   // Upload to org's Google Drive
+  const driveResult = await uploadToDrive(/* ... */);
+  if (!driveResult.ok) {
+    console.error("[drive/upload] Upload failed:", driveResult.error);
+    return NextResponse.json({ error: 'Drive upload failed' }, { status: 500 });
+  }
+
   // Store Drive file ID + URL on interview record
+  const { error: updateError } = await supabase
+    .from('interviews')
+    .update({ recording_drive_id: driveResult.fileId, recording_url: driveResult.url })
+    .eq('id', playbook_id);
+
+  if (updateError) {
+    console.error("[drive/upload] DB update failed:", updateError.message);
+    return NextResponse.json({ error: 'Failed to save Drive reference' }, { status: 500 });
+  }
+
   // Return Drive file ID and URL (needed by Whisper pipeline)
+  return NextResponse.json({ fileId: driveResult.fileId, url: driveResult.url });
 }
 ```
 

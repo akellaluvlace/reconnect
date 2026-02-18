@@ -54,11 +54,15 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default async function PlaybooksPage() {
-  const supabase = createClient();
-  const { data: playbooks } = await supabase
+  const supabase = await createClient(); // ← MUST await (Next.js 15+)
+  const { data: playbooks, error } = await supabase
     .from('playbooks')
     .select('*')
     .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("[playbooks] Failed to load:", error.message);
+  }
 
   return (
     <div className="space-y-6">
@@ -112,7 +116,7 @@ export function PlaybookCard({ playbook }: PlaybookCardProps) {
 - [ ] Create loading skeleton
 
 **Design Checklist:**
-- [ ] Grid layout (3 columns desktop, 1 mobile)
+- [ ] Grid layout (3 columns, desktop-only min 1024px)
 - [ ] Clear CTA for creating first playbook
 - [ ] Status badges visible
 
@@ -346,6 +350,10 @@ export function WizardStep3() {
         }),
       ]);
 
+      if (!jdResponse.ok || !insightsResponse.ok) {
+        throw new Error('AI generation failed');
+      }
+
       const jdData = await jdResponse.json();
       const insightsData = await insightsResponse.json();
 
@@ -445,20 +453,24 @@ cd apps/web && pnpm dev
 // apps/web/src/app/api/playbooks/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { JobDescription, MarketInsights, CandidateProfile } from '@reconnect/database';
 import { z } from 'zod';
 
 const createPlaybookSchema = z.object({
   title: z.string().min(1),
   department: z.string().optional(),
-  job_description: z.any().optional(),
-  market_insights: z.any().optional(),
-  candidate_profile: z.any().optional(),
+  job_description: z.record(z.unknown()).optional(), // Validated as JobDescription at runtime
+  market_insights: z.record(z.unknown()).optional(), // Validated as MarketInsights at runtime
+  candidate_profile: z.record(z.unknown()).optional(), // Validated as CandidateProfile at runtime
 });
 
 export async function GET() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient(); // ← MUST await (Next.js 15+)
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
+  if (authError) {
+    console.error("[playbooks/GET] Auth error:", authError.message);
+  }
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -469,6 +481,7 @@ export async function GET() {
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.error("[playbooks/GET] Query failed:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -476,9 +489,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabase = await createClient(); // ← MUST await (Next.js 15+)
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
 
+  if (authError) {
+    console.error("[playbooks/POST] Auth error:", authError.message);
+  }
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -491,11 +507,16 @@ export async function POST(req: NextRequest) {
   }
 
   // Get user's org
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('organization_id, role')
     .eq('id', user.id)
     .single();
+
+  if (profileError) {
+    console.error("[playbooks/POST] Profile fetch failed:", profileError.message);
+    return NextResponse.json({ error: 'Failed to verify permissions' }, { status: 500 });
+  }
 
   if (!profile || !['admin', 'manager'].includes(profile.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -507,12 +528,13 @@ export async function POST(req: NextRequest) {
       ...parsed.data,
       organization_id: profile.organization_id,
       created_by: user.id,
-      status: 'draft',
+      status: 'draft' as const,
     })
     .select()
     .single();
 
   if (error) {
+    console.error("[playbooks/POST] Insert failed:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -550,16 +572,22 @@ pnpm lint && pnpm typecheck
 // apps/web/src/app/(dashboard)/playbooks/[id]/layout.tsx
 import { ChapterNav } from '@/components/playbooks/chapter-nav';
 
-export default function PlaybookLayout({
+export default async function PlaybookLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>; // ← Next.js 15+: params is a Promise
 }) {
+  const { id } = await params;
+  // Validate UUID format before using
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    notFound();
+  }
+
   return (
     <div className="space-y-6">
-      <ChapterNav playbookId={params.id} />
+      <ChapterNav playbookId={id} />
       {children}
     </div>
   );

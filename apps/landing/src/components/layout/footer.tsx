@@ -9,9 +9,7 @@ const footerLinks = {
     { label: "Book a Demo", href: "#book-demo" },
   ],
   company: [
-    { label: "About", href: "#" },
     { label: "Contact", href: "#contact" },
-    { label: "Privacy Policy", href: "#" },
   ],
 };
 

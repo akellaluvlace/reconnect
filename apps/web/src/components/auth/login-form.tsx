@@ -26,9 +26,9 @@ const loginSchema = z.object({
 
 type LoginData = z.infer<typeof loginSchema>;
 
-export function LoginForm() {
+export function LoginForm({ authError }: { authError?: string }) {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(authError ?? null);
   const {
     register,
     handleSubmit,
@@ -38,23 +38,37 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginData) => {
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword(data);
-    if (error) {
-      setError(error.message);
-    } else {
-      router.push("/");
-      router.refresh();
+    try {
+      setError(null);
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword(data);
+      if (error) {
+        setError(error.message);
+      } else {
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err) {
+      console.error("[login] Unexpected error:", err);
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
   const handleOAuth = async (provider: "google" | "azure") => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
+    try {
+      setError(null);
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) {
+        setError(error.message);
+      }
+    } catch (err) {
+      console.error("[login] OAuth error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    }
   };
 
   return (
@@ -77,6 +91,7 @@ export function LoginForm() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@company.com"
               {...register("email")}
             />
@@ -97,6 +112,7 @@ export function LoginForm() {
             <Input
               id="password"
               type="password"
+              autoComplete="current-password"
               {...register("password")}
             />
             {errors.password && (

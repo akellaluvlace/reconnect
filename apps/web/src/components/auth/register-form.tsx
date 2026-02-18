@@ -21,7 +21,12 @@ import Link from "next/link";
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Must contain at least one number"),
 });
 
 type RegisterData = z.infer<typeof registerSchema>;
@@ -38,19 +43,24 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (data: RegisterData) => {
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { name: data.name },
-      },
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess(true);
+    try {
+      setError(null);
+      const supabase = createClient();
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: { name: data.name },
+        },
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess(true);
+      }
+    } catch (err) {
+      console.error("[register] Unexpected error:", err);
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -83,7 +93,7 @@ export function RegisterForm() {
           )}
           <div className="space-y-2">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" placeholder="John Doe" {...register("name")} />
+            <Input id="name" autoComplete="name" placeholder="John Doe" {...register("name")} />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name.message}</p>
             )}
@@ -93,6 +103,7 @@ export function RegisterForm() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@company.com"
               {...register("email")}
             />
@@ -105,6 +116,7 @@ export function RegisterForm() {
             <Input
               id="password"
               type="password"
+              autoComplete="new-password"
               {...register("password")}
             />
             {errors.password && (

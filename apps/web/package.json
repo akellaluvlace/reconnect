@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.74.0",
+    "@reconnect/ai": "workspace:*",
+    "@reconnect/database": "workspace:*",
     "@hookform/resolvers": "5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",

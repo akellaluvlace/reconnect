@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_research_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          model_used: string | null
+          organization_id: string
+          phase: string
+          prompt_version: string | null
+          results: Json
+          search_params: Json
+          sources: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          model_used?: string | null
+          organization_id: string
+          phase?: string
+          prompt_version?: string | null
+          results: Json
+          search_params: Json
+          sources?: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          model_used?: string | null
+          organization_id?: string
+          phase?: string
+          prompt_version?: string | null
+          results?: Json
+          search_params?: Json
+          sources?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_research_cache_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_synthesis: {
         Row: {
           candidate_id: string | null
@@ -109,12 +159,15 @@ export type Database = {
           current_stage_id: string | null
           cv_url: string | null
           email: string | null
+          gdpr_consent_at: string | null
+          gdpr_deletion_requested_at: string | null
           id: string
           linkedin_url: string | null
           name: string
           notes: string | null
           phone: string | null
           playbook_id: string | null
+          retained_until: string | null
           salary_expectation: Json | null
           status: string | null
           updated_at: string | null
@@ -124,12 +177,15 @@ export type Database = {
           current_stage_id?: string | null
           cv_url?: string | null
           email?: string | null
+          gdpr_consent_at?: string | null
+          gdpr_deletion_requested_at?: string | null
           id?: string
           linkedin_url?: string | null
           name: string
           notes?: string | null
           phone?: string | null
           playbook_id?: string | null
+          retained_until?: string | null
           salary_expectation?: Json | null
           status?: string | null
           updated_at?: string | null
@@ -139,12 +195,15 @@ export type Database = {
           current_stage_id?: string | null
           cv_url?: string | null
           email?: string | null
+          gdpr_consent_at?: string | null
+          gdpr_deletion_requested_at?: string | null
           id?: string
           linkedin_url?: string | null
           name?: string
           notes?: string | null
           phone?: string | null
           playbook_id?: string | null
+          retained_until?: string | null
           salary_expectation?: Json | null
           status?: string | null
           updated_at?: string | null
@@ -162,6 +221,281 @@ export type Database = {
             columns: ["playbook_id"]
             isOneToOne: false
             referencedRelation: "playbooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_email_templates: {
+        Row: {
+          body_html: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          subject: string
+          template_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          body_html: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          subject: string
+          template_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          body_html?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          subject?: string
+          template_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_email_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_industries: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_industries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_jd_templates: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          style: string | null
+        }
+        Insert: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          style?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          style?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_jd_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_levels: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          order_index: number
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          order_index?: number
+          organization_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          order_index?: number
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_levels_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_questions: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          look_for: Json | null
+          organization_id: string
+          purpose: string | null
+          question: string
+          stage_type: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          look_for?: Json | null
+          organization_id: string
+          purpose?: string | null
+          question: string
+          stage_type?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          look_for?: Json | null
+          organization_id?: string
+          purpose?: string | null
+          question?: string
+          stage_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_questions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_skills: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_skills_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cms_stage_templates: {
+        Row: {
+          created_at: string | null
+          duration_minutes: number | null
+          focus_areas: Json | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string
+          suggested_questions: Json | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          focus_areas?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id: string
+          suggested_questions?: Json | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          focus_areas?: Json | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string
+          suggested_questions?: Json | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cms_stage_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -229,7 +563,7 @@ export type Database = {
           focus_areas_confirmed: boolean
           id: string
           interview_id: string | null
-          interviewer_id: string
+          interviewer_id: string | null
           notes: string | null
           pros: Json | null
           ratings: Json
@@ -240,7 +574,7 @@ export type Database = {
           focus_areas_confirmed?: boolean
           id?: string
           interview_id?: string | null
-          interviewer_id: string
+          interviewer_id?: string | null
           notes?: string | null
           pros?: Json | null
           ratings: Json
@@ -251,7 +585,7 @@ export type Database = {
           focus_areas_confirmed?: boolean
           id?: string
           interview_id?: string | null
-          interviewer_id?: string
+          interviewer_id?: string | null
           notes?: string | null
           pros?: Json | null
           ratings?: Json
@@ -278,6 +612,7 @@ export type Database = {
         Row: {
           assigned_interviewer_id: string | null
           created_at: string | null
+          description: string | null
           duration_minutes: number | null
           focus_areas: Json | null
           id: string
@@ -290,6 +625,7 @@ export type Database = {
         Insert: {
           assigned_interviewer_id?: string | null
           created_at?: string | null
+          description?: string | null
           duration_minutes?: number | null
           focus_areas?: Json | null
           id?: string
@@ -302,6 +638,7 @@ export type Database = {
         Update: {
           assigned_interviewer_id?: string | null
           created_at?: string | null
+          description?: string | null
           duration_minutes?: number | null
           focus_areas?: Json | null
           id?: string
@@ -328,13 +665,50 @@ export type Database = {
           },
         ]
       }
+      interview_transcripts: {
+        Row: {
+          created_at: string | null
+          id: string
+          interview_id: string
+          metadata: Json | null
+          transcript: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interview_id: string
+          metadata?: Json | null
+          transcript: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interview_id?: string
+          metadata?: Json | null
+          transcript?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_transcripts_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: true
+            referencedRelation: "interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       interviews: {
         Row: {
           candidate_id: string | null
           completed_at: string | null
           created_at: string | null
+          drive_file_id: string | null
+          drive_folder_id: string | null
           id: string
           interviewer_id: string | null
+          meet_link: string | null
+          recording_consent_at: string | null
+          recording_status: string | null
           recording_url: string | null
           scheduled_at: string | null
           stage_id: string | null
@@ -346,8 +720,13 @@ export type Database = {
           candidate_id?: string | null
           completed_at?: string | null
           created_at?: string | null
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
           id?: string
           interviewer_id?: string | null
+          meet_link?: string | null
+          recording_consent_at?: string | null
+          recording_status?: string | null
           recording_url?: string | null
           scheduled_at?: string | null
           stage_id?: string | null
@@ -359,8 +738,13 @@ export type Database = {
           candidate_id?: string | null
           completed_at?: string | null
           created_at?: string | null
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
           id?: string
           interviewer_id?: string | null
+          meet_link?: string | null
+          recording_consent_at?: string | null
+          recording_status?: string | null
           recording_url?: string | null
           scheduled_at?: string | null
           stage_id?: string | null
@@ -388,6 +772,57 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "interview_stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_drive_connections: {
+        Row: {
+          access_token: string
+          connected_at: string | null
+          connected_by: string | null
+          drive_root_folder_id: string | null
+          id: string
+          organization_id: string
+          refresh_token: string
+          token_expiry: string
+          updated_at: string | null
+        }
+        Insert: {
+          access_token: string
+          connected_at?: string | null
+          connected_by?: string | null
+          drive_root_folder_id?: string | null
+          id?: string
+          organization_id: string
+          refresh_token: string
+          token_expiry: string
+          updated_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          connected_at?: string | null
+          connected_by?: string | null
+          drive_root_folder_id?: string | null
+          id?: string
+          organization_id?: string
+          refresh_token?: string
+          token_expiry?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_drive_connections_connected_by_fkey"
+            columns: ["connected_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_drive_connections_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -426,7 +861,8 @@ export type Database = {
         Row: {
           candidate_profile: Json | null
           created_at: string | null
-          created_by: string
+          created_by: string | null
+          department: string | null
           id: string
           job_description: Json | null
           market_insights: Json | null
@@ -439,7 +875,8 @@ export type Database = {
         Insert: {
           candidate_profile?: Json | null
           created_at?: string | null
-          created_by: string
+          created_by?: string | null
+          department?: string | null
           id?: string
           job_description?: Json | null
           market_insights?: Json | null
@@ -452,7 +889,8 @@ export type Database = {
         Update: {
           candidate_profile?: Json | null
           created_at?: string | null
-          created_by?: string
+          created_by?: string | null
+          department?: string | null
           id?: string
           job_description?: Json | null
           market_insights?: Json | null
@@ -534,6 +972,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          notification_preferences: Json | null
           organization_id: string | null
           role: string
         }
@@ -543,6 +982,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          notification_preferences?: Json | null
           organization_id?: string | null
           role: string
         }
@@ -552,6 +992,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          notification_preferences?: Json | null
           organization_id?: string | null
           role?: string
         }
@@ -576,12 +1017,17 @@ export type Database = {
       }
       get_user_org_id: { Args: never; Returns: string }
       get_user_role: { Args: never; Returns: string }
+      is_active_collaborator: {
+        Args: { p_playbook_id: string }
+        Returns: boolean
+      }
       is_org_admin: { Args: never; Returns: boolean }
       is_org_manager_or_admin: { Args: never; Returns: boolean }
       playbook_belongs_to_user_org: {
         Args: { pb_id: string }
         Returns: boolean
       }
+      validate_ratings_scores: { Args: { ratings: Json }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

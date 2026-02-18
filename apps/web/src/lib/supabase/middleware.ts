@@ -1,14 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "@reconnect/database";
+import { supabaseUrl, supabaseAnonKey } from "./env";
+
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  const supabase = createServerClient<Database>(
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
@@ -32,13 +36,23 @@ export async function updateSession(request: NextRequest) {
   // Refresh session if expired — required for Server Components
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
+  if (authError) {
+    console.error("[middleware] Auth check failed:", authError.message);
+  }
+
   // Public routes that don't require authentication
-  const publicPaths = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback"];
-  const isPublicPath = publicPaths.some((path) =>
+  const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
+
+  // On auth service failure (not just "no user"), don't redirect — let through
+  if (!user && authError && !isPublicPath) {
+    console.error("[middleware] Auth service error, allowing request through");
+    return response;
+  }
 
   // Redirect unauthenticated users from protected routes
   if (!user && !isPublicPath) {

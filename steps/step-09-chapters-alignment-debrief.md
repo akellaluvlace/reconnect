@@ -165,7 +165,11 @@ pnpm lint && pnpm typecheck
 ```typescript
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiKey = process.env.RESEND_API_KEY;
+if (!apiKey) {
+  throw new Error("Missing RESEND_API_KEY environment variable");
+}
+const resend = new Resend(apiKey);
 
 export async function sendCollaboratorInvite({
   email,
@@ -180,7 +184,7 @@ export async function sendCollaboratorInvite({
   stageName?: string;
   magicLink: string;
 }) {
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: 'Rec+onnect <noreply@[domain]>',
     to: email,
     subject: `You've been invited to collaborate on ${playbookTitle}`,
@@ -191,6 +195,10 @@ export async function sendCollaboratorInvite({
       <p>This link expires in 7 days.</p>
     `,
   });
+  if (error) {
+    console.error("[email] Failed to send collaborator invite:", error);
+    throw new Error("Failed to send invitation email");
+  }
 }
 ```
 
@@ -354,14 +362,28 @@ cd apps/web && pnpm dev
 - [ ] Create transcription API route:
 ```typescript
 import OpenAI from 'openai';
+import { createClient } from '@/lib/supabase/server';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const apiKey = process.env.OPENAI_API_KEY;
+if (!apiKey) {
+  throw new Error("Missing OPENAI_API_KEY environment variable");
+}
+const openai = new OpenAI({ apiKey });
 
 export async function POST(req: NextRequest) {
-  // Get audio from Supabase Storage
+  const supabase = await createClient(); // ← MUST await
+
+  // Validate interview_id is a valid UUID
   const { recording_url, interview_id } = await req.json();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(interview_id)) {
+    return NextResponse.json({ error: 'Invalid interview ID' }, { status: 400 });
+  }
 
   const audioResponse = await fetch(recording_url);
+  if (!audioResponse.ok) {
+    console.error("[transcription] Failed to fetch recording:", audioResponse.status);
+    return NextResponse.json({ error: 'Failed to fetch recording' }, { status: 500 });
+  }
   const audioBlob = await audioResponse.blob();
 
   const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
@@ -373,18 +395,23 @@ export async function POST(req: NextRequest) {
     response_format: 'verbose_json',
   });
 
-  // Store transcript
-  await supabase
-    .from('interviews')
-    .update({
-      transcript: transcription.text,
-      transcript_metadata: {
+  // Store transcript in interview_transcripts table (NOT interviews.transcript — deprecated)
+  const { error } = await supabase
+    .from('interview_transcripts')
+    .upsert({
+      interview_id,
+      content: transcription.text,
+      metadata: {
         duration_seconds: transcription.duration,
         language: transcription.language,
         segments: transcription.segments,
       },
-    })
-    .eq('id', interview_id);
+    });
+
+  if (error) {
+    console.error("[transcription] Failed to store transcript:", error.message);
+    return NextResponse.json({ error: 'Failed to store transcript' }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }

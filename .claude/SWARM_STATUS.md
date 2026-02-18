@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-02-17
-**Current Macro Step:** 4 — Landing Page (COMPLETE + POLISHED)
-**Active Micro Steps:** 4.1-4.8 (all complete)
+**Last Updated:** 2026-02-18
+**Current Macro Step:** Step 6 COMPLETE — ready for Step 7
+**Active Micro Steps:** None (between steps)
 
 ---
 
@@ -41,12 +41,23 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 
 | Micro Step | Owner | Branch | Status |
 |------------|-------|--------|--------|
-| All Step 1-3 + 5 micro steps | Various | master | COMPLETE |
-| Code review (25 issues) | QA | master | COMPLETE — all fixed |
-| Deep architecture audit | Architect | — | COMPLETE (2026-02-16) |
-| Step 4: Landing Page | UI Builder | master | COMPLETE (2026-02-16) |
-| Step 4: Design polish | UI Builder | master | COMPLETE (2026-02-16) — hero image, solution illustrations, how-it-works redesign |
-| Step 4: Design overhaul | UI Builder | master | COMPLETE (2026-02-17) — gold→teal, showcase stats, CTA watermark, scroll animations |
+| All Step 1-5 micro steps | Various | master | COMPLETE |
+| Migrations 7-10 | Backend | master | COMPLETE (2026-02-18) — Drive, CMS, share link fix, P0 security |
+| Asset cleanup + code review | QA | master | COMPLETE (2026-02-18) — 50 files removed, 66 issues found+fixed |
+| P0 security fixes | Backend | master | COMPLETE (2026-02-18) — collaborator RLS, FK cascade, transcript privacy |
+| Database types regenerated | Backend | master | COMPLETE (2026-02-18) — 20 tables, 8 functions |
+| RLS policy consolidation | Backend | master | COMPLETE (2026-02-18) — 28 duplicate policies merged, FK indexes added |
+| auth.email fix | Backend | master | COMPLETE (2026-02-18) — policies use auth.email() not auth.users |
+| Feedback cross-tenant fix | Backend | master | COMPLETE (2026-02-18) — added org scoping to feedback SELECT |
+| Database test suite | QA | master | COMPLETE (2026-02-18) — 233 tests, 10 categories, all green |
+| Phase 0: Static analysis | QA | master | COMPLETE (2026-02-18) — typecheck+lint zero errors |
+| Phase 0: Silent failure hunt | QA | master | COMPLETE (2026-02-18) — 14 failures found+fixed (5 crit, 5 high, 4 med) |
+| Phase 0: Type design review | QA | master | COMPLETE (2026-02-18) — 13 issues fixed, Database type wired, domain types created |
+| Phase 0: CodeRabbit review | QA | master | COMPLETE (2026-02-18) — 19 issues fixed (1 crit admin guard, 3 high sec, 6 med, 9 low) |
+| Phase 0 Round 2: Silent failures | QA | master | COMPLETE (2026-02-18) — 12 issues: try-catch all async, toast on signout, AuthListener preserve user |
+| Phase 0 Round 2: Code simplifier | QA | master | COMPLETE (2026-02-18) — 4 simplifications: requireRole dedup, PUBLIC_PATHS const |
+| Phase 0 Round 2: Comment analyzer | QA | master | COMPLETE (2026-02-18) — 3 critical: SynthesisType comment, deprecated transcript note |
+| Phase 0 Round 2: Step file audit | QA | master | COMPLETE (2026-02-18) — 18 anti-patterns fixed in steps 7-10 code examples |
 
 ---
 
@@ -59,7 +70,7 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | 3 | Supabase Core | [step-03](../steps/step-03-supabase-core.md) | 6 | COMPLETE |
 | 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | COMPLETE |
 | 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | COMPLETE + REVIEWED |
-| 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 6 | NOT STARTED |
+| 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 7 | COMPLETE |
 | 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | NOT STARTED |
 | 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 9 | NOT STARTED |
 | 9 | Chapters: Alignment + Debrief | [step-09](../steps/step-09-chapters-alignment-debrief.md) | 10 | NOT STARTED |
@@ -108,11 +119,27 @@ Completed planning updates:
 
 ## Next Actions
 
-1. **NOW:** Schema migration #7 (Drive tables, recording metadata, GDPR retention) OR Step 7 (Playbook Creation)
-2. **Client:** Setting up external services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — expected this week
-3. **Corrected build order:** Migration #7 → [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
-   - Note: `assigned_stages UUID[]` is already in initial schema (migration 1) — does NOT need migration #7
-4. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
+1. **NOW:** Step 7 (Playbook Creation) — all micro steps can start, 7.4 unblocked (Step 6 complete).
+2. **Step 6 COMPLETE:** Full AI Intelligence Engine built — 6 schemas, 5 pipelines, 6 API routes, 74 tests green.
+3. **Client:** External API keys still needed for live testing (Anthropic, Tavily, OpenAI, Resend, Google Cloud).
+4. **Build order:** [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
+5. **P1 remaining:** /share/[token] route stub (admin route guards DONE in Phase 0)
+6. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
+
+### Testing Coverage
+
+| Layer | Status | Tests | Tools |
+|-------|--------|-------|-------|
+| Database (SQL) | COMPLETE | 233/233 green | psql + custom framework |
+| AI package | COMPLETE | 74/74 green | Vitest |
+| E2E (browser) | PLANNED | 0 | Playwright MCP (installed) |
+| Unit tests | PLANNED | 0 | Vitest (installed in @reconnect/ai) |
+| Components | PLANNED | 0 | React Testing Library (not yet installed) |
+| API routes | PLANNED | 0 | Vitest + MSW (not yet installed) |
+| Accessibility | PLANNED | 0 | Playwright a11y snapshots |
+
+**Installed test plugins:** Playwright MCP, Context7, superpowers skills (TDD, verification, code-reviewer).
+**Next test phase:** E2E landing page checks + auth flow tests after Step 7 features are built.
 
 ---
 

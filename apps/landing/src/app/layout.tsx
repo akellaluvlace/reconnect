@@ -17,7 +17,8 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const rawGaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const GA_ID = rawGaId && /^G-[A-Z0-9]+$/.test(rawGaId) ? rawGaId : null;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://reconnect.io"),
@@ -86,7 +87,7 @@ export default function RootLayout({
                 priceCurrency: "EUR",
                 description: "Free trial — one playbook",
               },
-            }),
+            }).replace(/</g, "\\u003c"),
           }}
         />
       </head>

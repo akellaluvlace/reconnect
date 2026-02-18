@@ -7,12 +7,12 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Migration #7 (in progress)
-**Status:** Steps 1-5 complete. Landing page fully redesigned (teal theme). Migration #7 being written (Drive tables, recording metadata, GDPR).
-**Next task:** Migration #7 (in progress) → Step 6 + Step 7 (parallel start)
-**Blockers:** External services (Google Cloud, Azure, Anthropic, OpenAI, Resend) — client setting up this week. Not blocking migration or Step 7.
+**Step:** Step 6 COMPLETE — AI Intelligence Engine built
+**Status:** Steps 1-6 complete. 15 migrations (ai_research_cache pending deploy). 233 DB tests + 74 AI tests green. Full deep research pipeline: 6 schemas, 5 pipelines (deep research, market insights, JD gen, stage gen, feedback synthesis), 6 API routes, Tavily web search, Anthropic structured output via messages.parse()+zodOutputFormat(), 30-day org-scoped cache, context injection chain, model escalation (Sonnet→Opus), EU AI Act compliance.
+**Next task:** Step 7 (Playbook Creation) — all micro steps unblocked
+**Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) needed for live testing. Not blocking Step 7 UI work.
 
-**Corrected build order:** Migration #7 → [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
+**Build order:** 7 → 8 → 10.1-10.2 → 9 → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -79,7 +79,7 @@ Read files ONLY when the situation matches:
 1. Branch: `step{NN}-{micro}-{slug}` (e.g., `step03-2-rls-policies`)
 2. Stay within allowed paths for your micro step
 3. Implement minimal diff — don't over-engineer
-4. Verify: run DoD commands from the step file (lint, typecheck, tests)
+4. Verify: run Definition of Done commands from the step file (lint, typecheck, tests)
 5. Report: state what was done, what passed, any blockers
 6. If blocked: document exact error + what you tried + options
 7. **NEVER sign commits** with `Co-Authored-By` or any attribution line. Plain commit messages only.
@@ -101,10 +101,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-02-17 (a):** Landing page design overhaul. Gold→teal theme migration (FAQ, CTA, contact, footer, globals). Showcase: stats column with Phosphor icons + image carousel with smooth crossfade. CTA: dark teal bg with watermark SVG illustration. FAQ: centered layout, all-closed default, white bg. Contact: removed image, added phone/LinkedIn/Instagram placeholders. Problem: removed counter animations. Added AnimateOnScroll to hero, showcase, footer — smooth reveal on scroll everywhere. Team/FAQ visually separated.
-- **2026-02-16 (d):** Landing page content expansion. Added 5 new sections: stats bar, problem section (3 pain points), trust badges, FAQ accordion, CTA rewrite ("Join the founding 50"). Build clean.
-- **2026-02-16 (c):** Landing page design polish. Hero image swap, solution section redesigned, How It Works rewritten as 2x2 icon cards. All checks clean.
-- **2026-02-16 (b):** Step 4 Landing Page COMPLETE. Premium design (navy/gold/cream), 7 sections, scroll animations, SEO+JSON-LD+GA4, static export.
-- **2026-02-16 (a):** Deep architecture audit. Resolved 3 P0 blockers. Locked 3 tech decisions. Found 5 DB schema gaps + step ordering fix.
+- **2026-02-18 (f):** Step 6 complete. Full AI Intelligence Engine: config+errors+retry, Anthropic client (messages.parse+zodOutputFormat), Tavily search client, 6 Zod schemas, 5 prompt templates (EU AI Act compliant), 5 pipelines (deep research 6-step, market insights 2-phase, JD gen, stage gen, feedback synthesis), ai_research_cache migration, 6 API routes, 74 golden tests. Context injection chain, model escalation, 30-day org-scoped cache.
+- **2026-02-18 (e):** Phase 0 Round 2. 31 more fixes: try-catch on all async handlers, toast on sign-out, AuthListener preserves user on transient errors, middleware distinguishes auth failure from no-user, callback top-level try-catch, requireRole calls requireAuth (dedup), PUBLIC_PATHS module-level const, domain-types comment accuracy (SynthesisType no CHECK), step files 7-10 anti-patterns fixed (18 issues: missing await, error handling, UUID validation, typed clients).
+- **2026-02-18 (d):** Phase 0 Round 1. 46 issues fixed: typed Supabase clients, domain types, 14 silent failures patched, admin role guards, security headers, OTP validation, password policy, autocomplete, dead links, StaggeredText perf.
+- **2026-02-18 (c):** Comprehensive DB test suite (233 tests, 10 categories, all green). Found+fixed 3 bugs: auth.users permission in policies (use auth.email()), feedback cross-tenant leak, inline auth.users refs. Migrations 13-14 deployed.
+- **2026-02-18 (b):** Deep review + P0 security fixes. Migrations 7-12 deployed. Fixed: collaborator RLS, share link leak, FK cascade, transcript privacy, duplicate policies, FK indexes.
 
 > Keep max 5 entries. Remove oldest when adding new.

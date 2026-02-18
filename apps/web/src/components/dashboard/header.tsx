@@ -8,8 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useSignOut } from "@/lib/hooks/use-sign-out";
 import { useAuthStore } from "@/stores/auth-store";
 import Link from "next/link";
 
@@ -32,15 +31,9 @@ function getPageTitle(pathname: string) {
 
 export function Header() {
   const pathname = usePathname();
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const title = getPageTitle(pathname);
-
-  const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+  const handleSignOut = useSignOut();
 
   const initials = user?.email?.slice(0, 2).toUpperCase() ?? "??";
 

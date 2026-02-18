@@ -35,15 +35,20 @@ export function ForgotPasswordForm() {
   });
 
   const onSubmit = async (data: FormData) => {
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-      redirectTo: `${window.location.origin}/auth/callback?next=/settings/profile`,
-    });
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccess(true);
+    try {
+      setError(null);
+      const supabase = createClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/settings/profile`,
+      });
+      if (error) {
+        setError(error.message);
+      } else {
+        setSuccess(true);
+      }
+    } catch (err) {
+      console.error("[forgot-password] Unexpected error:", err);
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -81,6 +86,7 @@ export function ForgotPasswordForm() {
             <Input
               id="email"
               type="email"
+              autoComplete="email"
               placeholder="you@company.com"
               {...register("email")}
             />

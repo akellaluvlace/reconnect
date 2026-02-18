@@ -3,7 +3,7 @@
 import { Container } from "@/components/ui/container";
 import { AnimateOnScroll } from "@/components/animate-on-scroll";
 import { Button } from "@/components/ui/button";
-import { EnvelopeSimple, Phone, LinkedinLogo, InstagramLogo, PaperPlaneTilt } from "@phosphor-icons/react";
+import { EnvelopeSimple, LinkedinLogo, PaperPlaneTilt } from "@phosphor-icons/react";
 import { useState, type FormEvent } from "react";
 
 export function ContactSection() {
@@ -11,6 +11,7 @@ export function ContactSection() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // TODO: Wire to Resend API or Supabase edge function when backend is ready
     setSubmitted(true);
   }
 
@@ -55,46 +56,13 @@ export function ContactSection() {
 
                   <div className="flex items-center gap-4">
                     <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
-                      <Phone size={24} weight="duotone" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-400">Call us</p>
-                      <a
-                        href="tel:+353000000000"
-                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
-                      >
-                        +353 (0) 00 000 0000
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
                       <LinkedinLogo size={24} weight="duotone" />
                     </div>
                     <div>
                       <p className="text-sm text-slate-400">LinkedIn</p>
-                      <a
-                        href="#"
-                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
-                      >
-                        Rec+onnect
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-teal-900 text-teal-400">
-                      <InstagramLogo size={24} weight="duotone" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-400">Instagram</p>
-                      <a
-                        href="#"
-                        className="font-medium text-teal-900 hover:text-teal-600 transition-colors duration-200"
-                      >
-                        @reconnect.io
-                      </a>
+                      <span className="font-medium text-teal-900">
+                        Coming soon
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -112,10 +80,10 @@ export function ContactSection() {
                       <PaperPlaneTilt size={32} weight="duotone" />
                     </div>
                     <h3 className="font-display text-xl font-bold text-teal-900">
-                      Message sent
+                      Thanks for your interest
                     </h3>
                     <p className="mt-2 text-slate-500">
-                      We&apos;ll be in touch within 24 hours.
+                      We&apos;re launching soon. Email us directly at hello@reconnect.io and we&apos;ll be in touch within 24 hours.
                     </p>
                   </div>
                 ) : (
@@ -132,6 +100,7 @@ export function ContactSection() {
                         name="name"
                         type="text"
                         required
+                        autoComplete="name"
                         placeholder="Your name"
                         className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
                       />
@@ -148,6 +117,7 @@ export function ContactSection() {
                         name="email"
                         type="email"
                         required
+                        autoComplete="email"
                         placeholder="you@company.com"
                         className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
                       />
@@ -163,6 +133,7 @@ export function ContactSection() {
                         id="company"
                         name="company"
                         type="text"
+                        autoComplete="organization"
                         placeholder="Your company name"
                         className="w-full h-14 px-5 rounded-xl border border-cream-200 bg-cream-50 text-teal-900 placeholder:text-slate-400 transition-all duration-300 focus:border-teal-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
                       />

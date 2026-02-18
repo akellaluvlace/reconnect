@@ -33,19 +33,20 @@ const INTERVAL = 5000;
 const FADE_MS = 1800;
 
 function StaggeredText({ text, isVisible }: { text: string; isVisible: boolean }) {
+  const words = text.split(" ");
   return (
-    <span className="inline-flex flex-wrap" aria-label={text}>
-      {text.split("").map((char, i) => (
+    <span className="inline-flex flex-wrap gap-x-[0.3em]" aria-label={text}>
+      {words.map((word, i) => (
         <span
           key={`${text}-${i}`}
           className="inline-block transition-all duration-500 ease-out"
           style={{
-            transitionDelay: `${i * 20}ms`,
+            transitionDelay: `${i * 40}ms`,
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? "translateY(0)" : "translateY(10px)",
           }}
         >
-          {char === " " ? "\u00A0" : char}
+          {word}
         </span>
       ))}
     </span>

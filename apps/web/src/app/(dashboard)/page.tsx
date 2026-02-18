@@ -16,7 +16,7 @@ export default function DashboardPage() {
         title="Dashboard"
         description="Overview of your recruitment operations"
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.name}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">

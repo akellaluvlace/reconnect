@@ -198,12 +198,14 @@ export function HeroSection() {
                 <img
                   src="https://images.unsplash.com/photo-1557804506-669a67965ba0?w=400&h=300&fit=crop&q=80"
                   alt="Team meeting"
+                  loading="lazy"
                   className="w-full h-48 object-cover rounded-xl shadow-[0_2px_16px_rgba(4,47,46,0.07)]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=400&fit=crop&q=80"
                   alt="Strategy session"
+                  loading="lazy"
                   className="w-full h-56 object-cover rounded-xl shadow-[0_2px_16px_rgba(4,47,46,0.07)]"
                 />
               </div>
@@ -212,12 +214,14 @@ export function HeroSection() {
                 <img
                   src="https://images.unsplash.com/photo-1600880292089-90a7e086ee0c?w=400&h=400&fit=crop&q=80"
                   alt="Executive consulting"
+                  loading="lazy"
                   className="w-full h-56 object-cover rounded-xl shadow-[0_2px_16px_rgba(4,47,46,0.07)]"
                 />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="https://images.unsplash.com/photo-1553028826-f4804a6dba3b?w=400&h=300&fit=crop&q=80"
                   alt="Data analysis"
+                  loading="lazy"
                   className="w-full h-48 object-cover rounded-xl shadow-[0_2px_16px_rgba(4,47,46,0.07)]"
                 />
               </div>

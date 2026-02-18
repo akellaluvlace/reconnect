@@ -1,13 +1,23 @@
 import { create } from "zustand";
+import type { JobDescription, MarketInsights, FocusArea, SuggestedQuestion } from "@reconnect/database";
+
+interface GeneratedStage {
+  name: string;
+  type?: string;
+  duration_minutes?: number;
+  description?: string;
+  focus_areas: FocusArea[];
+  suggested_questions: SuggestedQuestion[];
+}
 
 interface PlaybookDraft {
   step: number;
   basicInfo: { title: string; department: string };
   roleDetails: { level: string; skills: string[]; industry: string };
   generatedContent: {
-    jobDescription?: unknown;
-    marketInsights?: unknown;
-    interviewStages?: unknown[];
+    jobDescription?: JobDescription;
+    marketInsights?: MarketInsights;
+    interviewStages?: GeneratedStage[];
   };
 }
 
