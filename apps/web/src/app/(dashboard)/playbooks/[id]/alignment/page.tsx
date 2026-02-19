@@ -1,10 +1,10 @@
-import { PageHeader } from "@/components/ui/page-header";
-
 export default function AlignmentPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Alignment" description="Team feedback alignment" />
-      <div className="text-muted-foreground">Alignment chapter — coming in Step 9</div>
+    <div className="rounded-lg border border-dashed p-8 text-center">
+      <h3 className="text-lg font-medium">Alignment</h3>
+      <p className="text-sm text-muted-foreground mt-1">
+        Team feedback alignment and calibration — coming in Step 9
+      </p>
     </div>
   );
 }

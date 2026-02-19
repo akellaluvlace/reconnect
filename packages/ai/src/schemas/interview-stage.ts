@@ -4,6 +4,7 @@ export const FocusAreaSchema = z.object({
   name: z.string(),
   description: z.string(),
   weight: z.number().int().min(1).max(4),
+  rationale: z.string().optional(),
 });
 
 export const SuggestedQuestionSchema = z.object({
@@ -27,6 +28,7 @@ export const InterviewStageSchema = z.object({
   description: z.string(),
   focus_areas: z.array(FocusAreaSchema).min(2).max(3),
   suggested_questions: z.array(SuggestedQuestionSchema).min(6).max(15),
+  rationale: z.string().optional(),
 });
 
 export const InterviewStagesSchema = z.object({

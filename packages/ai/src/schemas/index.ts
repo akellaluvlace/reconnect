@@ -27,6 +27,16 @@ export {
 } from "./feedback-synthesis";
 
 export {
+  HiringStrategySchema,
+  type HiringStrategyOutput,
+} from "./hiring-strategy";
+
+export {
+  CoverageAnalysisSchema,
+  type CoverageAnalysisOutput,
+} from "./coverage-analysis";
+
+export {
   SearchQueriesSchema,
   SourceScoreSchema,
   SourceScoringSchema,

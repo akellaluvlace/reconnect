@@ -43,6 +43,7 @@ export interface FocusArea {
   name: string;
   description: string;
   weight: 1 | 2 | 3 | 4;
+  rationale?: string;
 }
 
 export interface SuggestedQuestion {
@@ -123,6 +124,7 @@ export interface CandidateProfile {
   nice_to_have_skills?: string[];
   experience_range?: string;
   cultural_fit_indicators?: string[];
+  disclaimer: string;
 }
 
 export interface OrgSettings {
@@ -138,4 +140,51 @@ export interface PlaybookSettings {
   auto_generate_jd?: boolean;
   auto_generate_insights?: boolean;
   default_stage_count?: number;
+}
+
+export interface HiringStrategy {
+  market_classification: "employer_market" | "balanced" | "candidate_market";
+  market_classification_rationale: string;
+  salary_positioning: {
+    strategy: "lead" | "match" | "lag";
+    rationale: string;
+    recommended_range: { min: number; max: number; currency: string };
+  };
+  process_speed: {
+    recommendation: "fast_track" | "standard" | "thorough";
+    rationale: string;
+    max_stages: number;
+    target_days: number;
+  };
+  competitive_differentiators: string[];
+  skills_priority: {
+    must_have: string[];
+    nice_to_have: string[];
+    emerging_premium: string[];
+  };
+  key_risks: Array<{ risk: string; mitigation: string }>;
+  recommendations: string[];
+  disclaimer: string;
+}
+
+export interface CoverageAnalysis {
+  requirements_covered: Array<{
+    requirement: string;
+    covered_by_stage: string;
+    covered_by_focus_area: string;
+    coverage_strength: "strong" | "moderate" | "weak";
+  }>;
+  gaps: Array<{
+    requirement: string;
+    severity: "critical" | "important" | "minor";
+    suggestion: string;
+  }>;
+  redundancies: Array<{
+    focus_area: string;
+    appears_in_stages: string[];
+    recommendation: string;
+  }>;
+  recommendations: string[];
+  overall_coverage_score: number;
+  disclaimer: string;
 }

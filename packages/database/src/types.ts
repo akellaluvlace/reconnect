@@ -863,11 +863,16 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           department: string | null
+          hiring_strategy: Json | null
           id: string
+          industry: string | null
           job_description: Json | null
+          level: string | null
+          location: string | null
           market_insights: Json | null
           organization_id: string
           settings: Json | null
+          skills: Json | null
           status: string | null
           title: string
           updated_at: string | null
@@ -877,11 +882,16 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           department?: string | null
+          hiring_strategy?: Json | null
           id?: string
+          industry?: string | null
           job_description?: Json | null
+          level?: string | null
+          location?: string | null
           market_insights?: Json | null
           organization_id: string
           settings?: Json | null
+          skills?: Json | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -891,11 +901,16 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           department?: string | null
+          hiring_strategy?: Json | null
           id?: string
+          industry?: string | null
           job_description?: Json | null
+          level?: string | null
+          location?: string | null
           market_insights?: Json | null
           organization_id?: string
           settings?: Json | null
+          skills?: Json | null
           status?: string | null
           title?: string
           updated_at?: string | null

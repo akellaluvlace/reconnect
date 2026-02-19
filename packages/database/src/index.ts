@@ -74,4 +74,6 @@ export type {
   CandidateProfile,
   OrgSettings,
   PlaybookSettings,
+  HiringStrategy,
+  CoverageAnalysis,
 } from "./domain-types";

@@ -18,6 +18,16 @@ export {
 } from "./stage-generation";
 
 export {
+  STRATEGY_GENERATION_PROMPT,
+  type StrategyGenerationInput,
+} from "./strategy-generation";
+
+export {
+  COVERAGE_ANALYSIS_PROMPT,
+  type CoverageAnalysisInput,
+} from "./coverage-analysis";
+
+export {
   FEEDBACK_SYNTHESIS_PROMPT,
   TRANSCRIPT_TOKEN_LIMIT,
   estimateTokens,

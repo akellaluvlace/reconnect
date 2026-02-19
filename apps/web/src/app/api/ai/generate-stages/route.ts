@@ -15,6 +15,25 @@ const RequestSchema = z.object({
       seniority_signals: z.array(z.string()).optional(),
     })
     .optional(),
+  strategy_context: z
+    .object({
+      market_classification: z.string().max(50).optional(),
+      process_speed: z
+        .object({
+          recommendation: z.string().max(20),
+          max_stages: z.number().int().min(1).max(10),
+          target_days: z.number().int().min(1).max(120),
+        })
+        .optional(),
+      skills_priority: z
+        .object({
+          must_have: z.array(z.string().max(100)).max(10),
+          nice_to_have: z.array(z.string().max(100)).max(10),
+        })
+        .optional(),
+      competitive_differentiators: z.array(z.string().max(200)).max(5).optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

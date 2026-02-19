@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
 **Last Updated:** 2026-02-19
-**Current Macro Step:** Step 6 COMPLETE + QA REVIEWED — ready for Step 7
-**Active Micro Steps:** None (between steps)
+**Current Macro Step:** Step 8 COMPLETE + HARDENED
+**Active Micro Steps:** None — ready for next step
 
 ---
 
@@ -60,6 +60,25 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | Phase 0 Round 2: Step file audit | QA | master | COMPLETE (2026-02-18) — 18 anti-patterns fixed in steps 7-10 code examples |
 | Step 6: AI Intelligence Engine | AI Engineer | master | COMPLETE (2026-02-19) — 6 schemas, 5 pipelines, 6 API routes, 77 tests |
 | Step 6: Deep QA review | QA | master | COMPLETE (2026-02-19) — 7 agents, 90+ findings, 30+ fixed, migration #16 deployed |
+| Step 7: Playbook CRUD API | Backend | master | COMPLETE (2026-02-19) — GET/POST /api/playbooks, GET/PATCH/DELETE /api/playbooks/[id] |
+| Step 7: Playbook list page | UI Builder | master | COMPLETE (2026-02-19) — server component, PlaybookCard, StatusBadge, loading skeleton |
+| Step 7: Wizard Step 1 | UI Builder | master | COMPLETE (2026-02-19) — basic info form (title + department), WizardProgress |
+| Step 7: Wizard Step 2 | UI Builder | master | COMPLETE (2026-02-19) — role details (level, industry, skills tag input, location) |
+| Step 7: Wizard Step 3 | Frontend | master | COMPLETE (2026-02-19) — AI generation, parallel JD+insights calls, save, deep research trigger |
+| Step 7: Detail page shell | UI Builder | master | COMPLETE (2026-02-19) — layout with ChapterNav (4 tabs), chapter stubs updated |
+| Step 7: QA review | QA | master | COMPLETE (2026-02-19) — 3 agents, 26 findings, 22 fixed (security, validation, a11y) |
+| Step 8.0: Foundations | Backend | master | COMPLETE (2026-02-19) — migration #17, domain types, config, auto-save hook, dnd-kit |
+| Step 8.1: AI Schemas+Prompts | AI Engineer | master | COMPLETE (2026-02-19) — HiringStrategy+CoverageAnalysis schemas, strategy+coverage prompts, updated stage prompt |
+| Step 8.2: AI Pipelines | AI Engineer | master | COMPLETE (2026-02-19) — strategy+coverage pipelines, context builders, updated stage+JD pipelines |
+| Step 8.3: API Routes | Backend | master | COMPLETE (2026-02-19) — generate-strategy, analyze-coverage, stage CRUD (5 routes), playbook PATCH update |
+| Step 8.4: Discovery Page | UI Builder | master | COMPLETE (2026-02-19) — market intelligence panel, strategy panel, JD structured editor |
+| Step 8.5: Process Blueprint | UI Builder | master | COMPLETE (2026-02-19) — stage blueprint, stage cards, dnd-kit reorder, timeline |
+| Step 8.6: Process Management | UI Builder | master | COMPLETE (2026-02-19) — stage edit dialog, question bank, coverage analysis panel |
+| Step 8.7: Tests | QA | master | COMPLETE (2026-02-19) — 4 new test files, 52 new tests (129 total AI tests) |
+| Data coherence fix | Backend | master | COMPLETE (2026-02-19) — migration #18 (role fields), POST/PATCH routes, wizard save, typed page reads |
+| AI algorithm audit | Architect | master | COMPLETE (2026-02-19) — AI_INTELLIGENCE_ENGINE.md rewritten, 10 pipelines defined, 9 gaps mapped, step 9 files updated |
+| Coherence verification | QA | master | COMPLETE (2026-02-19) — 6-check audit all PASS, CandidateProfile disclaimer fix |
+| Step 8 QA + test expansion | QA | master | COMPLETE (2026-02-19) — 103 new tests (232 total), 3 agents, 48→22 findings, 16 fixed (6C+9H+1M) |
 
 ---
 
@@ -73,8 +92,8 @@ All agents can escalate to **Opus 4.6 (full effort)** for:
 | 4 | Landing Page | [step-04](../steps/step-04-landing-page.md) | 8 | COMPLETE |
 | 5 | Web App Shell + Core UI | [step-05](../steps/step-05-web-app-shell.md) | 6 | COMPLETE + REVIEWED |
 | 6 | AI Platform Setup | [step-06](../steps/step-06-ai-platform.md) | 7 | COMPLETE + QA REVIEWED |
-| 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | NOT STARTED |
-| 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 9 | NOT STARTED |
+| 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | COMPLETE + QA REVIEWED |
+| 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 8 | COMPLETE |
 | 9 | Chapters: Alignment + Debrief | [step-09](../steps/step-09-chapters-alignment-debrief.md) | 10 | NOT STARTED |
 | 10 | Integrations + Hardening + Beta | [step-10](../steps/step-10-integrations-delivery.md) | 8 | NOT STARTED |
 
@@ -121,19 +140,21 @@ Completed planning updates:
 
 ## Next Actions
 
-1. **NOW:** Step 7 (Playbook Creation) — all micro steps can start, 7.4 unblocked (Step 6 complete + QA reviewed).
-2. **Step 6 COMPLETE + QA:** AI Intelligence Engine built and reviewed — 6 schemas, 5 pipelines, 6 API routes, 77 tests green, 30+ QA fixes applied.
-3. **Client:** External API keys still needed for live testing (Anthropic, Tavily, OpenAI, Resend, Google Cloud).
-4. **Build order:** [6 + 7.1-7.3/7.5-7.6 parallel] → 7.4 (after 6) → 8 → 10.1-10.2 → 9 → 10.3-10.8
-5. **P1 remaining:** /share/[token] route stub (admin route guards DONE in Phase 0)
-6. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
+1. **NOW:** Step 9 (Chapters: Alignment + Debrief) or Step 10.1-10.2 (Drive integration)
+2. **AI Engine Audit COMPLETE:** Full algorithm spec in `docs/AI_INTELLIGENCE_ENGINE.md`. 10 pipelines defined (7 built, 3 remaining). 9 gaps identified and assigned to step files. All DB tables verified coherent.
+3. **Step 8 COMPLETE:** Discovery page (market intelligence + strategy + JD editor), Process page (stage blueprint + management + coverage analysis), 2 new AI pipelines, 7 new API routes, 129 AI tests green.
+4. **Client:** External API keys still needed for live testing (Anthropic, Tavily, OpenAI, Resend, Google Cloud).
+5. **Build order:** 10.1-10.2 → 9 → 10.3-10.8
+6. **P1 remaining:** /share/[token] route stub
+7. **Drive integration (10.1-10.2) moved BEFORE Step 9** — recording pipeline depends on Drive
+8. **Step 9 gaps pre-resolved:** candidateProfile added to AI_CONFIG + PROMPT_VERSIONS. Step 9.1/9.7/9.8/9.9 updated with precise pipeline specs. Domain types + DB columns all verified.
 
 ### Testing Coverage
 
 | Layer | Status | Tests | Tools |
 |-------|--------|-------|-------|
 | Database (SQL) | COMPLETE | 233/233 green | psql + custom framework |
-| AI package | COMPLETE | 77/77 green | Vitest |
+| AI package | COMPLETE | 129/129 green | Vitest |
 | E2E (browser) | PLANNED | 0 | Playwright MCP (installed) |
 | Unit tests | PLANNED | 0 | Vitest (installed in @reconnect/ai) |
 | Components | PLANNED | 0 | React Testing Library (not yet installed) |

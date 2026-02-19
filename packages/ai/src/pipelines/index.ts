@@ -21,6 +21,20 @@ export {
 } from "./stage-generation";
 
 export {
+  generateHiringStrategy,
+  buildStrategyContextForJD,
+  buildStrategyContextForStages,
+  type StrategyPipelineInput,
+  type StrategyPipelineResult,
+} from "./strategy-generation";
+
+export {
+  analyzeCoverage,
+  type CoveragePipelineInput,
+  type CoveragePipelineResult,
+} from "./coverage-analysis";
+
+export {
   synthesizeFeedback,
   type FeedbackSynthesisPipelineInput,
   type FeedbackSynthesisPipelineResult,

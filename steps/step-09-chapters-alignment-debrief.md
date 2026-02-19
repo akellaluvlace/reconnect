@@ -47,18 +47,42 @@ Ship collaboration + feedback loop + compliant synthesis.
 
 ## Micro Steps
 
-### 9.1 — Build Candidate Profile Builder
+### 9.1 — Build Candidate Profile Builder + AI Pipeline
 
-**Owner:** UI Builder
-**Supporting:** Frontend
+**Owner:** UI Builder + AI Engineer
+**Supporting:** Frontend, Backend
 **Status:** PENDING
 **Branch:** `step09-1-candidate-profile`
 
 **Allowed Paths:**
 - `apps/web/src/app/(dashboard)/playbooks/[id]/alignment/page.tsx`
 - `apps/web/src/components/alignment/**`
+- `packages/ai/src/schemas/candidate-profile.ts`
+- `packages/ai/src/prompts/candidate-profile.ts`
+- `packages/ai/src/pipelines/candidate-profile.ts`
+- `apps/web/src/app/api/ai/generate-candidate-profile/route.ts`
 
-**Tasks:**
+**AI Pipeline (Pipeline #8 from AI_INTELLIGENCE_ENGINE.md):**
+- [ ] Create `CandidateProfileSchema` in `packages/ai/src/schemas/candidate-profile.ts`:
+```typescript
+// Fields: ideal_background, must_have_skills[], nice_to_have_skills[],
+// experience_range, cultural_fit_indicators[], disclaimer
+// Must match CandidateProfile domain type in packages/database/src/domain-types.ts
+```
+- [ ] Create prompt in `packages/ai/src/prompts/candidate-profile.ts`:
+  - System: recruitment profile specialist
+  - User: receives JD requirements + strategy skills_priority + market key_skills
+  - Context injection: jd_context + strategy_context + market_context (all slim slices)
+- [ ] Create pipeline in `packages/ai/src/pipelines/candidate-profile.ts`:
+  - Model: Sonnet (`candidateProfile` endpoint — already in AI_CONFIG)
+  - Input: `{ role, level, industry, jd_requirements, strategy_skills_priority, market_key_skills }`
+  - Output: `CandidateProfile` shape
+- [ ] Create API route `POST /api/ai/generate-candidate-profile`:
+  - Auth: any authenticated user
+  - Zod validation on input with `.max()` on strings
+  - Returns `{ data, metadata: { model_used, prompt_version, generated_at } }`
+
+**UI Tasks:**
 - [ ] Create Alignment page layout (tabbed or sections)
 - [ ] Create CandidateProfileBuilder component:
   - Experience level selector (slider or dropdown)
@@ -66,14 +90,18 @@ Ship collaboration + feedback loop + compliant synthesis.
   - Industry multi-select (preferred, excluded)
   - Education requirements (optional)
   - Custom requirements field
-  - AI suggestions button
+  - **"AI Suggestions" button** — calls `/api/ai/generate-candidate-profile`, auto-fills form
+  - Users can edit after AI fills in
+  - Auto-save via `useAutoSave` hook
+- [ ] Save to `playbooks.candidate_profile` (JSONB) via `PATCH /api/playbooks/[id]`
 
 **DoD Commands:**
 ```bash
-cd apps/web && pnpm dev
+cd packages/ai && pnpm test
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
-**Output:** Candidate profile builder UI
+**Output:** Candidate profile builder UI + AI pipeline (Pipeline #8)
 
 ---
 
@@ -347,7 +375,7 @@ cd apps/web && pnpm dev
 
 ---
 
-### 9.7 — Implement Transcription Pipeline
+### 9.7 — Implement Transcription Pipeline (Pipeline #9)
 
 **Owner:** Backend
 **Supporting:** AI Engineer
@@ -356,85 +384,63 @@ cd apps/web && pnpm dev
 
 **Allowed Paths:**
 - `apps/web/src/app/api/transcription/route.ts`
-- `supabase/functions/transcribe-audio/**`
+- `apps/web/src/lib/openai/client.ts`
+- `apps/web/src/components/debrief/transcription-viewer.tsx`
 
-**Tasks:**
-- [ ] Create transcription API route:
-```typescript
-import OpenAI from 'openai';
-import { createClient } from '@/lib/supabase/server';
+**AI Pipeline (Pipeline #9 from AI_INTELLIGENCE_ENGINE.md):**
+- Model: OpenAI Whisper-1
+- Input: Audio file (webm from browser recording OR Google Drive URL)
+- Output: Transcript text + metadata (duration, language, segments)
+- Storage: `interview_transcripts` table (service_role only — NO RLS policies)
+- Privacy: Transcript NEVER exposed to client. Only service_role reads it. Only synthesis pipeline uses it.
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error("Missing OPENAI_API_KEY environment variable");
-}
-const openai = new OpenAI({ apiKey });
-
-export async function POST(req: NextRequest) {
-  const supabase = await createClient(); // ← MUST await
-
-  // Validate interview_id is a valid UUID
-  const { recording_url, interview_id } = await req.json();
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(interview_id)) {
-    return NextResponse.json({ error: 'Invalid interview ID' }, { status: 400 });
-  }
-
-  const audioResponse = await fetch(recording_url);
-  if (!audioResponse.ok) {
-    console.error("[transcription] Failed to fetch recording:", audioResponse.status);
-    return NextResponse.json({ error: 'Failed to fetch recording' }, { status: 500 });
-  }
-  const audioBlob = await audioResponse.blob();
-
-  const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' });
-
-  const transcription = await openai.audio.transcriptions.create({
-    file,
-    model: 'whisper-1',
-    language: 'en',
-    response_format: 'verbose_json',
-  });
-
-  // Store transcript in interview_transcripts table (NOT interviews.transcript — deprecated)
-  const { error } = await supabase
-    .from('interview_transcripts')
-    .upsert({
-      interview_id,
-      content: transcription.text,
-      metadata: {
-        duration_seconds: transcription.duration,
-        language: transcription.language,
-        segments: transcription.segments,
-      },
-    });
-
-  if (error) {
-    console.error("[transcription] Failed to store transcript:", error.message);
-    return NextResponse.json({ error: 'Failed to store transcript' }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
-}
+**Recording flow:**
+```
+Browser recording → Supabase Storage (temp)
+                         ↓ (Step 10.2 adds Drive upload here)
+                    Whisper API
+                         ↓
+                interview_transcripts table (service_role INSERT)
+                         ↓
+                interviews.recording_status = "completed"
 ```
 
-- [ ] Handle large files (chunking if needed)
-- [ ] Create TranscriptionViewer component
-- [ ] Add manual edit capability for transcript
-- [ ] Show transcription status (processing, complete, error)
+**Tasks:**
+- [ ] Create OpenAI client wrapper (`apps/web/src/lib/openai/client.ts`):
+  - Env var validation (`OPENAI_API_KEY`)
+  - Export `transcribeAudio(file: File)` function
+- [ ] Create transcription API route (`POST /api/transcription`):
+  - Auth: any authenticated user
+  - UUID validation on `interview_id`
+  - Fetch audio from `recording_url` (Supabase Storage or Drive URL)
+  - Call Whisper API with `response_format: 'verbose_json'`
+  - Use **service_role** Supabase client (NOT user client — `interview_transcripts` has no RLS policies)
+  - UPSERT to `interview_transcripts` table: `{ interview_id, transcript, metadata }`
+  - Update `interviews.recording_status` to `"completed"` (or `"failed"` on error)
+  - Return `{ success: true, duration_seconds }`
+- [ ] Handle large files (Whisper limit: 25MB; chunk if needed)
+- [ ] Create TranscriptionViewer component (admin/manager only — shows transcript text)
+- [ ] Show transcription status indicator on interview card
+
+**Service-role client note:** Create `apps/web/src/lib/supabase/service-role.ts`:
+```typescript
+import { createClient } from '@supabase/supabase-js';
+// Uses SUPABASE_SERVICE_ROLE_KEY — server-side only, NEVER import in client code
+```
 
 **DoD Commands:**
 ```bash
 pnpm lint && pnpm typecheck
-# Test with sample audio
+# Test with sample audio (requires OPENAI_API_KEY)
 ```
 
-**Output:** Transcription pipeline working
+**Output:** Transcription pipeline working (Pipeline #9)
 
 ---
 
-### 9.8 — Build Feedback Forms
+### 9.8 — Build Feedback Forms + CRUD API
 
-**Owner:** UI Builder
+**Owner:** UI Builder + Backend
 **Supporting:** Frontend
 **Status:** PENDING
 **Branch:** `step09-8-feedback-forms`
@@ -442,135 +448,170 @@ pnpm lint && pnpm typecheck
 **Allowed Paths:**
 - `apps/web/src/app/(dashboard)/playbooks/[id]/debrief/page.tsx`
 - `apps/web/src/components/debrief/feedback-form.tsx`
+- `apps/web/src/components/debrief/feedback-list.tsx`
+- `apps/web/src/app/api/feedback/route.ts`
+- `apps/web/src/app/api/feedback/[id]/route.ts`
 
-**Tasks:**
-- [ ] Create Debrief page layout:
-  - Candidate cards list
-  - Select candidate to view/add feedback
-  - Interview timeline
+**API Routes (G6 from AI_INTELLIGENCE_ENGINE.md):**
+- [ ] `POST /api/feedback` — Submit feedback for an interview:
+  - Auth: authenticated user (interviewer for this stage)
+  - Input Zod schema:
+    ```typescript
+    {
+      interview_id: z.string().uuid(),
+      ratings: z.array(z.object({
+        category: z.string().max(200),
+        score: z.number().int().min(1).max(4),
+        notes: z.string().max(1000).optional(),
+      })).min(1).max(20),
+      pros: z.array(z.string().max(500)).max(20),
+      cons: z.array(z.string().max(500)).max(20),
+      notes: z.string().max(5000).optional(),
+      focus_areas_confirmed: z.boolean().refine(val => val === true),
+    }
+    ```
+  - Sets `interviewer_id` from auth user (not from body — prevent spoofing)
+  - Returns created feedback row
+- [ ] `GET /api/feedback?interview_id=X` — List feedback for an interview:
+  - **Blind feedback rules (critical):**
+    - Interviewers: see only their OWN feedback (filter by `interviewer_id = auth.uid()`)
+    - Managers/Admins: see ALL feedback for the interview
+  - Verify RLS policies match these rules (G9 from AI_INTELLIGENCE_ENGINE.md)
 
-- [ ] Create FeedbackForm component:
-```typescript
-const feedbackSchema = z.object({
-  ratings: z.array(z.object({
-    category: z.string(),
-    score: z.number().min(1).max(4),
-    notes: z.string().optional(),
-  })),
-  overall_notes: z.string(),
-  pros: z.array(z.string()),
-  cons: z.array(z.string()),
-  focus_areas_confirmed: z.boolean().refine(val => val === true, {
-    message: 'You must confirm that focus areas were discussed',
-  }),
-});
+**DB Table (`feedback`):**
+```
+interview_id   UUID → interviews(id)
+interviewer_id UUID → users(id)
+ratings        JSONB  — Array<{ category, score 1-4, notes? }>
+pros           JSONB  — string[]
+cons           JSONB  — string[]
+notes          TEXT
+focus_areas_confirmed BOOLEAN (required true)
+submitted_at   TIMESTAMPTZ
 ```
 
-- [ ] Rating scales (1-4 numeric scale)
-- [ ] Structured sections
-- [ ] Pros/cons input (add multiple, stored as JSONB arrays)
-- [ ] Focus areas confirmation checkbox (required)
-- [ ] Submit confirmation
-- [ ] **NO recommendation/hire/no-hire field** (human decides, not the form)
-
-- [ ] Implement blind feedback rules:
-  - Interviewers can't see others' feedback until submitted
-  - Managers can see all immediately
+**UI Tasks:**
+- [ ] Create Debrief page layout:
+  - Candidate cards list
+  - Select candidate to view interviews + feedback
+  - Interview timeline (per stage)
+- [ ] Create FeedbackForm component:
+  - Rating scales (1-4 numeric scale with labels)
+  - Structured pros/cons input (add multiple, JSONB arrays)
+  - Overall notes textarea
+  - Focus areas confirmation checkbox (required)
+  - Submit confirmation dialog
+  - **NO recommendation/hire/no-hire field** (human decides, not the form)
+- [ ] Create FeedbackList component (blind-aware):
+  - Shows all feedback if manager/admin
+  - Shows only own feedback if interviewer
+  - "Waiting for N more feedback" indicator
+- [ ] "Generate AI Synthesis" button (visible to manager/admin only, after all feedback submitted)
 
 **DoD Commands:**
 ```bash
-cd apps/web && pnpm dev
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
-**Output:** Feedback forms complete
+**Output:** Feedback forms + CRUD API + blind access control
 
 ---
 
-### 9.9 — Implement AI Feedback Synthesis
+### 9.9 — Complete AI Feedback Synthesis (Pipeline #10)
 
 **Owner:** AI Engineer
-**Supporting:** Security
+**Supporting:** Security, Backend
 **Status:** PENDING
 **Branch:** `step09-9-ai-synthesis`
 
 **Allowed Paths:**
-- `apps/web/src/app/api/ai/synthesize-feedback/route.ts`
-- `packages/ai/src/prompts/feedback-synthesis.ts`
+- `apps/web/src/app/api/ai/synthesize-feedback/route.ts` (MODIFY — wire transcript + persist)
 - `apps/web/src/components/debrief/ai-synthesis-panel.tsx`
 
-**Tasks:**
-- [ ] Create synthesis prompt (**COMPLIANCE CRITICAL**):
+**Pipeline status:** Schema, prompt, and pipeline are ALREADY BUILT (`packages/ai/`). This step completes the integration:
+
+**What's already built:**
+- `FeedbackSynthesisSchema` — validated output with mandatory disclaimer
+- `FEEDBACK_SYNTHESIS_PROMPT` — EU AI Act compliant, text-only, no hire/no-hire
+- `synthesizeFeedback()` pipeline — Opus model, accepts transcript param
+- `estimateTokens()` + `truncateTranscript()` — 150K soft limit with 60/30 head/tail split
+- API route `/api/ai/synthesize-feedback` — exists but has 2 stubs
+
+**What needs to be completed:**
+
+1. **Wire transcript fetch (G2 from AI_INTELLIGENCE_ENGINE.md):**
 ```typescript
-export const FEEDBACK_SYNTHESIS_PROMPT = {
-  version: '1.0.0',
-  system: `You are analyzing text-based interview feedback.
-
-COMPLIANCE REQUIREMENTS (EU AI ACT - MANDATORY):
-- Analyze TEXT ONLY from interviewer feedback forms
-- DO NOT infer emotions, confidence, or truthfulness
-- DO NOT analyze voice, tone, or any audio signals
-- DO NOT make hiring decisions or recommendations - only highlight key points
-- Focus ONLY on what interviewers explicitly wrote
-- NO hire/no-hire recommendation — the human hiring manager decides
-
-OUTPUT MUST include this disclaimer:
-"This AI-generated summary is for informational purposes only. All hiring decisions must be made by humans."`,
-
-  user: (feedbacks: any[]) => `
-Analyze the following interviewer feedback and provide a synthesis:
-
-${feedbacks.map((f, i) => `
-Interviewer ${i + 1}:
-- Pros: ${f.pros.join(', ')}
-- Cons: ${f.cons.join(', ')}
-- Notes: ${f.overall_notes}
-- Focus areas confirmed: ${f.focus_areas_confirmed ? 'Yes' : 'No'}
-`).join('\n')}
-
-Return JSON:
-{
-  "summary": "Brief overview of feedback themes",
-  "consensus": {
-    "areas_of_agreement": ["string"],
-    "areas_of_disagreement": ["string"]
-  },
-  "key_strengths": ["string"],
-  "key_concerns": ["string"],
-  "highlights": [
-    {
-      "point": "string",
-      "source": "Interviewer N",
-      "sentiment": "positive | negative | neutral"
-    }
-  ],
-  "discussion_points": ["string"],
-  "disclaimer": "This AI-generated summary is for informational purposes only. All hiring decisions must be made by humans."
+// In synthesize-feedback/route.ts, replace the stub:
+if (parsed.data.interview_id) {
+  // Use service_role client to read from interview_transcripts
+  // (table has RLS enabled but NO policies — only service_role can read)
+  const serviceClient = createServiceRoleClient();
+  const { data: transcriptRow, error: txError } = await serviceClient
+    .from('interview_transcripts')
+    .select('transcript')
+    .eq('interview_id', parsed.data.interview_id)
+    .single();
+  if (txError && txError.code !== 'PGRST116') {
+    console.error("[synthesis] Transcript fetch failed:", txError.message);
+  }
+  transcript = transcriptRow?.transcript ?? undefined;
 }
-`,
-};
 ```
 
+2. **Persist synthesis to DB (G3 from AI_INTELLIGENCE_ENGINE.md):**
+```typescript
+// After successful synthesis, INSERT to ai_synthesis table:
+if (parsed.data.candidate_id) {
+  const { error: insertError } = await supabase
+    .from('ai_synthesis')
+    .insert({
+      candidate_id: parsed.data.candidate_id,
+      synthesis_type: 'initial',  // or 'updated' if re-running
+      content: result.data as Json,
+      model_used: result.metadata.model_used,
+      prompt_version: result.metadata.prompt_version,
+    });
+  if (insertError) {
+    console.error("[synthesis] Failed to persist:", insertError.message);
+    // Don't fail the request — synthesis was successful, just persistence failed
+  }
+}
+```
+
+3. **Add `candidate_id` to request schema** (needed for DB persistence):
+```typescript
+const RequestSchema = z.object({
+  // ...existing fields...
+  candidate_id: z.string().uuid().optional(),  // ADD: needed for ai_synthesis INSERT
+});
+```
+
+**UI Tasks:**
 - [ ] Create AISynthesisPanel component:
   - Display summary
-  - Show consensus areas
-  - Highlight divergent opinions
-  - Show key highlights and points (NO recommendation breakdown)
-  - **DISPLAY DISCLAIMER PROMINENTLY**
-  - **NO hire/no-hire recommendation** — humans decide
+  - Show consensus areas (agreement + disagreement)
+  - Highlight key strengths and concerns (NO recommendation)
+  - Show rating overview (average score, distribution chart)
+  - Show discussion points
+  - **DISPLAY DISCLAIMER PROMINENTLY** (use `<AiDisclaimer />` component)
+  - "Regenerate" button (re-runs synthesis with latest feedback)
+  - Transcript indicator: "Includes transcript analysis" badge when transcript was used
 
 **Compliance Checklist:**
-- [ ] Text-only analysis confirmed
+- [ ] Text-only analysis confirmed (already in prompt)
 - [ ] No emotion/voice references in code
 - [ ] No hire/no-hire recommendation generated
-- [ ] Disclaimer is mandatory in schema
+- [ ] Disclaimer is mandatory in schema (already enforced by Zod)
 - [ ] Disclaimer displayed in UI
+- [ ] Transcript NEVER exposed to UI (only synthesis result)
 
 **DoD Commands:**
 ```bash
-pnpm test -- feedback-synthesis
+cd packages/ai && pnpm test
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
-**Output:** AI synthesis working and compliant
+**Output:** AI synthesis fully wired — transcript fetch + DB persistence + UI panel
 
 ---
 

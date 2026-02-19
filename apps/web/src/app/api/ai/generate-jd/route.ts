@@ -24,6 +24,25 @@ const RequestSchema = z.object({
       competitors: z.array(z.string()).optional(),
     })
     .optional(),
+  strategy_context: z
+    .object({
+      salary_positioning: z
+        .object({
+          strategy: z.string().max(20),
+          recommended_range: z
+            .object({ min: z.number(), max: z.number(), currency: z.string() })
+            .optional(),
+        })
+        .optional(),
+      competitive_differentiators: z.array(z.string().max(200)).max(5).optional(),
+      skills_priority: z
+        .object({
+          must_have: z.array(z.string().max(100)).max(10),
+          nice_to_have: z.array(z.string().max(100)).max(10),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export async function POST(req: NextRequest) {

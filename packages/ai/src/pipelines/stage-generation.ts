@@ -20,6 +20,7 @@ export interface StagePipelineInput {
   industry: string;
   stage_count?: number;
   jd_context?: StageGenerationInput["jd_context"];
+  strategy_context?: StageGenerationInput["strategy_context"];
 }
 
 export interface StagePipelineResult {

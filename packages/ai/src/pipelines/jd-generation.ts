@@ -15,6 +15,7 @@ export interface JDPipelineInput {
   style: "formal" | "creative" | "concise";
   currency?: string;
   market_context?: JDGenerationInput["market_context"];
+  strategy_context?: JDGenerationInput["strategy_context"];
 }
 
 export interface JDPipelineResult {

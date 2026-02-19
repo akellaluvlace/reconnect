@@ -1,10 +1,18 @@
-import { PageHeader } from "@/components/ui/page-header";
+import { redirect, notFound } from "next/navigation";
 
-export default function PlaybookDetailPage() {
-  return (
-    <div className="space-y-6">
-      <PageHeader title="Playbook" description="Playbook overview and stages" />
-      <div className="text-muted-foreground">Playbook detail — coming in Step 7</div>
-    </div>
-  );
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default async function PlaybookDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  if (!UUID_REGEX.test(id)) {
+    notFound();
+  }
+
+  redirect(`/playbooks/${id}/discovery`);
 }

@@ -13,7 +13,7 @@ interface GeneratedStage {
 interface PlaybookDraft {
   step: number;
   basicInfo: { title: string; department: string };
-  roleDetails: { level: string; skills: string[]; industry: string };
+  roleDetails: { level: string; skills: string[]; industry: string; location: string };
   generatedContent: {
     jobDescription?: JobDescription;
     marketInsights?: MarketInsights;
@@ -32,15 +32,17 @@ interface PlaybookStore {
   resetDraft: () => void;
 }
 
-const initialDraft: PlaybookDraft = {
-  step: 1,
-  basicInfo: { title: "", department: "" },
-  roleDetails: { level: "", skills: [], industry: "" },
-  generatedContent: {},
-};
+function createInitialDraft(): PlaybookDraft {
+  return {
+    step: 1,
+    basicInfo: { title: "", department: "" },
+    roleDetails: { level: "", skills: [], industry: "", location: "" },
+    generatedContent: {},
+  };
+}
 
 export const usePlaybookStore = create<PlaybookStore>((set) => ({
-  draft: initialDraft,
+  draft: createInitialDraft(),
   setStep: (step) => set((state) => ({ draft: { ...state.draft, step } })),
   updateBasicInfo: (info) =>
     set((state) => ({
@@ -63,5 +65,5 @@ export const usePlaybookStore = create<PlaybookStore>((set) => ({
         generatedContent: { ...state.draft.generatedContent, ...content },
       },
     })),
-  resetDraft: () => set({ draft: initialDraft }),
+  resetDraft: () => set({ draft: createInitialDraft() }),
 }));

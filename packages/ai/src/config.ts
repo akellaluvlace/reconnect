@@ -44,6 +44,21 @@ export const AI_CONFIG = {
     temperature: 0.1,
     maxTokens: 2048,
   },
+  strategyGeneration: {
+    model: "claude-sonnet-4-5-20250929" as const,
+    temperature: 0.3,
+    maxTokens: 2048,
+  },
+  coverageAnalysis: {
+    model: "claude-sonnet-4-5-20250929" as const,
+    temperature: 0.2,
+    maxTokens: 1024,
+  },
+  candidateProfile: {
+    model: "claude-sonnet-4-5-20250929" as const,
+    temperature: 0.3,
+    maxTokens: 1024,
+  },
 } as const;
 
 export type AIEndpoint = keyof typeof AI_CONFIG;
@@ -69,5 +84,9 @@ export const PROMPT_VERSIONS = {
   sourceExtraction: "1.0.0",
   jdGeneration: "1.0.0",
   stageGeneration: "1.0.0",
+  questionGeneration: "1.0.0",
   feedbackSynthesis: "1.0.0",
+  strategyGeneration: "1.0.0",
+  coverageAnalysis: "1.0.0",
+  candidateProfile: "1.0.0",
 } as const;
