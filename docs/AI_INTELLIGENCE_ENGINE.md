@@ -318,17 +318,21 @@ Candidate Profile ←── JD + Strategy     Whisper Transcription
 - Input: Audio file (webm from browser recording OR from Google Drive URL)
 - Output: Transcript text + metadata (duration, language, segments)
 
-**Flow:**
+**Flow (updated 2026-02-20 — shared Rec+onnect Google account):**
 ```
-Browser recording → Supabase Storage (temp) → Google Drive (permanent)
-                                                    ↓
-                                              Whisper API
-                                                    ↓
-                                          interview_transcripts table
-                                            (service_role only)
-                                                    ↓
-                                          Feedback Synthesis pipeline
+Google Meet auto-record → Rec+onnect's Drive (auto-saved by Meet)
+        ↓
+Meet API: conferenceRecords.recordings.list() → driveDestination.fileId
+        ↓
+Drive API: files.get(fileId) → download audio
+        ↓
+Whisper API (audio → text)
+        ↓
+interview_transcripts table (service_role only)
+        ↓
+Feedback Synthesis pipeline
 ```
+See `docs/INTERVIEW_RECORDING_FLOW.md` for full recording architecture.
 
 **Storage:** `interview_transcripts` table:
 ```sql
@@ -522,7 +526,8 @@ generated_at   TIMESTAMPTZ
 | `candidates` | Candidate records (manual) |
 | `collaborators` | Invite/access management |
 | `share_links` | Public URL tokens |
-| `org_drive_connections` | Google Drive OAuth tokens |
+| `platform_google_config` | Shared Rec+onnect Google account tokens (service_role only) |
+| `org_drive_connections` | DEPRECATED — replaced by `platform_google_config` |
 | `cms_*` tables | Admin CMS content |
 | `audit_log` | Event tracking |
 
@@ -748,7 +753,7 @@ apps/web/src/app/api/ai/
 └── synthesize-feedback/route.ts # POST: feedback synthesis (transcript stub)
 
 packages/database/src/
-├── types.ts                     # Auto-generated from Supabase (18 migrations)
+├── types.ts                     # Auto-generated from Supabase (21 migrations)
 ├── domain-types.ts              # Manual type overlays (HiringStrategy, CoverageAnalysis, etc.)
 └── index.ts                     # Barrel exports
 ```

@@ -703,9 +703,9 @@ export type Database = {
           completed_at: string | null
           created_at: string | null
           drive_file_id: string | null
-          drive_folder_id: string | null
           id: string
           interviewer_id: string | null
+          meet_conference_id: string | null
           meet_link: string | null
           recording_consent_at: string | null
           recording_status: string | null
@@ -721,9 +721,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           drive_file_id?: string | null
-          drive_folder_id?: string | null
           id?: string
           interviewer_id?: string | null
+          meet_conference_id?: string | null
           meet_link?: string | null
           recording_consent_at?: string | null
           recording_status?: string | null
@@ -739,9 +739,9 @@ export type Database = {
           completed_at?: string | null
           created_at?: string | null
           drive_file_id?: string | null
-          drive_folder_id?: string | null
           id?: string
           interviewer_id?: string | null
+          meet_conference_id?: string | null
           meet_link?: string | null
           recording_consent_at?: string | null
           recording_status?: string | null
@@ -830,6 +830,7 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string | null
+          drive_folder_id: string | null
           id: string
           logo_url: string | null
           name: string
@@ -839,6 +840,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          drive_folder_id?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -848,12 +850,52 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          drive_folder_id?: string | null
           id?: string
           logo_url?: string | null
           name?: string
           settings?: Json | null
           slug?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      platform_google_config: {
+        Row: {
+          access_token: string
+          auto_record_enabled: boolean | null
+          created_at: string | null
+          google_email: string
+          id: string
+          refresh_token: string
+          scopes: string[] | null
+          token_expiry: string
+          updated_at: string | null
+          workspace_domain: string | null
+        }
+        Insert: {
+          access_token: string
+          auto_record_enabled?: boolean | null
+          created_at?: string | null
+          google_email: string
+          id?: string
+          refresh_token: string
+          scopes?: string[] | null
+          token_expiry: string
+          updated_at?: string | null
+          workspace_domain?: string | null
+        }
+        Update: {
+          access_token?: string
+          auto_record_enabled?: boolean | null
+          created_at?: string | null
+          google_email?: string
+          id?: string
+          refresh_token?: string
+          scopes?: string[] | null
+          token_expiry?: string
+          updated_at?: string | null
+          workspace_domain?: string | null
         }
         Relationships: []
       }

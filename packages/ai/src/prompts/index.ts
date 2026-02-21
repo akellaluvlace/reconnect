@@ -34,3 +34,8 @@ export {
   truncateTranscript,
   type FeedbackSynthesisInput,
 } from "./feedback-synthesis";
+
+export {
+  CANDIDATE_PROFILE_PROMPT,
+  type CandidateProfileInput,
+} from "./candidate-profile";

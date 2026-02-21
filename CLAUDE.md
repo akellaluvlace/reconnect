@@ -7,12 +7,12 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 8 COMPLETE + HARDENED — Chapters: Discovery + Process
-**Status:** Steps 1-8 complete + hardened. 18 migrations deployed. 233 DB tests + 232 AI tests + 82 API route tests green. 7 E2E smoke tests ready (Playwright). JSONB validation: 10 unsafe `as` casts replaced with Zod-validated `parseJsonb()`. Full AI algorithm audit done. QA review complete.
-**Next task:** Step 10.1-10.2 (Drive integration) or Step 9 (Alignment + Debrief)
-**Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) needed for live testing.
+**Step:** Step 9 COMPLETE + HARDENED + MUTATION TESTED — Chapters: Alignment + Debrief
+**Status:** Steps 1-9 complete + hardened. Zod v4.3.6 migrated. 21 migrations deployed. 233 DB tests + 251 AI tests + 476 web tests green. 7 E2E smoke tests pass. Mutation testing: 15 mutations, 100% kill rate. Typecheck clean. Google OAuth + Microsoft OAuth both verified working (axil.ie domain).
+**Next task:** Step 10.1-10.2 (Platform Google setup + recording pipeline). UI/UX polish pass needed on playbooks.
+**Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) + Google Workspace account setup needed for live testing.
 
-**Build order:** 10.1-10.2 → 9 → 10.3-10.8
+**Build order:** 10.1-10.2 → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -38,7 +38,7 @@ These are non-negotiable client decisions. Do not ask about them — they're set
 - **Email-only notifications** — no in-app, use Resend
 - **Auth:** Email+password + Google OAuth + Microsoft OAuth — NO LinkedIn
 - **No PDF/CSV export** — everything stays in system
-- **Google Drive = core storage backbone** — org-level (1 account per org, admin connects once). ALL interview recordings stored on Drive. AI pipeline (Whisper → Claude) pulls recordings from Drive for transcription + analysis. Users set up Meet links through this integration. This is NOT an export feature — it IS the recording infrastructure.
+- **Google Drive + Meet = core recording infrastructure** — **shared Rec+onnect Google Workspace account** (platform-level, NOT per-org). App creates Meet events with interviewer as co-host → auto-record on join → recording saved to Rec+onnect's Drive → Meet API retrieves exact file ID → Whisper transcribes → Claude synthesizes. Per-org folder isolation in shared Drive. See `docs/INTERVIEW_RECORDING_FLOW.md`.
 - **Share links: token-only URL** — no password protection, secure random token + rate limiting
 - **Share link data scope: minimal** — collaborator sees: candidate first name + role, their stage, focus areas + questions, their feedback form. NO access to other feedback, salary, CV, AI synthesis, scores, or full playbook
 - **Magic link auth: Supabase Auth OTP** — clicking magic link creates temporary Supabase auth session. Existing RLS policies work unchanged via `auth.uid()`.
@@ -139,6 +139,44 @@ Before implementing a review fix, check:
 
 ---
 
+## Pre-Beta Checklist (Gate Before 10.6)
+
+Everything below MUST pass before any beta tester gets access. Not optional.
+
+### Infrastructure
+- [ ] All migrations deployed to production (currently 22, including FK cascade fix)
+- [ ] Env vars set in Vercel (Supabase, Anthropic, Tavily, OpenAI, Resend, Google)
+- [ ] Rate limiting on AI endpoints (not implemented yet — add in 10.3 or 10.4)
+- [ ] Error monitoring (Sentry or equivalent) configured
+
+### Data Integrity
+- [ ] RLS verified against real DB: admin sees all, manager sees org, interviewer sees assigned
+- [ ] Blind feedback verified: interviewer cannot see others' feedback via API or UI
+- [ ] Share link data scope verified: no salary, CV, AI synthesis, or full playbook data leaks
+- [ ] Transcript privacy verified: no API route returns raw transcript to client
+- [ ] FK cascades work: deleting a stage doesn't crash interviews or candidates
+
+### UI/UX
+- [ ] Every page click-tested: Landing → Login → Register → Playbooks list → Wizard → Discovery → Process → Alignment → Debrief
+- [ ] Empty states: new org (no playbooks), empty playbook (no stages), empty stage (no interviews)
+- [ ] Error states: network failure during AI generation, invalid form submission, expired session
+- [ ] Cross-browser: Chrome + Firefox + Edge (desktop, 1024px min)
+- [ ] AI disclaimer visible on every AI-generated output
+
+### Compliance
+- [ ] EU AI Act: text-only analysis, no emotion/voice inference, human review disclaimer
+- [ ] Recording consent flow: candidate can decline, interview proceeds without recording
+- [ ] No hire/no-hire recommendation anywhere in UI or AI output
+- [ ] Data retention plan communicated to client (1-year auto-reachout is spec'd but not built — confirm deferral)
+
+### Known Gaps (Accept or Fix Before Beta)
+- **Data retention cron:** Not implemented. Needs client decision: build now or defer.
+- **Audit logging:** No admin action logging. Low risk for beta, needed for production.
+- **Rate limiting:** No AI endpoint rate limiting. Could allow credit burn during beta if abused.
+- **16 lint errors:** All `no-explicit-any` in test files. Zero production impact.
+
+---
+
 ## Session End Protocol
 
 Before ending a session, ALWAYS do these:
@@ -152,10 +190,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-02-19 (i):** Step 8 hardening. parseJsonb utility (10 unsafe JSONB casts → Zod-validated). 82 API route tests (12 files, vitest). 7 E2E smoke tests (Playwright). Typecheck clean. 232 AI + 82 web tests green.
-- **2026-02-19 (h):** Post-audit QA. 3 agents (silent-failure-hunter, type-design-analyzer, CodeRabbit), 48 raw → 22 unique findings. Fixed all 6 CRITICAL (DELETE silent success, isSaving non-reactive, dead AbortController, unchecked order_index, strategy_context stripped from generate-jd+generate-stages). Fixed 9 HIGH (polling max count, division-by-zero guard, array bounds on bulk create+reorder, error.message leak, 207 handling, partial failure reporting, JD auto-save check). Fixed 1 MEDIUM (Regenerate All deletes old stages first). 103 new tests added (7 files). 232/232 AI tests green.
-- **2026-02-19 (g):** AI algorithm audit + coherence verification. AI_INTELLIGENCE_ENGINE.md rewritten (10 pipelines, 11 DB columns, 9 gaps mapped). CandidateProfile disclaimer fix. Step 9 files rewritten (9.1, 9.7, 9.8, 9.9). 6-check coherence audit: all layers aligned.
-- **2026-02-19 (f):** Data coherence fix. Migration #18 (level, industry, skills, location on playbooks). Fixed POST/PATCH routes, wizard Step 3 persists role details. 129 AI tests green.
-- **2026-02-19 (e):** Step 8 complete. Discovery + Process: migration #17, 2 domain types, 2 AI schemas + 2 prompts, 2 new pipelines, 7 new API routes, Discovery page, Process page (dnd-kit), auto-save hook.
+- **2026-02-21 (a):** Google OAuth + Microsoft OAuth verified working. Fixed auth callback to surface real provider errors. Azure required Token Configuration email claim + ID tokens enabled. Domain: axil.ie.
+- **2026-02-20 (e):** Zod v4.3.6 migration. Upgraded from v3.25.76 (stale "v3 only" constraint was false positive — `@hookform/resolvers@5.2.2` supports v4). Fixed `z.record()` (9 occurrences), `z.literal()` errorMap→message (2), RFC 4122 UUID validation (~20 test UUIDs). Anthropic SDK Zod v4 compat resolved. 476 web + 251 AI tests green. Typecheck clean.
+- **2026-02-20 (d):** Mutation testing + E2E. 15 mutations, 100% kill rate (5 gaps patched). 11 mutation-killer tests. E2E: 7/7 smoke pass (port 3001).
+- **2026-02-20 (c):** Step 9 deep hardening. Fixed 8 CRITICAL + 9 HIGH bugs. Contract tests (118) + hardening tests (199). 465 web + 251 AI tests green.
+- **2026-02-20 (b):** Step 9 COMPLETE. Candidate profile AI pipeline, 7 API routes, 15 UI components, email skeleton, consent/share pages. 251 AI + 147 web tests green.
 
 > Keep max 5 entries. Remove oldest when adding new.

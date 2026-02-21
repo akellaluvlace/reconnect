@@ -1472,13 +1472,15 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_REDIRECT_URI
 );
 
-// Org-level auth: admin connects once for the whole organization
+// Platform-level auth: shared Rec+onnect account (NOT per-org)
+// See docs/INTERVIEW_RECORDING_FLOW.md for full architecture
 export function getAuthUrl() {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: [
-      'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/calendar.events', // Meet link creation
+      'https://www.googleapis.com/auth/drive.meet.readonly', // Meet recording download
+      'https://www.googleapis.com/auth/calendar.events',      // Meet link creation
+      'https://www.googleapis.com/auth/meetings.space.readonly', // Conference record lookup
     ],
     prompt: 'consent',
   });

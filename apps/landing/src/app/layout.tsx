@@ -22,7 +22,7 @@ const GA_ID = rawGaId && /^G-[A-Z0-9]+$/.test(rawGaId) ? rawGaId : null;
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://reconnect.io"),
-  title: "Rec+onnect — Hire with clarity. Not chaos.",
+  title: "Axil — Hire with clarity. Not chaos.",
   description:
     "AI-powered strategic recruitment platform for the Irish market. Create comprehensive hiring playbooks with market insights, structured interviews, and team coordination.",
   keywords: [
@@ -35,20 +35,20 @@ export const metadata: Metadata = {
     "hiring playbook",
     "recruitment platform",
   ],
-  authors: [{ name: "Rec+onnect" }],
+  authors: [{ name: "Axil" }],
   openGraph: {
-    title: "Rec+onnect — Hire with clarity. Not chaos.",
+    title: "Axil — Hire with clarity. Not chaos.",
     description:
       "AI-powered strategic recruitment platform. Create hiring playbooks with market insights, interview planning, and team coordination.",
     url: "https://reconnect.io",
-    siteName: "Rec+onnect",
+    siteName: "Axil",
     images: [],
     locale: "en_IE",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rec+onnect — Hire with clarity. Not chaos.",
+    title: "Axil — Hire with clarity. Not chaos.",
     description:
       "AI-powered strategic recruitment platform for the Irish market.",
     images: [],
@@ -75,7 +75,7 @@ export default function RootLayout({
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              name: "Rec+onnect",
+              name: "Axil",
               applicationCategory: "BusinessApplication",
               description:
                 "AI-powered strategic recruitment platform for the Irish market",

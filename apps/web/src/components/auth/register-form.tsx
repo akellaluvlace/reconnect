@@ -82,7 +82,7 @@ export function RegisterForm() {
     <Card>
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create an account</CardTitle>
-        <CardDescription>Get started with Rec+onnect</CardDescription>
+        <CardDescription>Get started with Axil</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

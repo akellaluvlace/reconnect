@@ -1,6 +1,6 @@
 # Step 9 — Chapters: Alignment + Debrief
 
-**Status:** NOT STARTED
+**Status:** COMPLETE + HARDENED + MUTATION TESTED
 **Week:** 5-6
 **Default Owners:** Frontend + UI Builder + Backend + AI Engineer + QA + Security
 
@@ -21,7 +21,7 @@ Ship collaboration + feedback loop + compliant synthesis.
 - Share links + public read-only page (/share/[token])
 
 **Debrief:**
-- Recording (MediaRecorder) + upload
+- Recording (Google Meet auto-record) + manual upload fallback
 - Whisper transcription pipeline
 - Feedback forms + blind feedback rules
 - AI synthesis (text-only, disclaimer, divergence highlights)
@@ -230,7 +230,12 @@ export async function sendCollaboratorInvite({
 }
 ```
 
-- [ ] Create email templates (invite, reminder)
+- [ ] Create email templates (invite, reminder, **recording consent**)
+- [ ] Recording consent email: sent to candidate with consent link (`/consent/[token]`)
+  - Public page, no auth required
+  - Candidate confirms → sets `interviews.recording_consent_at`
+  - If declined → interview proceeds without recording, interviewer notified
+  - See `docs/INTERVIEW_RECORDING_FLOW.md` → Consent Gate Flow
 - [ ] Handle magic link acceptance flow
 
 **DoD Commands:**
@@ -286,92 +291,60 @@ cd apps/web && pnpm dev
 
 ---
 
-### 9.6 — Build Audio Recording Component
+### 9.6 — Build Interview Management + Recording Status UI
+
+> **Recording is handled by Google Meet auto-record** (Step 10.1-10.2).
+> This step builds the UI for managing interviews and tracking recording status.
+> See `docs/INTERVIEW_RECORDING_FLOW.md` for full recording architecture.
 
 **Owner:** Frontend
-**Supporting:** UI Builder
+**Supporting:** UI Builder, Backend
 **Status:** PENDING
-**Branch:** `step09-6-audio-recording`
+**Branch:** `step09-6-interview-management`
 
 **Allowed Paths:**
-- `apps/web/src/components/debrief/audio-recorder.tsx`
-- `apps/web/src/hooks/use-audio-recorder.ts`
+- `apps/web/src/components/debrief/interview-list.tsx`
+- `apps/web/src/components/debrief/interview-card.tsx`
+- `apps/web/src/components/debrief/recording-status.tsx`
+- `apps/web/src/components/debrief/manual-upload.tsx`
 
 **Tasks:**
-- [ ] Create useAudioRecorder hook:
-```typescript
-'use client';
+- [ ] Create InterviewList component (Debrief page):
+  - List interviews per candidate, grouped by stage
+  - Show: interviewer, scheduled date, status, recording status
+  - "Schedule Interview" button → opens ScheduleDialog (built in 10.2)
 
-import { useState, useRef, useCallback } from 'react';
+- [ ] Create InterviewCard component:
+  - Interview details (stage, interviewer, date/time)
+  - Meet link (click to join)
+  - **Consent status badge**: pending → consented → declined (from `recording_consent_at`)
+  - Recording status badge: pending → uploaded → transcribing → completed → failed
+  - If consent declined: show "No recording — feedback only" indicator
+  - "Check Recording" button (manual poll trigger for Meet API)
+  - "Submit Feedback" button (links to feedback form)
 
-export function useAudioRecorder() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [duration, setDuration] = useState(0);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+- [ ] Create RecordingStatus component:
+  - Visual status indicator (icon + label)
+  - Progress: waiting for recording → processing → transcribed → ready
+  - Error state with retry option
 
-  const startRecording = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder.current = new MediaRecorder(stream, {
-      mimeType: 'audio/webm',
-    });
-    const chunks: Blob[] = [];
-
-    mediaRecorder.current.ondataavailable = (e) => chunks.push(e.data);
-    mediaRecorder.current.onstop = () => {
-      setAudioBlob(new Blob(chunks, { type: 'audio/webm' }));
-      stream.getTracks().forEach((track) => track.stop());
-    };
-
-    mediaRecorder.current.start();
-    setIsRecording(true);
-
-    // Timer
-    timerRef.current = setInterval(() => {
-      setDuration((d) => d + 1);
-    }, 1000);
-  }, []);
-
-  const stopRecording = useCallback(() => {
-    mediaRecorder.current?.stop();
-    setIsRecording(false);
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
-  }, []);
-
-  return {
-    isRecording,
-    audioBlob,
-    duration,
-    startRecording,
-    stopRecording,
-  };
-}
-```
-
-- [ ] Create AudioRecorder component:
-  - **COMPLIANCE: Candidate informed notice before recording**
-  - Consent checkbox/button
-  - Start/stop controls
-  - Recording timer
-  - Audio level visualization (optional)
-  - Upload button
-  - Alternative: Upload external recording
+- [ ] Create ManualUpload component (fallback):
+  - File upload input (accepts audio/video: mp4, webm, m4a)
+  - Upload to **Supabase Storage** (MVP — no Drive write scope)
+  - Progress indicator
+  - **COMPLIANCE: Recording consent notice before upload**
 
 **Compliance Checklist:**
-- [ ] Notice displayed before recording
-- [ ] User must confirm consent
-- [ ] Recording indicator visible
+- [ ] Recording consent notice displayed
+- [ ] Meet auto-record shows notification to all participants (handled by Google)
+- [ ] Manual upload requires consent confirmation
 
 **DoD Commands:**
 ```bash
-cd apps/web && pnpm dev
-# Test recording in browser
+cd apps/web && pnpm lint && pnpm typecheck
 ```
 
-**Output:** Audio recording component
+**Output:** Interview management UI + recording status tracking
 
 ---
 
@@ -389,21 +362,24 @@ cd apps/web && pnpm dev
 
 **AI Pipeline (Pipeline #9 from AI_INTELLIGENCE_ENGINE.md):**
 - Model: OpenAI Whisper-1
-- Input: Audio file (webm from browser recording OR Google Drive URL)
+- Input: Audio extracted from Google Drive MP4 video (ffmpeg) OR Supabase Storage fallback upload
 - Output: Transcript text + metadata (duration, language, segments)
 - Storage: `interview_transcripts` table (service_role only — NO RLS policies)
 - Privacy: Transcript NEVER exposed to client. Only service_role reads it. Only synthesis pipeline uses it.
 
-**Recording flow:**
+**Recording flow (updated 2026-02-20):**
 ```
-Browser recording → Supabase Storage (temp)
-                         ↓ (Step 10.2 adds Drive upload here)
-                    Whisper API
+Google Meet auto-record → Rec+onnect's Drive (auto, via Meet API)
+                         ↓
+                    App downloads audio from Drive (Drive API files.get)
+                         ↓
+                    Whisper API (audio → text)
                          ↓
                 interview_transcripts table (service_role INSERT)
                          ↓
                 interviews.recording_status = "completed"
 ```
+See `docs/INTERVIEW_RECORDING_FLOW.md` for full architecture.
 
 **Tasks:**
 - [ ] Create OpenAI client wrapper (`apps/web/src/lib/openai/client.ts`):
@@ -418,7 +394,11 @@ Browser recording → Supabase Storage (temp)
   - UPSERT to `interview_transcripts` table: `{ interview_id, transcript, metadata }`
   - Update `interviews.recording_status` to `"completed"` (or `"failed"` on error)
   - Return `{ success: true, duration_seconds }`
-- [ ] Handle large files (Whisper limit: 25MB; chunk if needed)
+- [ ] Handle Meet video files (MP4, 500MB+):
+  - Extract audio from video before sending to Whisper (ffmpeg: `mp4 → m4a`)
+  - Audio-only file typically 5-15MB for 1hr interview (well under 25MB Whisper limit)
+  - If audio still exceeds 25MB (very long interviews): chunk into segments
+  - ffmpeg runs server-side (install as dependency or use a Node wrapper like `fluent-ffmpeg`)
 - [ ] Create TranscriptionViewer component (admin/manager only — shows transcript text)
 - [ ] Show transcription status indicator on interview card
 
@@ -660,7 +640,7 @@ pnpm test
 | 9.3 Collaborator System | Backend | PENDING | step09-3-collaborator-system |
 | 9.4 Email Invites | Backend | PENDING | step09-4-email-invites |
 | 9.5 Share Links | Backend | PENDING | step09-5-share-links |
-| 9.6 Audio Recording | Frontend | PENDING | step09-6-audio-recording |
+| 9.6 Interview Management UI | Frontend | PENDING | step09-6-interview-management |
 | 9.7 Transcription | Backend | PENDING | step09-7-transcription |
 | 9.8 Feedback Forms | UI Builder | PENDING | step09-8-feedback-forms |
 | 9.9 AI Synthesis | AI Engineer | PENDING | step09-9-ai-synthesis |

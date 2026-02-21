@@ -351,7 +351,7 @@ Google Drive API enables saving recordings and exporting documents.
    - App name: `Rec+onnect`
    - User support email: your email
    - Developer contact: your email
-   - Scopes: Add `../auth/drive.file`
+   - Scopes: Add `../auth/drive.meet.readonly`, `../auth/calendar.events`, `../auth/meetings.space.readonly`
    - Test users: Add your email
 4. Back to Credentials → **Create Credentials** → **OAuth client ID**
 5. Application type: **Web application**
@@ -363,8 +363,8 @@ Google Drive API enables saving recordings and exporting documents.
    ```
 8. Authorized redirect URIs:
    ```
-   http://localhost:3000/api/google-drive/callback
-   https://app.reconnect.io/api/google-drive/callback
+   http://localhost:3000/api/google/callback
+   https://app.reconnect.io/api/google/callback
    ```
 9. Click **Create**
 10. Copy credentials:

@@ -1,183 +1,264 @@
-# External Setup — Client + Developer Split
+# Axil — External Setup Checklist
 
-This doc splits setup between **you (the client)** creating accounts under your credentials, and **me (the developer)** doing the technical configuration inside them. This avoids painful migrations later — especially OAuth providers, which break existing user sessions if moved between accounts.
+Everything needed beyond the codebase. Split by who does what.
 
----
-
-## Already Done
-
-| Service | Status | Details |
-|---------|--------|---------|
-| Supabase Project | Done | Project ref: `vfufxduwywrnwbjtwdjz`, EU West 1 |
-| Supabase CLI Auth | Done | Linked via `supabase login` |
-| Git Repository | Done | Local, 8 commits on `master` |
-| Database Schema | Done | 11 tables, 6 migrations, RLS policies, triggers |
+**Last updated:** 2026-02-21
 
 ---
 
-## Phase 1 — Needed Now (Before Next Build Sessions)
+## Client Side
 
-### 1. Google Cloud Project (for Google OAuth + Drive export later)
+Things the client needs to create/provide. We handle all technical wiring once we get the credentials.
 
-**Why under your account:** The OAuth consent screen shows your company name to users during login. Google's verification process takes days — you don't want to redo it. Migrating OAuth = new Client ID = breaks all existing Google logins.
+### 1. Azure AD App Registration (Microsoft Login)
 
-**Client does:**
-1. Go to https://console.cloud.google.com/
-2. Sign in with your company Google account (the one that will own this long-term)
-3. Click "Select a project" → "New Project" → Name: `Reconnect` → Create
-4. Add me as collaborator: IAM & Admin → IAM → Grant Access → enter my email → Role: **Editor** → Save
+**Status:** Waiting on client
+**Blocks:** Users signing in with Microsoft accounts
+**Priority:** High
 
-**Then send me:**
-- Confirmation that the project is created and I have Editor access
+**Steps:**
+1. Go to https://portal.azure.com
+2. Azure Active Directory → App registrations → New registration
+3. Name: `Axil`
+4. Supported account types: "Accounts in any organizational directory and personal Microsoft accounts"
+5. Redirect URI: `https://vfufxduwywrnwbjtwdjz.supabase.co/auth/v1/callback` (type: Web)
+6. After creation → Certificates & secrets → New client secret → copy the value immediately (it's only shown once)
 
-**I will then configure:**
-- OAuth consent screen (app name, logo, privacy policy URL, authorized domains)
-- OAuth 2.0 credentials (Client ID + Secret with correct redirect URIs)
-- Enable required APIs (Google Drive API for later)
-- Connect to Supabase Authentication → Providers → Google
-
----
-
-### 2. Microsoft Azure App Registration (for Microsoft OAuth)
-
-**Why under your account:** Same as Google — the Azure app registration shows your company name during Microsoft login. Migrating = new Application ID = breaks existing Microsoft logins.
-
-**Client does:**
-1. Go to https://portal.azure.com/
-2. Sign in with a Microsoft account (company or personal — whichever will own this)
-3. Search for "App registrations" in the top search bar → click it
-4. Click "New registration":
-   - Name: `Rec+onnect`
-   - Supported account types: **"Accounts in any organizational directory and personal Microsoft accounts"**
-   - Redirect URI: leave blank for now (I'll set it)
-   - Click Register
-5. Add me as collaborator: Go to the app → "Owners" in the left menu → "Add owners" → search my email → Add
-
-**Then send me:**
-- Confirmation that the app is registered and I'm added as owner
-
-**I will then configure:**
-- Redirect URI: `https://vfufxduwywrnwbjtwdjz.supabase.co/auth/v1/callback`
-- Client secret generation
-- API permissions
-- Connect to Supabase Authentication → Providers → Azure
+**Send us:**
+- Application (client) ID
+- Directory (tenant) ID
+- Client secret value
 
 ---
 
-### 3. Anthropic Account (for Claude AI features)
+### 2. Google Cloud Project (Google Login)
 
-**Why under your account:** Billing goes to your card. API keys are trivial to rotate, so this one is easy to migrate if needed — but simpler to start under your account.
+**Status:** Waiting on client
+**Blocks:** Users signing in with Google accounts
+**Priority:** High
 
-**Client does:**
-1. Go to https://console.anthropic.com/
-2. Sign up / sign in
-3. Add a payment method (Settings → Billing)
-4. Go to API Keys → Create Key → Name: `reconnect-dev`
+**Steps:**
+1. Go to https://console.cloud.google.com
+2. Create project named `Axil`
+3. APIs & Services → OAuth consent screen → External → fill in app name (`Axil`), support email, developer contact
+4. APIs & Services → Credentials → Create OAuth client ID → Web application
+5. Authorized redirect URI: `https://vfufxduwywrnwbjtwdjz.supabase.co/auth/v1/callback`
 
-**Then send me:**
-- The API key (`sk-ant-...`)
-- That's it — no collaborator access needed, I just need the key
-
-**Cost estimate:** ~$5-20/month during development (testing AI features). Production depends on usage.
-
----
-
-### 4. Resend Account (for email notifications — needed by Step 10)
-
-**Not urgent now, but good to start early because domain verification can take up to 48 hours.**
-
-**Client does:**
-1. Go to https://resend.com/
-2. Sign up with your company email
-3. Add me as teammate: Settings → Team → Invite → enter my email → Role: **Admin**
-
-**Then send me:**
-- Confirmation I'm added as teammate
-
-**I will then configure:**
-- Sending domain (DNS records for verification)
-- API key generation
-- Email templates
-
-**Free tier:** 100 emails/day, 3,000/month — plenty for MVP/beta.
+**Send us:**
+- Client ID (ends in `.apps.googleusercontent.com`)
+- Client secret
 
 ---
 
-### 5. Domain Name
+### 3. Google Workspace Account (Recording Infrastructure)
 
-**Client does:**
-1. Register a domain (e.g., `reconnect.ie`, `reconnect.app`, `getreconnect.com` — whatever you prefer)
-2. Use any registrar (Namecheap, Cloudflare, GoDaddy, etc.)
-3. If using Cloudflare: add me as a member with DNS edit access
-4. If using another registrar: share nameserver/DNS panel access or be available to update DNS records when I ask
+**Status:** Waiting on client
+**Blocks:** Step 10.1-10.2 — entire interview recording pipeline (Meet → Drive → Whisper → Claude)
+**Priority:** High — this is the critical path
 
-**Used for:** Production URL, email sending domain (Resend verification), OAuth redirect URIs.
+**Steps:**
+1. Sign up at https://workspace.google.com — **Business Standard** plan (minimum tier for Meet recording)
+2. Only 1 user needed (e.g. `platform@axil.ie` or similar)
+3. In Admin console (https://admin.google.com):
+   - Apps → Google Workspace → Google Meet → enable "Recording"
+4. In the **same Google Cloud project** from item #2 above, enable 3 additional APIs:
+   - Google Drive API
+   - Google Calendar API
+   - Google Meet REST API
+5. Create another OAuth client ID (Web application) — separate from the login one
 
----
-
-## Phase 2 — Before Beta Launch
-
-### 6. Vercel Account (deployment)
-
-**Client does:**
-1. Go to https://vercel.com/ → Sign up
-2. Settings → Members → Invite → my email → Role: **Member**
-
-**I will configure:** Project setup, environment variables, domain connection, deployments.
-
-### 7. OpenAI Account (optional — Whisper transcription)
-
-Only needed if we implement interview recording transcription.
-
-**Client does:**
-1. Go to https://platform.openai.com/ → Sign up
-2. Add payment method
-3. Create API key → send it to me
+**Send us:**
+- OAuth Client ID + Client secret (for the Drive/Meet/Calendar client)
+- Workspace account email address (e.g. `platform@axil.ie`)
+- Workspace account password (one-time use — we do an OAuth authorization, then store refresh tokens securely, password no longer needed)
 
 ---
 
-## What I Configure (Developer Side)
+### 4. Domain DNS
 
-Once you've created the accounts and given me access, I handle all of this:
+**Status:** Client has domain, DNS not pointed yet
+**Blocks:** Production deployment + emails from custom domain
+**Priority:** Medium (not needed until we're ready to deploy)
 
-| Service | What I Configure |
-|---------|-----------------|
-| Google Cloud | OAuth consent screen, OAuth credentials, redirect URIs, Drive API, Supabase provider connection |
-| Azure | Redirect URI, client secret, API permissions, Supabase provider connection |
-| Anthropic | Nothing — just plug the API key into `.env.local` |
-| Resend | Domain verification DNS records, API key, email templates |
-| Vercel | Project setup, env vars, domain, deployment pipeline |
-| Supabase | Email templates, provider configs (already have access) |
+**What we need to know:**
+- The domain name
+- Preferred structure (e.g. `axil.ie` for landing + `app.axil.ie` for dashboard)
 
----
-
-## Credentials I'll Need From You
-
-Summary of everything to send me once accounts are created:
-
-| What | Format | How to send |
-|------|--------|-------------|
-| Google Cloud project access | Editor invite to my email | Via GCP IAM |
-| Azure app registration access | Owner invite to my email | Via Azure portal |
-| Anthropic API key | `sk-ant-api03-...` | Secure message (not email) |
-| Resend team invite | Admin invite to my email | Via Resend dashboard |
-| Domain registrar access | Collaborator or DNS credentials | Depends on registrar |
-| OpenAI API key (if needed) | `sk-...` | Secure message |
-
-**Never send API keys over plain email.** Use a secure channel (Signal, encrypted message, password manager shared vault, etc.)
+**What to do when we're ready:**
+- We send exact DNS records (CNAME/A records for Vercel, MX/TXT records for email)
+- Client adds them in their domain registrar's DNS panel
 
 ---
 
-## Environment Variables (Final State)
+### 5. Google Analytics (Optional)
 
-Once everything is set up, `apps/web/.env.local` will contain:
+**Status:** Not set up
+**Blocks:** Nothing — landing page analytics only
+**Priority:** Low
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://vfufxduwywrnwbjtwdjz.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Supabase dashboard>
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase dashboard>
-ANTHROPIC_API_KEY=sk-ant-...
-RESEND_API_KEY=re_...
-```
+**Steps:**
+1. Go to https://analytics.google.com
+2. Create a property for the landing page domain
+3. Send us the Measurement ID (format: `G-XXXXXXXXXX`)
 
-Google/Microsoft OAuth credentials live in the Supabase dashboard (Authentication → Providers), not in env vars.
+---
+
+## Our Side
+
+Things we configure once we have the client's credentials, plus infrastructure we set up independently.
+
+### 1. Supabase Auth Providers
+
+**Status:** Email+password works. Google + Microsoft not configured.
+**Depends on:** Client items #1 (Azure) and #2 (Google OAuth)
+
+**Steps:**
+- Supabase dashboard → Authentication → Providers → Google: paste Client ID + Secret
+- Supabase dashboard → Authentication → Providers → Azure: paste Client ID + Secret + Tenant ID
+- Redirect URI for both: `https://vfufxduwywrnwbjtwdjz.supabase.co/auth/v1/callback`
+
+---
+
+### 2. Google Platform Token Authorization
+
+**Status:** Not done — Step 10.1 code not built yet
+**Depends on:** Client item #3 (Google Workspace)
+
+**Steps:**
+- Build OAuth flow in Step 10.1 (internal admin-only route)
+- One-time authorization with Workspace account
+- Store refresh token in `platform_google_config` table (service_role only, RLS protected)
+- Verify token auto-refresh works
+
+---
+
+### 3. Deploy Migrations to Production
+
+**Status:** Ready to do
+**Depends on:** Nothing
+
+**Steps:**
+- `supabase db push` via session-mode pooler (port 5432)
+- 22 migrations to apply (schema + RLS + triggers + FK cascades)
+- Verify RLS with real logins after deployment
+
+---
+
+### 4. Vercel Environment Variables
+
+**Status:** Not set
+**Depends on:** All client credentials above
+**Blocks:** Production deployment
+
+| Variable | Status |
+|----------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Have it |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Have it |
+| `SUPABASE_SERVICE_ROLE_KEY` | Have it |
+| `ANTHROPIC_API_KEY` | Have it |
+| `TAVILY_API_KEY` | Have it |
+| `OPENAI_API_KEY` | Have it |
+| `RESEND_API_KEY` | Have it |
+| `RESEND_FROM_EMAIL` | Waiting on domain verification |
+| `GOOGLE_CLIENT_ID` | Waiting on client |
+| `GOOGLE_CLIENT_SECRET` | Waiting on client |
+| `GOOGLE_REDIRECT_URI` | Set when deploying |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Optional, waiting on client |
+
+---
+
+### 5. Resend Domain Verification
+
+**Status:** Not done
+**Depends on:** Client's domain + DNS access
+
+**Steps:**
+- Add domain in Resend dashboard (https://resend.com/domains)
+- Get MX + TXT DNS records from Resend
+- Send records to client for DNS setup
+- Once verified, update `RESEND_FROM_EMAIL` to `noreply@axil.ie` (or similar)
+
+**Note:** Works without this during dev/beta — emails come from Resend's sandbox domain with limited daily sending.
+
+---
+
+### 6. Error Monitoring (Sentry)
+
+**Status:** Not implemented
+**Depends on:** Nothing
+**Priority:** Should be done before beta
+
+**Steps:**
+- Create Sentry project
+- Install `@sentry/nextjs`
+- Configure DSN in Vercel env vars
+- Add error boundary to app layout
+
+---
+
+### 7. Rate Limiting on AI Endpoints
+
+**Status:** Not implemented
+**Depends on:** Nothing
+**Priority:** Should be done before beta (prevents API credit burn if someone hammers the AI routes)
+
+**Options (pick one):**
+- Vercel's built-in rate limiting (simplest, least control)
+- Middleware-level IP-based limiting (moderate)
+- Per-user limiting via Supabase (most granular)
+
+---
+
+### 8. Step 10.1-10.2 Code (Recording Pipeline)
+
+**Status:** Not started
+**Depends on:** Client item #3 (Google Workspace)
+
+Build the recording pipeline code:
+- Google client wrapper + token management
+- Calendar event creation with Meet link
+- Meet API recording retrieval
+- Drive download + Whisper transcription integration
+- Manual upload fallback (Supabase Storage)
+- Interview scheduling UI
+
+See `steps/step-10-integrations-delivery.md` for full spec and `docs/TESTING_AND_BETA_PLAN.md` for test strategy.
+
+---
+
+## Summary
+
+### Already Done
+
+| Item | Details |
+|------|---------|
+| Supabase project | `vfufxduwywrnwbjtwdjz`, EU West 1, 22 migrations |
+| Anthropic API key | Plugged into .env.local |
+| Tavily API key | Plugged into .env.local (dev tier) |
+| OpenAI API key | Plugged into .env.local |
+| Resend API key | Plugged into .env.local |
+| Supabase service role key | Plugged into .env.local |
+| Steps 1-9 | Complete + hardened + mutation tested |
+| 960 tests | 233 DB + 251 AI + 476 web, all green |
+
+### Waiting on Client
+
+| Item | Blocks |
+|------|--------|
+| Azure AD credentials | Microsoft login |
+| Google OAuth credentials | Google login |
+| Google Workspace account | Recording pipeline (Step 10.1-10.2) |
+| Domain DNS pointing | Production deployment |
+
+### Waiting on Us
+
+| Item | Depends on | Priority |
+|------|-----------|----------|
+| Supabase auth provider config | Client Azure + Google creds | High |
+| Google platform authorization | Client Workspace account | High |
+| Step 10.1-10.2 code | Client Workspace account | High |
+| Deploy migrations to prod | Nothing — ready now | High |
+| Vercel env vars | All credentials | High |
+| Error monitoring (Sentry) | Nothing | Medium |
+| Rate limiting | Nothing | Medium |
+| Resend domain verification | Client DNS access | Low (works without) |

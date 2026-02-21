@@ -43,7 +43,12 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.redirect(`${origin}/login?error=auth`);
+    // Capture provider/Supabase error details if present
+    const providerError = searchParams.get("error_description")
+      || searchParams.get("error")
+      || "auth";
+    console.error("[auth/callback] No code or token_hash. Params:", Object.fromEntries(searchParams.entries()));
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(providerError)}`);
   } catch (err) {
     console.error("[auth/callback] Unexpected error:", err);
     const origin = new URL(request.url).origin;

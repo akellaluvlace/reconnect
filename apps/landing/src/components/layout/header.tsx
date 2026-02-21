@@ -40,13 +40,7 @@ export function Header() {
               "text-teal-950"
             )}
           >
-            Rec
-            <span
-              className="text-teal-500 transition-colors duration-300"
-            >
-              +
-            </span>
-            onnect
+            Axil
           </Link>
 
           {/* Navigation Links */}

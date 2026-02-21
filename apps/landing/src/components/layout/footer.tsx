@@ -35,7 +35,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-5">
             <Link href="/" className="font-display text-xl font-bold text-white tracking-tight">
-              Rec<span className="text-teal-500">+</span>onnect
+              Axil
             </Link>
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/55">
               AI-powered strategic recruitment platform. Helping Irish
@@ -87,7 +87,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <AnimateOnScroll>
         <div className="mt-16 pt-8 border-t border-white/[0.06] flex items-center justify-between text-xs text-white/35">
-          <p>&copy; {currentYear} Rec+onnect. All rights reserved.</p>
+          <p>&copy; {currentYear} Axil. All rights reserved.</p>
           <p className="flex items-center gap-2">
             Made in Ireland
             <span className="text-xl" aria-label="Irish flag">

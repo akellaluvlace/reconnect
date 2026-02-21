@@ -35,7 +35,7 @@ export function ContactSection() {
                 <p className="mt-6 text-slate-500 leading-relaxed">
                   Whether you&apos;re hiring for one role or building out your
                   entire interview process, we&apos;d love to show you
-                  how Rec+onnect works.
+                  how Axil works.
                 </p>
 
                 <div className="mt-10 space-y-5">

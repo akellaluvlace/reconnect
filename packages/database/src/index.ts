@@ -26,7 +26,9 @@ export type Collaborator = TableDefs["collaborators"]["Row"];
 export type ShareLink = TableDefs["share_links"]["Row"];
 export type AuditLog = TableDefs["audit_logs"]["Row"];
 export type InterviewTranscript = TableDefs["interview_transcripts"]["Row"];
+/** @deprecated Table deprecated — use platform_google_config instead. See docs/INTERVIEW_RECORDING_FLOW.md */
 export type OrgDriveConnection = TableDefs["org_drive_connections"]["Row"];
+export type PlatformGoogleConfig = TableDefs["platform_google_config"]["Row"];
 export type CmsSkill = TableDefs["cms_skills"]["Row"];
 export type CmsIndustry = TableDefs["cms_industries"]["Row"];
 export type CmsLevel = TableDefs["cms_levels"]["Row"];

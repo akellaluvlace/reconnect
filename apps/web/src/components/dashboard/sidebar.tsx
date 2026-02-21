@@ -31,7 +31,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 flex-col border-r bg-background">
       <div className="flex h-14 items-center px-6">
         <Link href="/" className="text-xl font-bold tracking-tight">
-          Rec<span className="text-primary">+</span>onnect
+          Axil
         </Link>
       </div>
       <Separator />

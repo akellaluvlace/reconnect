@@ -49,7 +49,7 @@ const MOCK_USER = { id: "user-1", email: "test@example.com" };
 
 const MOCK_PLAYBOOKS = [
   {
-    id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+    id: "aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee",
     title: "Senior Engineer",
     department: "Engineering",
     status: "draft",

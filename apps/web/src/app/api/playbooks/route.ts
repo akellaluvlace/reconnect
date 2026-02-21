@@ -18,19 +18,19 @@ const createPlaybookSchema = z.object({
   skills: z.array(z.string().max(100)).max(50).optional(),
   location: z.string().max(200).optional(),
   job_description: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Job description payload too large"),
   market_insights: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Market insights payload too large"),
   candidate_profile: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Candidate profile payload too large"),
   settings: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Settings payload too large"),
 });

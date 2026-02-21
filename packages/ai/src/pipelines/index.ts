@@ -45,3 +45,9 @@ export {
   type DeepResearchInput,
   type DeepResearchResult,
 } from "./deep-research";
+
+export {
+  generateCandidateProfile,
+  type CandidateProfilePipelineInput,
+  type CandidateProfilePipelineResult,
+} from "./candidate-profile";

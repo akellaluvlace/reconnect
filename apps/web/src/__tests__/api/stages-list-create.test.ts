@@ -45,12 +45,12 @@ function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
   return builder;
 }
 
-const VALID_UUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+const VALID_UUID = "aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee";
 const INVALID_UUID = "not-a-uuid";
 const MOCK_USER = { id: "user-1", email: "test@example.com" };
 
 const MOCK_STAGE = {
-  id: "11111111-2222-3333-4444-555555555555",
+  id: "11111111-2222-4333-a444-555555555555",
   playbook_id: VALID_UUID,
   name: "Phone Screen",
   type: "screening",

@@ -47,3 +47,8 @@ export {
   type SourceExtractionOutput,
   type BatchExtractionOutput,
 } from "./search-results";
+
+export {
+  CandidateProfileSchema,
+  type CandidateProfileOutput,
+} from "./candidate-profile";

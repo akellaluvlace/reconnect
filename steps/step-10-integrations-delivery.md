@@ -31,189 +31,209 @@ Make it reliable + shippable: Google Drive recording storage (core AI pipeline b
 
 ---
 
+## Guardrails (Burn Prevention)
+
+These are lessons from Steps 1-9. Violating them has caused real bugs.
+
+### Mock Gap Risk
+All 476 web tests mock Supabase. This means:
+- A `.eq("nonexistent_column", value)` would pass tests silently
+- An RLS policy mismatch between API route and DB would be invisible
+- **RULE:** Every new API route in Step 10 MUST be manually tested against the real dev server before marking complete. This is non-negotiable — the Zod v3→v4 crash was only caught by E2E, not unit tests.
+
+### Google Integration (10.1-10.2) — Build Incrementally
+Do NOT build the full Meet→Drive→Whisper→Claude pipeline in one batch.
+1. First: Google OAuth + token storage + health check. Verify tokens refresh.
+2. Then: Calendar event creation + Meet link. Verify event appears in calendar.
+3. Then: Meet API recording retrieval. Verify file ID comes back.
+4. Then: Drive download + Whisper. Verify transcription works.
+5. Each step should be independently testable and committable.
+
+### Token Counting
+`truncateTranscript()` exists in `packages/ai/src/prompts/feedback-synthesis.ts` (150K soft limit, 60/30 head/tail split). It IS called in the pipeline. BUT:
+- The route does NOT surface whether truncation happened. Add `transcript_truncated: boolean` to the response metadata so the UI can show "Partial transcript analyzed" when relevant.
+- Very long interviews (3+ hours) may produce transcripts that exceed even the truncation budget when combined with feedback. Monitor in beta.
+
+### Pre-Live Testing Checklist (Before Beta)
+Run these BEFORE giving any beta tester access:
+- [ ] Deploy migration #22 (FK cascade fix) to production
+- [ ] Verify RLS: log in as admin, manager, interviewer — each should see correct data scope
+- [ ] Verify blind feedback: interviewer cannot see other interviewers' feedback
+- [ ] Verify share links: expired link returns 404, revoked link returns 404
+- [ ] Verify transcript privacy: no route returns raw transcript text to client
+- [ ] Verify AI disclaimer: every AI-generated output shows the disclaimer
+- [ ] Click through every page: Landing → Login → Playbooks → Discovery → Process → Alignment → Debrief
+- [ ] Test empty states: new org with no playbooks, playbook with no stages, stage with no interviews
+- [ ] Test error states: disconnect network during AI generation, submit invalid feedback
+- [ ] Cross-browser: Chrome + Firefox + Safari + Edge (desktop only, 1024px min)
+
+### Data Retention (1-Year Requirement)
+This is a compliance requirement documented in the spec but has NO implementation yet.
+- Needs: cron job or Supabase pg_cron to check `created_at` > 1 year
+- Needs: auto-reachout email to candidate asking opt-in/out
+- Needs: if no response, archive or delete data
+- **Decision needed:** Build in Step 10.3 (bug fixes) or defer to post-MVP? Flag for client.
+
+### Known Lint Debt
+16 `no-explicit-any` errors in test files (mock builders use `any` by design). 8 `no-unused-vars` warnings. All pre-existing, none in production code. Don't waste time on these — they're test infrastructure.
+
+---
+
 ## Micro Steps
 
-### 10.1 — Implement Google Drive OAuth (Org-Level)
+### 10.1 — Platform Google Account Setup + OAuth
 
-> **CRITICAL**: Google Drive is the core storage backbone for interview recordings.
+> **CRITICAL**: Google Drive + Meet is the core recording infrastructure.
 > The AI pipeline (Whisper → Claude) depends on this. Not an export feature.
+> See `docs/INTERVIEW_RECORDING_FLOW.md` for full architecture.
 
 **Owner:** Backend
 **Supporting:** Security
 **Status:** PENDING
-**Branch:** `step10-1-google-drive-oauth`
+**Branch:** `step10-1-google-platform-oauth`
 
 **Allowed Paths:**
-- `apps/web/src/app/api/google-drive/**`
-- `apps/web/src/lib/google-drive/**`
+- `apps/web/src/app/api/google/**`
+- `apps/web/src/lib/google/**`
 
-**Architecture (Client Decision 2026-02-16):**
-- **Org-level**: One Google Drive account per organization
-- **Admin connects once**: OAuth with offline access, refresh token stored per org (NOT per user)
-- **All recordings go to org Drive**: Automatic upload after each interview recording
-- **Google Meet links**: Users create Meet links through the same Google integration
-- **AI pipeline**: Recording on Drive → Whisper pulls audio → transcribes → Claude analyzes
-- **Revocation**: Admin disconnects → Drive link breaks, existing files remain (org owns them)
+**Architecture (Client Decision 2026-02-20):**
+- **Shared Rec+onnect Google Workspace account** (platform-level, NOT per-org)
+- **Business Standard tier** (minimum) — enables Meet auto-recording
+- **Admin setting:** "Meetings are recorded by default" enabled in Workspace admin console
+- **All recordings → Rec+onnect's Drive** (`Meet Recordings/` folder, no moves for MVP — isolation via app-layer RLS)
+- **Meet API** provides exact Drive file IDs for recording retrieval (no filename guessing)
+- **DB table:** `platform_google_config` (single-row, service_role only) — migration #19 deployed
 
 **Tasks:**
 - [ ] Set up Google Cloud project:
-  - Enable Google Drive API + Google Calendar API (for Meet links)
-  - Create OAuth 2.0 credentials
-  - Configure consent screen
+  - Enable Google Drive API + Google Calendar API + Google Meet REST API
+  - Create OAuth 2.0 credentials for the Rec+onnect service account
+  - Configure consent screen (internal — Workspace domain only)
   - Add authorized redirect URIs
+  - Scopes: `drive.meet.readonly`, `calendar.events`, `meetings.space.readonly`
 
-- [ ] Create org-level OAuth flow:
+- [ ] Create Google client wrapper:
 ```typescript
-// apps/web/src/lib/google-drive/client.ts
-import { google, type Auth } from 'googleapis';
+// apps/web/src/lib/google/client.ts
+import { google } from 'googleapis';
 
-const clientId = process.env.GOOGLE_CLIENT_ID;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const redirectUri = process.env.GOOGLE_REDIRECT_URI;
-
-if (!clientId || !clientSecret || !redirectUri) {
-  throw new Error(
-    `Missing Google OAuth config: CLIENT_ID=${clientId ? "set" : "MISSING"}, ` +
-    `CLIENT_SECRET=${clientSecret ? "set" : "MISSING"}, REDIRECT_URI=${redirectUri ? "set" : "MISSING"}`
-  );
-}
-
-const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-
-// Org-level: admin connects once for the whole organization
-export function getAuthUrl() {
-  return oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: [
-      'https://www.googleapis.com/auth/drive.file',
-      'https://www.googleapis.com/auth/calendar.events',
-    ],
-    prompt: 'consent',
-  });
-}
-
-export async function getTokens(code: string): Promise<Auth.Credentials> {
-  const { tokens } = await oauth2Client.getToken(code);
-  if (!tokens.access_token) {
-    throw new Error("Google OAuth returned no access token");
-  }
-  return tokens;
+// Platform-level: one shared Rec+onnect account for all orgs
+// Tokens stored in platform_google_config (service_role only)
+export async function getGoogleClient() {
+  // Read tokens from platform_google_config (single row)
+  // Refresh if expired
+  // Return authenticated google client
 }
 ```
 
-- [ ] Create OAuth routes:
-  - GET /api/google-drive/auth → Redirect to Google (admin only)
-  - GET /api/google-drive/callback → Handle callback, store tokens per org
-  - GET /api/google-drive/status → Check org connection status
-  - POST /api/google-drive/disconnect → Revoke access (admin only)
+- [ ] Create platform config management:
+  - Internal admin route to store/refresh tokens in `platform_google_config`
+  - Token auto-refresh on expiry (background job or on-demand)
+  - Connection health check endpoint
 
-- [ ] Store refresh tokens securely per org in database (encrypted)
-- [ ] DB schema: `org_drive_connections` table already exists (migration #7). Wire up OAuth to store/refresh tokens there.
+- [ ] Create Google API helper functions:
+  - `createMeetEvent(params)` — Calendar API: create event with conferenceData + co-host
+  - `getRecordingFileId(meetingCode)` — Meet API: `conferenceRecords.list(filter=space.meeting_code=...)` → `recordings.list()` → `driveDestination.fileId`
+  - `downloadRecording(fileId)` — Drive API: download recording file by ID (`drive.meet.readonly` scope)
 
 **Security Checklist:**
-- [ ] Minimal scopes requested (drive.file + calendar.events)
-- [ ] Tokens encrypted at rest
-- [ ] Revocation works
+- [ ] Tokens stored in `platform_google_config` (RLS enabled, NO policies = service_role only)
+- [ ] Minimal scopes requested
+- [ ] Token refresh handled automatically
 - [ ] No tokens exposed to client
-- [ ] Only admin can connect/disconnect
+- [ ] API calls always go through server-side routes
 
 **DoD Commands:**
 ```bash
 pnpm lint && pnpm typecheck
-# Test OAuth flow
+# Test: create Meet event, verify Meet link returned
 ```
 
-**Output:** Org-level Google Drive OAuth working
+**Output:** Platform Google integration working (auth + Calendar + Meet + Drive APIs)
 
 ---
 
-### 10.2 — Implement Recording Storage + Meet Integration
+### 10.2 — Interview Scheduling + Recording Retrieval Pipeline
 
-> This is the critical path — recordings must land on Drive for the AI pipeline to work.
+> This is the critical path — Meet auto-records → Drive → retrieval → Whisper pipeline.
+> See `docs/INTERVIEW_RECORDING_FLOW.md` for the complete flow.
 
 **Owner:** Backend
 **Supporting:** Frontend, AI Engineer
 **Status:** PENDING
-**Branch:** `step10-2-drive-recording-storage`
+**Branch:** `step10-2-recording-pipeline`
 
 **Allowed Paths:**
-- `apps/web/src/app/api/google-drive/upload/route.ts`
-- `apps/web/src/app/api/google-drive/meet/route.ts`
-- `apps/web/src/components/settings/google-drive-settings.tsx`
-- `apps/web/src/lib/google-drive/**`
+- `apps/web/src/app/api/google/meet/route.ts`
+- `apps/web/src/app/api/google/recordings/route.ts`
+- `apps/web/src/app/api/interviews/**`
+- `apps/web/src/lib/google/**`
+- `apps/web/src/components/interview/schedule-dialog.tsx`
 
-**Tasks:**
-- [ ] Create recording upload route (automatic after interview):
-```typescript
-// POST /api/google-drive/upload
-export async function POST(req: NextRequest) {
-  const supabase = await createClient(); // ← MUST await (Next.js 15+)
-
-  // Auth + admin check
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) console.error("[drive/upload] Auth error:", authError.message);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const { recording_url, playbook_id, candidate_name, stage_name } = await req.json();
-
-  // Get ORG's Drive tokens (not user's)
-  // Download recording from Supabase Storage
-  // Create folder structure: org → playbook → candidate → stage
-  // Upload to org's Google Drive
-  const driveResult = await uploadToDrive(/* ... */);
-  if (!driveResult.ok) {
-    console.error("[drive/upload] Upload failed:", driveResult.error);
-    return NextResponse.json({ error: 'Drive upload failed' }, { status: 500 });
-  }
-
-  // Store Drive file ID + URL on interview record
-  const { error: updateError } = await supabase
-    .from('interviews')
-    .update({ recording_drive_id: driveResult.fileId, recording_url: driveResult.url })
-    .eq('id', playbook_id);
-
-  if (updateError) {
-    console.error("[drive/upload] DB update failed:", updateError.message);
-    return NextResponse.json({ error: 'Failed to save Drive reference' }, { status: 500 });
-  }
-
-  // Return Drive file ID and URL (needed by Whisper pipeline)
-  return NextResponse.json({ fileId: driveResult.fileId, url: driveResult.url });
-}
+**The Recording Flow:**
+```
+1. User schedules interview in Rec+onnect
+2. App creates Calendar event (Rec+onnect account = organizer)
+   - Interviewer added as CO-HOST (triggers auto-record on join)
+   - Candidate added as attendee
+   - Auto-record = ON (Workspace admin default + per-event API flag)
+3. Meet link + conference ID stored on interviews row
+4. Interview happens → auto-recorded → saved to Rec+onnect's Drive
+5. App polls Meet API for recording → gets Drive fileId
+6. Whisper transcribes → Claude synthesizes (Steps 9.7 + 9.9)
 ```
 
-- [ ] Recording storage flow:
-  - Interview recorded in-app → saved to Supabase Storage (temp)
-  - Auto-upload to org's Google Drive (permanent storage)
-  - Drive file URL stored on interview record in DB
-  - Whisper API pulls from Drive URL for transcription
-  - After transcription, transcript stored in DB for Claude analysis
-  - NOTE: NO PDF export, NO CSV export (client decision — all stays in system)
+**Tasks:**
+- [ ] Create interview scheduling API:
+  - `POST /api/interviews` — Create interview + Meet event:
+    - Auth check, validate candidate_id + stage_id
+    - Call `createMeetEvent()` from 10.1 (adds interviewer as co-host)
+    - Store `meet_link`, `meet_conference_id` on interview row
+    - Send email notification to interviewer + candidate (Resend, or Step 9.4)
+  - `PATCH /api/interviews/[id]` — Reschedule (update Calendar event)
+  - `DELETE /api/interviews/[id]` — Cancel (delete Calendar event)
 
-- [ ] Google Meet link creation:
-  - POST /api/google-drive/meet → Create Meet link for scheduled interview
-  - Store Meet link on interview record
-  - Users can create Meet links from interview scheduling UI
+- [ ] Create recording retrieval pipeline:
+  - `POST /api/google/recordings/check` — Poll for recording readiness:
+    - Input: `interview_id`
+    - Reads `meet_conference_id` from interview row
+    - Calls Meet API `conferenceRecords.recordings.list()`
+    - If recording found: get `driveDestination.fileId`
+    - Update `interviews.drive_file_id` + `recording_status = 'uploaded'`
+    - **No folder move (MVP)** — recording stays in `Meet Recordings/`, referenced by file ID
+    - Return `{ ready: true, fileId }` or `{ ready: false }`
+  - Background polling: after interview `completed_at`, check every 5 min for up to 2 hours
 
-- [ ] Folder organization (automatic):
-  - `{Org Name}/`
-  - `{Org Name}/{Playbook Title}/`
-  - `{Org Name}/{Playbook Title}/{Candidate Name}/`
-  - `{Org Name}/{Playbook Title}/{Candidate Name}/{Stage Name} - {date}.webm`
+- [ ] Drive storage (MVP — no folder moves):
+  - Recordings stay in `Meet Recordings/` folder (default Meet behavior)
+  - App stores `drive_file_id` on interview row, accesses by ID only
+  - No folder reorganization — isolation via app-layer RLS
+  - `drive.meet.readonly` scope is sufficient (no write scope needed)
 
-- [ ] Create Google Drive settings UI (org settings, admin only):
-  - Connect/disconnect button
-  - Connection status + connected account email
-  - Root folder selection
-  - Storage usage indicator
+- [ ] Create interview scheduling UI:
+  - ScheduleDialog component (date picker + time + interviewer select)
+  - Shows generated Meet link after scheduling
+  - Recording status indicator on interview cards
+  - "Check Recording" button (manual poll trigger)
+
+- [ ] Consent gate check:
+  - Before recording retrieval, verify `interviews.recording_consent_at` is set
+  - If null at `completed_at` time: skip recording retrieval, mark `recording_status = 'no_consent'`
+  - Synthesis runs on feedback forms only (no transcript)
+  - See `docs/INTERVIEW_RECORDING_FLOW.md` → Consent Gate Flow
+
+- [ ] Manual upload fallback:
+  - Upload button on interview card (if auto-record failed)
+  - Accepts audio/video file → uploads to **Supabase Storage** (MVP — no Drive write scope)
+  - Whisper downloads from Supabase Storage URL → same transcription pipeline
 
 **DoD Commands:**
 ```bash
 pnpm lint && pnpm typecheck
-# Test: record → upload to Drive → verify file exists → Whisper can access URL
+# Test: schedule interview → verify Meet link created → verify conference ID stored
 ```
 
-**Output:** Recording storage pipeline working end-to-end
+**Output:** Interview scheduling + recording retrieval pipeline working
 
 ---
 
@@ -267,18 +287,21 @@ pnpm build
 **Branch:** `step10-4-security-audit`
 
 **Tasks:**
-- [ ] Security checklist:
-  - [ ] All API routes authenticated
-  - [ ] RLS policies tested with multiple roles
-  - [ ] No sensitive data in client logs
-  - [ ] Environment variables secured
-  - [ ] CORS configured correctly
-  - [ ] Rate limiting on AI endpoints
-  - [ ] Input validation on all forms
-  - [ ] XSS prevention
-  - [ ] CSRF protection
-  - [ ] Secure file upload (type/size validation)
-  - [ ] Audit logging for sensitive ops
+- [ ] Security checklist (VERIFIED items from hardening — re-verify against live DB):
+  - [ ] All API routes authenticated (82 tests cover auth matrix — verify against real Supabase)
+  - [ ] RLS policies tested with multiple roles (233 DB tests — re-run after migration #22 deploy)
+  - [ ] No sensitive data in client logs (grep for `console.log` in production code — should use `console.error` only)
+  - [ ] Environment variables secured (check Vercel env config)
+  - [ ] CORS configured correctly (Next.js default is same-origin — verify)
+  - [ ] Rate limiting on AI endpoints (**NOT IMPLEMENTED** — add before beta. Options: Vercel rate limiting, or middleware-level IP limiting)
+  - [ ] Input validation on all forms (all routes have Zod `.max()` — verified)
+  - [ ] XSS prevention (React auto-escapes, `sanitizeInput()` on AI prompts — verified)
+  - [ ] CSRF protection (Next.js API routes use SameSite cookies — verify)
+  - [ ] Secure file upload (type/size validation on manual upload component — verify)
+  - [ ] Audit logging for sensitive ops (**NOT IMPLEMENTED** — consider for admin actions: delete playbook, revoke invite, etc.)
+  - [ ] `interviewer_id` always from auth, never from body (mutation test M12 verified)
+  - [ ] Share link data scope minimal (verified — name, stage, questions, feedback form only)
+  - [ ] Transcript never in client response (verified — service_role only access)
 
 - [ ] EU AI Act compliance verification:
   - [ ] No emotion inference
@@ -352,14 +375,24 @@ vercel --prod
   - Create test accounts
   - Provide beta testing guide
 
-- [ ] Test scenarios:
+- [ ] Test scenarios (critical path — must all pass):
   1. Create organization and invite team member
-  2. Create complete playbook (all 4 chapters)
-  3. Invite collaborator to interview stage
-  4. Record interview and view transcription
-  5. Submit feedback and view AI synthesis
-  6. Share playbook via link
-  7. Export to Google Drive
+  2. Create complete playbook: wizard → Discovery (market research + strategy + JD) → Process (stages + questions + coverage) → Alignment (candidate profile + collaborators + share link) → Debrief
+  3. Invite collaborator by email → verify magic link works → collaborator sees only assigned stage data
+  4. Schedule interview via Meet → verify Meet link + calendar event created
+  5. Record interview (auto-record) → verify recording retrieval → verify transcription
+  6. Submit feedback as interviewer → verify blind rules (can't see others' feedback)
+  7. Submit feedback as second interviewer → manager sees all feedback
+  8. Generate AI synthesis → verify disclaimer shows → verify no hire/no-hire recommendation
+  9. Share playbook via link → verify limited data scope → verify expired link blocked
+  10. Verify consent flow: candidate declines → no recording → feedback-only synthesis
+
+- [ ] Edge case scenarios (should not crash):
+  1. Delete a stage that has interviews → interviews should have `stage_id = NULL` (migration #22)
+  2. Very long text in all fields (test with 5000-char notes)
+  3. Generate AI insights with minimal data (1 feedback, no transcript)
+  4. Revoke share link → verify immediate access loss
+  5. Expired collaborator invite → verify rejection
 
 - [ ] Feedback collection:
   - Set up feedback form or channel
@@ -460,8 +493,8 @@ vercel --prod
 
 | Micro Step | Owner | Status | Branch |
 |------------|-------|--------|--------|
-| 10.1 Google Drive OAuth | Backend | PENDING | step10-1-google-drive-oauth |
-| 10.2 Drive Upload/Export | Backend | PENDING | step10-2-drive-upload |
+| 10.1 Platform Google Setup | Backend | PENDING | step10-1-google-platform-oauth |
+| 10.2 Recording Pipeline | Backend | PENDING | step10-2-recording-pipeline |
 | 10.3 Bug Fixes | Frontend + Backend | PENDING | step10-3-bugfixes-optimization |
 | 10.4 Security Audit | Security | PENDING | step10-4-security-audit |
 | 10.5 Production Deploy | DevOps | PENDING | step10-5-production-deploy |

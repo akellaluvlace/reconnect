@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rec+onnect",
+  title: "Axil",
   description: "AI-powered Strategic Recruitment Operations Platform",
 };
 

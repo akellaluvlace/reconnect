@@ -14,22 +14,22 @@ const faqs: FaqItem[] = [
   {
     question: "Will AI make the hiring decision?",
     answer:
-      "No. Rec+onnect's AI generates interview playbooks and synthesises feedback from your team, but it explicitly does not make hire/no-hire recommendations. Every hiring decision is made by a human. This is a design principle, not a limitation — and it's exactly what the EU AI Act requires.",
+      "No. Axil's AI generates interview playbooks and synthesises feedback from your team, but it explicitly does not make hire/no-hire recommendations. Every hiring decision is made by a human. This is a design principle, not a limitation — and it's exactly what the EU AI Act requires.",
   },
   {
     question: "How is this different from an ATS like Greenhouse or Recruitee?",
     answer:
-      "Rec+onnect is not an ATS. We don't post jobs, parse CVs, or source candidates. We focus entirely on what happens after candidates enter your pipeline: structuring interviews, collecting fair feedback, and synthesising evaluations. Think of us as the interview and decision layer that sits alongside your existing tools.",
+      "Axil is not an ATS. We don't post jobs, parse CVs, or source candidates. We focus entirely on what happens after candidates enter your pipeline: structuring interviews, collecting fair feedback, and synthesising evaluations. Think of us as the interview and decision layer that sits alongside your existing tools.",
   },
   {
     question: "Is this GDPR and EU AI Act compliant?",
     answer:
-      "Yes, fully. Rec+onnect processes candidate data under clear legal bases, supports all data subject rights, and never uses sole automated decision-making under GDPR Article 22. All data is hosted within the EU. For the EU AI Act — recruitment AI is classified as high-risk with obligations effective August 2026. Rec+onnect meets these requirements: text-only analysis, no emotion detection or biometric inference, mandatory human oversight, transparent processing, and full audit trails.",
+      "Yes, fully. Axil processes candidate data under clear legal bases, supports all data subject rights, and never uses sole automated decision-making under GDPR Article 22. All data is hosted within the EU. For the EU AI Act — recruitment AI is classified as high-risk with obligations effective August 2026. Axil meets these requirements: text-only analysis, no emotion detection or biometric inference, mandatory human oversight, transparent processing, and full audit trails.",
   },
   {
     question: "We only hire a few people a year. Is this worth it?",
     answer:
-      "Especially then. When you hire infrequently, you lack the muscle memory that high-volume recruiters develop. A bad hire at a 100-person company is proportionally far more damaging than at a 10,000-person one. Rec+onnect gives you a structured, repeatable process so every hire follows the same rigorous standard.",
+      "Especially then. When you hire infrequently, you lack the muscle memory that high-volume recruiters develop. A bad hire at a 100-person company is proportionally far more damaging than at a 10,000-person one. Axil gives you a structured, repeatable process so every hire follows the same rigorous standard.",
   },
   {
     question: "How long does it take to set up?",
@@ -115,7 +115,7 @@ export function FaqSection() {
               already asking
             </h2>
             <p className="mt-5 text-[15px] text-slate-500 leading-[1.7]">
-              We built Rec+onnect for hiring teams who are tired of guessing.
+              We built Axil for hiring teams who are tired of guessing.
               Here&apos;s what they ask first.
             </p>
           </div>

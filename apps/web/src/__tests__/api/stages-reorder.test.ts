@@ -47,9 +47,9 @@ function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
   return builder;
 }
 
-const VALID_UUID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-const STAGE_UUID_1 = "11111111-2222-3333-4444-555555555555";
-const STAGE_UUID_2 = "22222222-3333-4444-5555-666666666666";
+const VALID_UUID = "aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee";
+const STAGE_UUID_1 = "11111111-2222-4333-a444-555555555555";
+const STAGE_UUID_2 = "22222222-3333-4444-a555-666666666666";
 const INVALID_UUID = "not-a-uuid";
 const MOCK_USER = { id: "user-1", email: "test@example.com" };
 

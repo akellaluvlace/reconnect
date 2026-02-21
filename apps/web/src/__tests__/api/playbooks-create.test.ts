@@ -56,7 +56,7 @@ function makePost(body: unknown): NextRequest {
 const MOCK_USER = { id: "user-1", email: "test@example.com" };
 
 const CREATED_PLAYBOOK = {
-  id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  id: "aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee",
   title: "Senior Engineer",
   department: "Engineering",
   status: "draft",
@@ -181,7 +181,7 @@ describe("POST /api/playbooks", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.id).toBe("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    expect(body.id).toBe("aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee");
     expect(body.title).toBe("Senior Engineer");
     expect(body.status).toBe("draft");
   });
@@ -194,7 +194,7 @@ describe("POST /api/playbooks", () => {
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.id).toBe("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee");
+    expect(body.id).toBe("aaaaaaaa-bbbb-4ccc-addd-eeeeeeeeeeee");
   });
 
   it("returns 403 when user has no organization_id", async () => {

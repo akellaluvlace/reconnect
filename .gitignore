@@ -13,6 +13,7 @@ out/
 .env
 .env.local
 .env.*.local
+keys.md
 
 # Supabase
 supabase/.branches/
