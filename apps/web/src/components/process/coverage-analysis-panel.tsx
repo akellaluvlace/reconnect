@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   ShieldCheck,
-  AlertTriangle,
+  Warning,
   Info,
   Lightbulb,
-  Loader2,
-  CheckCircle2,
-  Sparkles,
-} from "lucide-react";
+  CircleNotch,
+  CheckCircle,
+  Sparkle,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
 
@@ -26,8 +26,8 @@ interface CoverageAnalysisPanelProps {
 }
 
 const SEVERITY_CONFIG = {
-  critical: { color: "border-red-200 bg-red-50 text-red-800", icon: AlertTriangle },
-  important: { color: "border-orange-200 bg-orange-50 text-orange-800", icon: AlertTriangle },
+  critical: { color: "border-red-200 bg-red-50 text-red-800", icon: Warning },
+  important: { color: "border-orange-200 bg-orange-50 text-orange-800", icon: Warning },
   minor: { color: "border-yellow-200 bg-yellow-50 text-yellow-800", icon: Info },
 };
 
@@ -101,15 +101,15 @@ export function CoverageAnalysisPanel({
   if (!analysis) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <ShieldCheck className="h-6 w-6 text-muted-foreground/40" />
+        <ShieldCheck size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           Analyze how well your interview stages cover the job requirements
         </p>
         <Button className="mt-4" onClick={handleAnalyze} disabled={isAnalyzing}>
           {isAnalyzing ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <ShieldCheck className="mr-2 h-4 w-4" />
+            <ShieldCheck size={16} weight="duotone" className="mr-2" />
           )}
           Analyze Coverage
         </Button>
@@ -129,9 +129,9 @@ export function CoverageAnalysisPanel({
           aria-label="Re-analyze coverage"
         >
           {isAnalyzing ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            <Sparkle size={16} weight="duotone" />
           )}
         </Button>
       </div>
@@ -154,7 +154,7 @@ export function CoverageAnalysisPanel({
       {analysis.requirements_covered.length > 0 && (
         <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <CheckCircle size={16} weight="duotone" className="text-green-600" />
             <h3 className="text-[15px] font-semibold tracking-tight">
               Requirements Covered ({analysis.requirements_covered.length})
             </h3>
@@ -188,7 +188,7 @@ export function CoverageAnalysisPanel({
       {analysis.gaps.length > 0 && (
         <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <Warning size={16} weight="duotone" className="text-amber-600" />
             <h3 className="text-[15px] font-semibold tracking-tight">
               Gaps ({analysis.gaps.length})
             </h3>
@@ -200,7 +200,7 @@ export function CoverageAnalysisPanel({
               return (
                 <div key={i} className="rounded-lg border border-border/40 p-4">
                   <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 shrink-0 text-amber-500" />
+                    <Icon size={16} weight="duotone" className="shrink-0 text-amber-500" />
                     <span className="text-[13px] font-medium text-foreground flex-1 truncate">
                       {gap.requirement}
                     </span>
@@ -224,7 +224,7 @@ export function CoverageAnalysisPanel({
       {analysis.redundancies.length > 0 && (
         <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Info className="h-4 w-4 text-blue-600" />
+            <Info size={16} weight="duotone" className="text-blue-600" />
             <h3 className="text-[15px] font-semibold tracking-tight">
               Redundancies ({analysis.redundancies.length})
             </h3>

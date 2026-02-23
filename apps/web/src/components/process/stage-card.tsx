@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  GripVertical,
-  ChevronDown,
-  ChevronUp,
-  Pencil,
-  Trash2,
-  MessageSquare,
-} from "lucide-react";
+  DotsSixVertical,
+  CaretDown,
+  CaretUp,
+  PencilSimple,
+  Trash,
+  ChatCenteredText,
+} from "@phosphor-icons/react";
 import type { FocusArea, SuggestedQuestion } from "@reconnect/database";
 import type { StageData } from "./process-page-client";
 
@@ -51,7 +51,7 @@ export function StageCard({
             className="cursor-grab text-muted-foreground hover:text-foreground"
             {...dragHandleProps}
           >
-            <GripVertical className="h-5 w-5" />
+            <DotsSixVertical size={20} weight="duotone" />
           </div>
 
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[11px] font-bold text-teal-700">
@@ -89,7 +89,7 @@ export function StageCard({
               onClick={onEdit}
               aria-label="Edit stage"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <PencilSimple size={14} />
             </Button>
             <Button
               variant="ghost"
@@ -98,7 +98,7 @@ export function StageCard({
               onClick={onDelete}
               aria-label="Delete stage"
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Trash size={14} />
             </Button>
             <Button
               variant="ghost"
@@ -108,9 +108,9 @@ export function StageCard({
               aria-label={expanded ? "Collapse" : "Expand"}
             >
               {expanded ? (
-                <ChevronUp className="h-4 w-4" />
+                <CaretUp size={16} />
               ) : (
-                <ChevronDown className="h-4 w-4" />
+                <CaretDown size={16} />
               )}
             </Button>
           </div>
@@ -158,7 +158,7 @@ export function StageCard({
                               key={qi}
                               className="flex items-start gap-2 border-l-2 border-teal-200 pl-3"
                             >
-                              <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-teal-500" />
+                              <ChatCenteredText size={12} weight="duotone" className="mt-0.5 shrink-0 text-teal-500" />
                               <div>
                                 <p className="text-[12px] text-foreground">{q.question}</p>
                                 <p className="text-[11px] text-muted-foreground">

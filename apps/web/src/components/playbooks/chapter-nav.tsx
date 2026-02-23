@@ -2,13 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  MagnifyingGlass,
+  ListChecks,
+  Target,
+  ChatCircleDots,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const chapters = [
-  { id: "discovery", name: "Discovery" },
-  { id: "process", name: "Process" },
-  { id: "alignment", name: "Alignment" },
-  { id: "debrief", name: "Debrief" },
+  { id: "discovery", name: "Discovery", icon: MagnifyingGlass },
+  { id: "process", name: "Process", icon: ListChecks },
+  { id: "alignment", name: "Alignment", icon: Target },
+  { id: "debrief", name: "Debrief", icon: ChatCircleDots },
 ];
 
 export function ChapterNav({ playbookId }: { playbookId: string }) {
@@ -19,18 +25,24 @@ export function ChapterNav({ playbookId }: { playbookId: string }) {
       {chapters.map((chapter) => {
         const href = `/playbooks/${playbookId}/${chapter.id}`;
         const isActive = pathname === href;
+        const Icon = chapter.icon;
 
         return (
           <Link
             key={chapter.id}
             href={href}
             className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-all",
+              "flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium transition-all",
               isActive
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            <Icon
+              size={16}
+              weight={isActive ? "duotone" : "regular"}
+              className={isActive ? "text-teal-600" : ""}
+            />
             {chapter.name}
           </Link>
         );

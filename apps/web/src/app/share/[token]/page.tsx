@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink } from "lucide-react";
+import { ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
 
 export default async function SharePage({
   params,
@@ -58,7 +58,7 @@ export default async function SharePage({
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <ExternalLink className="h-5 w-5 text-muted-foreground" />
+            <ArrowSquareOut size={20} weight="duotone" className="text-muted-foreground" />
             <CardTitle>Shared Playbook</CardTitle>
           </div>
           {playbook && (

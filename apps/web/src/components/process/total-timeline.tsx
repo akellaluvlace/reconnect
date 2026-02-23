@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock } from "@phosphor-icons/react";
 import type { StageData } from "./process-page-client";
 
 interface TotalTimelineProps {
@@ -21,7 +21,7 @@ export function TotalTimeline({ stages }: TotalTimelineProps) {
 
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Clock className="h-4 w-4" />
+      <Clock size={16} weight="duotone" />
       <span>
         {timeStr} across {stages.length} stage{stages.length !== 1 ? "s" : ""}
       </span>

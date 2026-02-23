@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { CheckCircle, Circle, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -92,11 +92,11 @@ export function DeepResearchProgress({ isActive, startedAt }: DeepResearchProgre
               )}
             >
               {isCompleted ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                <CheckCircle size={16} weight="duotone" className="shrink-0 text-green-500" />
               ) : isCurrent ? (
-                <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-500" />
+                <CircleNotch size={16} weight="bold" className="shrink-0 animate-spin text-blue-500" />
               ) : (
-                <Circle className="h-4 w-4 shrink-0" />
+                <Circle size={16} className="shrink-0" />
               )}
               {step.label}
             </div>

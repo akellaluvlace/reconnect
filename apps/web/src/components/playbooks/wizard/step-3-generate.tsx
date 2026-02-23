@@ -6,7 +6,12 @@ import { usePlaybookStore } from "@/stores/playbook-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import {
+  WarningCircle,
+  ArrowLeft,
+  CircleNotch,
+  Sparkle,
+} from "@phosphor-icons/react";
 
 const levelLabels: Record<string, string> = {
   junior: "Junior",
@@ -172,7 +177,7 @@ export function Step3Generate() {
 
         {/* AI notice */}
         <div className="flex items-start gap-3 rounded-lg border border-dashed border-border/80 p-4">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-teal-500" />
+          <Sparkle size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-500" />
           <div className="text-[13px] text-muted-foreground">
             <span className="font-medium text-foreground">AI-generated content</span>
             <span className="mx-1">&middot;</span>
@@ -183,14 +188,14 @@ export function Step3Generate() {
 
         {error && (
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <WarningCircle size={16} weight="duotone" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {isGenerating && (
           <div className="flex items-center gap-2.5 rounded-lg bg-teal-50 px-4 py-3">
-            <Loader2 className="h-4 w-4 animate-spin text-teal-600" />
+            <CircleNotch size={16} weight="bold" className="animate-spin text-teal-600" />
             <span className="text-[13px] font-medium text-teal-700">
               {statusMessage}
             </span>
@@ -204,7 +209,7 @@ export function Step3Generate() {
             onClick={() => setStep(2)}
             disabled={isGenerating}
           >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            <ArrowLeft size={14} className="mr-1.5" />
             Back
           </Button>
           <Button
@@ -214,7 +219,7 @@ export function Step3Generate() {
           >
             {isGenerating ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
                 Generating...
               </>
             ) : (

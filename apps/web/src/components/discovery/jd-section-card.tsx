@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
+import { PencilSimple, Check, X, Plus, Trash } from "@phosphor-icons/react";
 
 interface JDSectionCardProps {
   title: string;
@@ -49,7 +49,7 @@ export function JDSectionCard({
               }}
               aria-label={`Edit ${title}`}
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <PencilSimple size={14} />
             </Button>
           )}
         </div>
@@ -64,10 +64,10 @@ export function JDSectionCard({
             />
             <div className="flex gap-2">
               <Button size="sm" onClick={handleSave}>
-                <Check className="mr-1.5 h-3 w-3" /> Save
+                <Check size={12} className="mr-1.5" /> Save
               </Button>
               <Button size="sm" variant="ghost" onClick={handleCancel}>
-                <X className="mr-1.5 h-3 w-3" /> Cancel
+                <X size={12} className="mr-1.5" /> Cancel
               </Button>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function JDSectionCard({
               }}
               aria-label={`Edit ${title}`}
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <PencilSimple size={14} />
             </Button>
           )}
         </div>
@@ -127,7 +127,7 @@ export function JDSectionCard({
                   }}
                   aria-label="Remove item"
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  <Trash size={14} className="text-destructive" />
                 </Button>
               </div>
             ))}
@@ -136,14 +136,14 @@ export function JDSectionCard({
               size="sm"
               onClick={() => setDraft([...(draft as string[]), ""])}
             >
-              <Plus className="mr-1.5 h-3 w-3" /> Add item
+              <Plus size={12} className="mr-1.5" /> Add item
             </Button>
             <div className="flex gap-2 pt-1">
               <Button size="sm" onClick={handleSave}>
-                <Check className="mr-1.5 h-3 w-3" /> Save
+                <Check size={12} className="mr-1.5" /> Save
               </Button>
               <Button size="sm" variant="ghost" onClick={handleCancel}>
-                <X className="mr-1.5 h-3 w-3" /> Cancel
+                <X size={12} className="mr-1.5" /> Cancel
               </Button>
             </div>
           </div>
@@ -190,7 +190,7 @@ export function JDSectionCard({
             }}
             aria-label={`Edit ${title}`}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <PencilSimple size={14} />
           </Button>
         )}
       </div>

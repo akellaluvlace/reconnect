@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
 import type { FocusArea } from "@reconnect/database";
@@ -230,7 +230,7 @@ export function StageEditDialog({
                 onClick={addFocusArea}
                 type="button"
               >
-                <Plus className="mr-1 h-3 w-3" /> Add
+                <Plus size={12} className="mr-1" /> Add
               </Button>
             </div>
             <div className="mt-2 space-y-3">
@@ -269,7 +269,7 @@ export function StageEditDialog({
                       onClick={() => removeFocusArea(i)}
                       aria-label="Remove focus area"
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash size={14} className="text-destructive" />
                     </Button>
                   </div>
                   <Input
@@ -295,7 +295,7 @@ export function StageEditDialog({
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
-            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSaving && <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />}
             {isNew ? "Add Stage" : "Save Changes"}
           </Button>
         </DialogFooter>

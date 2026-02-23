@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, Loader2, CheckCircle } from "lucide-react";
+import { ShieldCheck, CircleNotch, CheckCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useParams } from "next/navigation";
 
@@ -47,7 +47,7 @@ export default function ConsentPage() {
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardContent className="flex flex-col items-center gap-4 pt-8 pb-8">
-            <CheckCircle className="h-12 w-12 text-green-500" />
+            <CheckCircle size={48} weight="duotone" className="text-green-500" />
             <h2 className="text-lg font-semibold">Consent Recorded</h2>
             <p className="text-sm text-muted-foreground text-center">
               Thank you. Your recording consent has been recorded. You can close
@@ -64,7 +64,7 @@ export default function ConsentPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
+            <ShieldCheck size={20} weight="duotone" />
             Recording Consent
           </CardTitle>
         </CardHeader>
@@ -114,9 +114,9 @@ export default function ConsentPage() {
             disabled={!agreed || isSubmitting}
           >
             {isSubmitting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
             ) : (
-              <ShieldCheck className="mr-2 h-4 w-4" />
+              <ShieldCheck size={16} weight="duotone" className="mr-2" />
             )}
             Submit Consent
           </Button>

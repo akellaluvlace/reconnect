@@ -6,7 +6,7 @@ import { CandidateProfileBuilder } from "./candidate-profile-builder";
 import { ProcessSummary } from "./process-summary";
 import { CollaboratorManager } from "./collaborator-manager";
 import { ShareableLink } from "./shareable-link";
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface StageInfo {
@@ -99,7 +99,7 @@ export function AlignmentPageClient({
 
         {/* AI disclaimer */}
         <div className="mt-6 flex items-start gap-1.5 px-3 pt-4 text-[11px] text-muted-foreground">
-          <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+          <Sparkle size={12} weight="duotone" className="mt-0.5 shrink-0" />
           <span>AI-generated content. Hiring decisions must be made by humans.</span>
         </div>
       </nav>

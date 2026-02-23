@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowRight, Sparkles, Plus } from "lucide-react";
+import { ArrowRight, Sparkle, Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
 
@@ -18,9 +18,9 @@ export interface PlaybookListItem {
 export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
   if (playbooks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 py-16">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-cream-50 py-16">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50">
-          <Sparkles className="h-6 w-6 text-teal-500" />
+          <Sparkle size={24} weight="duotone" className="text-teal-500" />
         </div>
         <h3 className="text-[15px] font-semibold">No playbooks yet</h3>
         <p className="mt-1 max-w-sm text-center text-[13px] text-muted-foreground">
@@ -28,7 +28,7 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
         </p>
         <Button asChild className="mt-4" size="sm">
           <Link href="/playbooks/new">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Plus size={14} weight="bold" className="mr-1.5" />
             Create Playbook
           </Link>
         </Button>
@@ -37,7 +37,7 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
+    <div className="card-surface overflow-hidden">
       {playbooks.map((pb, i) => {
         let timeAgo = "";
         const ts = pb.updated_at ?? pb.created_at;
@@ -54,7 +54,7 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
             key={pb.id}
             href={`/playbooks/${pb.id}`}
             className={
-              "group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/50" +
+              "group flex items-center gap-4 px-5 py-4 transition-all duration-150 hover:bg-cream-100" +
               (i < playbooks.length - 1 ? " border-b border-border/40" : "")
             }
           >
@@ -82,7 +82,7 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
             </span>
 
             {/* Arrow */}
-            <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-teal-500" />
+            <ArrowRight size={16} className="shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5 group-hover:text-teal-500" />
           </Link>
         );
       })}

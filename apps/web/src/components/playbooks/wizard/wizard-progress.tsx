@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const steps = [
@@ -29,7 +29,7 @@ export function WizardProgress({ currentStep }: { currentStep: number }) {
                   isPending && "bg-muted text-muted-foreground",
                 )}
               >
-                {isComplete ? <Check className="h-3.5 w-3.5" /> : step.number}
+                {isComplete ? <Check size={14} weight="bold" /> : step.number}
               </div>
               <span
                 className={cn(

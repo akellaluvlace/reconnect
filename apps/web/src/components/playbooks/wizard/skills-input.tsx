@@ -2,7 +2,7 @@
 
 import { useState, useRef, type KeyboardEvent } from "react";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 
 interface SkillsInputProps {
   value: string[];
@@ -62,7 +62,7 @@ export function SkillsInput({
               }}
               className="hover:text-foreground"
             >
-              <X className="h-3 w-3" />
+              <X size={12} />
             </button>
           </Badge>
         ))}

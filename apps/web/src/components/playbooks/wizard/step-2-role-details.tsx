@@ -22,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkillsInput } from "./skills-input";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
 
 const levels = [
   { value: "junior", label: "Junior (0-2 years)" },
@@ -186,12 +186,12 @@ export function Step2RoleDetails() {
               variant="outline"
               onClick={() => setStep(1)}
             >
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              <ArrowLeft size={14} className="mr-1.5" />
               Back
             </Button>
             <Button type="submit" className="flex-1">
               Continue
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              <ArrowRight size={14} className="ml-1.5" />
             </Button>
           </div>
         </form>

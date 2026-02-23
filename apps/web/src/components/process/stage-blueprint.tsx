@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { StageCard } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
 import { StageEditDialog } from "./stage-edit-dialog";
-import { Sparkles, Loader2, Plus } from "lucide-react";
+import { Sparkle, CircleNotch, Plus } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
 
@@ -291,7 +291,7 @@ export function StageBlueprint({
                 setIsDialogOpen(true);
               }}
             >
-              <Plus className="mr-1 h-3 w-3" />
+              <Plus size={12} className="mr-1" />
               Add Stage
             </Button>
             <Button
@@ -302,9 +302,9 @@ export function StageBlueprint({
               aria-label="Regenerate stages"
             >
               {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <CircleNotch size={16} weight="bold" className="animate-spin" />
               ) : (
-                <Sparkles className="h-4 w-4" />
+                <Sparkle size={16} weight="duotone" />
               )}
             </Button>
           </div>
@@ -313,7 +313,7 @@ export function StageBlueprint({
 
       {stages.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-          <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+          <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
           <p className="mt-3 text-[14px] text-muted-foreground">
             No interview stages yet. Generate an AI-powered process or add
             stages manually.
@@ -321,9 +321,9 @@ export function StageBlueprint({
           <div className="mt-4 flex gap-2">
             <Button onClick={handleGenerate} disabled={isGenerating}>
               {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
               ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkle size={16} weight="duotone" className="mr-2" />
               )}
               Generate Interview Process
             </Button>
@@ -334,7 +334,7 @@ export function StageBlueprint({
                 setIsDialogOpen(true);
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus size={16} className="mr-2" />
               Add Stage
             </Button>
           </div>

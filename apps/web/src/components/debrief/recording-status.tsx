@@ -2,16 +2,17 @@
 
 import {
   Circle,
-  Upload,
+  UploadSimple,
   CheckCircle,
-  Loader2,
+  CircleNotch,
   XCircle,
-  Ban,
-} from "lucide-react";
+  Prohibit,
+} from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }
+  { label: string; color: string; Icon: Icon }
 > = {
   pending: {
     label: "Pending",
@@ -21,17 +22,17 @@ const STATUS_CONFIG: Record<
   uploading: {
     label: "Uploading",
     color: "border-blue-200 bg-blue-50 text-blue-800",
-    Icon: Upload,
+    Icon: UploadSimple,
   },
   uploaded: {
     label: "Uploaded",
     color: "border-blue-200 bg-blue-50 text-blue-800",
-    Icon: Upload,
+    Icon: UploadSimple,
   },
   transcribing: {
     label: "Transcribing",
     color: "border-amber-200 bg-amber-50 text-amber-800",
-    Icon: Loader2,
+    Icon: CircleNotch,
   },
   completed: {
     label: "Ready",
@@ -46,7 +47,7 @@ const STATUS_CONFIG: Record<
   no_consent: {
     label: "No Consent",
     color: "border-border/60 bg-muted/40 text-muted-foreground",
-    Icon: Ban,
+    Icon: Prohibit,
   },
 };
 
@@ -65,7 +66,9 @@ export function RecordingStatus({ status }: RecordingStatusProps) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${color}`}>
       <Icon
-        className={`h-3 w-3 ${status === "transcribing" ? "animate-spin" : ""}`}
+        size={12}
+        weight={status === "transcribing" ? "bold" : "duotone"}
+        className={status === "transcribing" ? "animate-spin" : undefined}
       />
       {label}
     </span>

@@ -7,12 +7,12 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 9 COMPLETE + HARDENED + Dashboard overhaul + Discovery intelligence
-**Status:** Steps 1-9 complete + hardened. Dashboard UI overhaul (teal/gold/cream). Competitor Listings (Tavily → DB-persisted). Discovery cross-references (strategy ← market data, JD ← strategy hints). Code review fixes: Zod JSONB validation, div-by-zero guard, PATCH error handling, dead-link fallback. 476 web + 293 AI tests green. 24 migrations. Typecheck clean.
-**Next task:** Step 10.1-10.2 (Platform Google setup + recording pipeline).
+**Step:** Step 10 DESIGN APPROVED — ready for implementation
+**Status:** Steps 1-9 complete + hardened. Premium design polish + Phosphor duotone icons. Step 10 recording pipeline redesigned: state machine (12 states), Google Meet VTT as primary transcript (not Whisper), manual synthesis trigger, optimistic locking, pipeline audit log, retry budget. Design doc at `docs/plans/2026-02-23-recording-pipeline-design.md`. 12 vulnerabilities mapped with mitigations. 476 web + 293 AI tests green. 24 migrations. Typecheck clean.
+**Next task:** Step 10.1 (Platform Google setup + migration #25) → 10.2 (recording pipeline implementation).
 **Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) + Google Workspace account setup needed for live testing.
 
-**Build order:** 10.1-10.2 → 10.3-10.8
+**Build order:** 10.1 (migration #25 + Google OAuth + helpers) → 10.2 (cron + state machine + UI) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -231,10 +231,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-02-23 (b):** Dashboard UI overhaul (teal/gold/cream design system). Competitor Listings + Discovery intelligence + code review fixes (Zod JSONB validation, div-by-zero, PATCH error handling, dead-link fallback). 476 web + 293 AI tests green. Committed + PR.
-- **2026-02-23 (a):** Competitor Listings feature: Tavily search API route, DB-persisted JSONB column on playbooks (migration #24), dead link filtering, markdown stripping. Discovery cross-references: strategy ← market data, JD ← strategy+market hints. Typecheck clean.
-- **2026-02-22 (a):** Sequential pipeline enforced. Wizard → quick insights only. Discovery tabs gated. Candidate profile receives market_key_skills. Tracer logs verified. 476 web tests green.
-- **2026-02-21 (a):** Google OAuth + Microsoft OAuth verified working. Fixed auth callback error surfacing. Azure Token Config email claim + ID tokens. Domain: axil.ie.
-- **2026-02-20 (e):** Zod v4.3.6 migration from v3.25.76. Fixed `z.record()` (9), `z.literal()` errorMap→message (2), UUID validation (~20). 476 web + 251 AI tests green.
-
+- **2026-02-23 (d):** Step 10 recording pipeline design. Vulnerability analysis (12 risks). State machine architecture. VTT primary transcript. Manual synthesis trigger. Design doc written. Step-10 file updated. MEMORY + CLAUDE.md updated.
+- **2026-02-23 (c):** Premium design polish — warm cream CSS variables, teal-tinted borders/shadows, card-surface utility class. Phosphor duotone icons across 35 files. Only shadcn/ui primitives retain lucide-react. 476 web tests green. Typecheck clean.
+- **2026-02-23 (b):** Dashboard UI overhaul (teal/gold/cream design system). Competitor Listings + Discovery intelligence + code review fixes. 476 web + 293 AI tests green.
+- **2026-02-23 (a):** Competitor Listings feature: Tavily search, DB-persisted JSONB, dead link filtering. Discovery cross-references: strategy ← market data, JD ← strategy+market hints.
+- **2026-02-22 (a):** Sequential pipeline enforced. Wizard → quick insights only. Discovery tabs gated. Candidate profile receives market_key_skills. 476 web tests green.
 > Keep max 5 entries. Remove oldest when adding new.

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PlaybookList } from "@/components/playbooks/playbook-list";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertCircle } from "lucide-react";
+import { Plus, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -20,14 +20,14 @@ export default async function PlaybooksPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Playbooks</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Playbooks</h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
             Manage your recruitment playbooks
           </p>
         </div>
         <Button asChild size="sm">
           <Link href="/playbooks/new">
-            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            <Plus size={14} weight="bold" className="mr-1.5" />
             New Playbook
           </Link>
         </Button>
@@ -35,7 +35,7 @@ export default async function PlaybooksPage() {
 
       {error ? (
         <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
+          <WarningCircle size={16} weight="duotone" />
           <AlertDescription>
             Failed to load playbooks. Please refresh the page.
           </AlertDescription>

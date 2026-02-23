@@ -5,7 +5,7 @@ import type { JobDescription, MarketInsights, HiringStrategy } from "@reconnect/
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { JDSectionCard } from "./jd-section-card";
-import { Sparkles, Loader2, Info } from "lucide-react";
+import { Sparkle, CircleNotch, Info } from "@phosphor-icons/react";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
 
@@ -146,15 +146,15 @@ export function JDStructuredEditor({
   if (!jobDescription) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+        <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           No job description yet. Generate one using AI.
         </p>
         <Button className="mt-4" onClick={handleRegenerate} disabled={isRegenerating}>
           {isRegenerating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkle size={16} weight="duotone" className="mr-2" />
           )}
           Generate Job Description
         </Button>
@@ -173,9 +173,9 @@ export function JDStructuredEditor({
           disabled={isRegenerating}
         >
           {isRegenerating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkle size={16} weight="duotone" className="mr-2" />
           )}
           Regenerate
         </Button>
@@ -214,7 +214,7 @@ export function JDStructuredEditor({
           />
           {strategy?.skills_priority?.must_have && strategy.skills_priority.must_have.length > 0 && (
             <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-4 py-3 text-[12px] text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <Info size={14} weight="duotone" className="mt-0.5 shrink-0" />
               <span>
                 Strategy must-haves: <span className="font-semibold text-foreground">{strategy.skills_priority.must_have.join(", ")}</span>
               </span>
@@ -256,7 +256,7 @@ export function JDStructuredEditor({
           />
           {(strategy?.salary_positioning || marketInsights?.salary) && (
             <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-4 py-3 text-[12px] text-muted-foreground">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <Info size={14} weight="duotone" className="mt-0.5 shrink-0" />
               <span>
                 {strategy?.salary_positioning && (
                   <>

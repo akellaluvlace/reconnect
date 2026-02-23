@@ -8,17 +8,17 @@ import { PhaseBadge } from "@/components/ai/phase-badge";
 import { DeepResearchProgress } from "./deep-research-progress";
 import { stripAIMetadata } from "@/lib/strip-ai-metadata";
 import {
-  Users,
-  Building2,
-  Zap,
-  RefreshCw,
-  Loader2,
-  DollarSign,
+  UsersThree,
+  Buildings,
+  Lightning,
+  ArrowsClockwise,
+  CircleNotch,
+  CurrencyDollar,
   Clock,
   Globe,
-  ExternalLink,
-  Search,
-} from "lucide-react";
+  ArrowSquareOut,
+  MagnifyingGlass,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface CompetitorListing {
@@ -118,7 +118,7 @@ export function MarketIntelligencePanel({
   if (!marketInsights) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <Globe className="h-6 w-6 text-muted-foreground/40" />
+        <Globe size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           No market insights available. Complete the playbook wizard to generate initial insights.
         </p>
@@ -284,8 +284,10 @@ export function MarketIntelligencePanel({
           disabled={isRefreshing}
           aria-label="Refresh market data"
         >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          <ArrowsClockwise
+            size={16}
+            weight="duotone"
+            className={isRefreshing ? "animate-spin" : ""}
           />
         </Button>
       </div>
@@ -307,9 +309,9 @@ export function MarketIntelligencePanel({
                 disabled={isRetrying}
               >
                 {isRetrying ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
                 ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <ArrowsClockwise size={16} weight="duotone" className="mr-2" />
                 )}
                 Retry Deep Research
               </Button>
@@ -325,7 +327,7 @@ export function MarketIntelligencePanel({
             {/* Salary Range */}
             <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="h-4 w-4 text-teal-600" />
+                <CurrencyDollar size={16} weight="duotone" className="text-teal-600" />
                 <p className="text-[13px] font-medium text-muted-foreground">Salary Range</p>
               </div>
               <p className="text-[28px] font-bold tabular-nums tracking-tight">
@@ -362,7 +364,7 @@ export function MarketIntelligencePanel({
             {/* Time to Hire */}
             <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-4 w-4 text-blue-500" />
+                <Clock size={16} weight="duotone" className="text-blue-500" />
                 <p className="text-[13px] font-medium text-muted-foreground">Time to Hire</p>
               </div>
               <p className="text-[28px] font-bold tabular-nums tracking-tight">
@@ -387,7 +389,7 @@ export function MarketIntelligencePanel({
           <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-orange-500" />
+                <UsersThree size={16} weight="duotone" className="text-orange-500" />
                 <p className="text-[13px] font-medium text-muted-foreground">Candidate Availability</p>
               </div>
               <Badge
@@ -413,7 +415,7 @@ export function MarketIntelligencePanel({
           {/* Competition */}
           <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <Building2 className="h-4 w-4 text-purple-500" />
+              <Buildings size={16} weight="duotone" className="text-purple-500" />
               <p className="text-[13px] font-medium text-muted-foreground">Competition</p>
             </div>
             <div className="flex items-baseline gap-3">
@@ -534,7 +536,7 @@ export function MarketIntelligencePanel({
                       className="group flex items-center gap-1.5 text-[14px] font-medium text-foreground"
                     >
                       <span className="truncate group-hover:underline">{source.title}</span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                      <ArrowSquareOut size={12} className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                     </a>
                     <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
                       {source.url}
@@ -549,7 +551,7 @@ export function MarketIntelligencePanel({
             </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border/60 py-12 text-center">
-              <Globe className="mx-auto h-6 w-6 text-muted-foreground/40" />
+              <Globe size={24} weight="duotone" className="mx-auto text-muted-foreground/40" />
               <p className="mt-3 text-[14px] text-muted-foreground">
                 Sources will appear after deep research completes.
               </p>
@@ -564,7 +566,7 @@ export function MarketIntelligencePanel({
           {/* Fetch button */}
           {listings.length === 0 && !isLoadingListings && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-              <Building2 className="h-6 w-6 text-muted-foreground/40" />
+              <Buildings size={24} weight="duotone" className="text-muted-foreground/40" />
               <p className="mt-3 text-[14px] text-muted-foreground">
                 Search job boards for competitor listings in your market.
               </p>
@@ -575,7 +577,7 @@ export function MarketIntelligencePanel({
                 className="mt-4"
                 onClick={handleFetchListings}
               >
-                <Search className="mr-2 h-4 w-4" />
+                <MagnifyingGlass size={16} weight="duotone" className="mr-2" />
                 Search Competitor Listings
               </Button>
             </div>
@@ -584,7 +586,7 @@ export function MarketIntelligencePanel({
           {/* Loading state */}
           {isLoadingListings && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-card py-16 shadow-sm">
-              <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+              <CircleNotch size={24} weight="bold" className="animate-spin text-teal-600" />
               <p className="mt-3 text-[14px] text-muted-foreground">
                 Searching job boards...
               </p>
@@ -610,7 +612,7 @@ export function MarketIntelligencePanel({
                   onClick={handleFetchListings}
                   disabled={isLoadingListings}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <ArrowsClockwise size={16} weight="duotone" />
                 </Button>
               </div>
 
@@ -629,7 +631,7 @@ export function MarketIntelligencePanel({
                           className="group inline-flex items-center gap-1.5 text-[14px] font-medium text-teal-600 hover:text-teal-700"
                         >
                           <span className="group-hover:underline">{listing.title}</span>
-                          <ExternalLink className="h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+                          <ArrowSquareOut size={12} className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
                         </a>
                         <p className="mt-1 text-[13px] font-semibold text-foreground">
                           {listing.company}

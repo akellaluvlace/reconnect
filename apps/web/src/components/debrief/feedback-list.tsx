@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Json } from "@reconnect/database";
-import { ClipboardList, Clock } from "lucide-react";
+import { ClipboardText, Clock } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface StageInfo {
@@ -141,7 +141,7 @@ export function FeedbackList({
   if (feedback.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <ClipboardList className="h-6 w-6 text-muted-foreground/40" />
+        <ClipboardText size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           No feedback submitted yet.
           {!isManagerOrAdmin &&
@@ -157,7 +157,7 @@ export function FeedbackList({
       {waitingFor > 0 && (
         <div className="flex items-center justify-end">
           <span className="flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-medium text-muted-foreground">
-            <Clock className="h-3 w-3" />
+            <Clock size={12} weight="duotone" />
             Waiting for {waitingFor} more
           </span>
         </div>

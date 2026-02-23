@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Users, Trash2, Loader2, Mail, CheckCircle } from "lucide-react";
+import { UsersThree, Trash, CircleNotch, EnvelopeSimple, CheckCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface StageInfo {
@@ -174,9 +174,9 @@ export function CollaboratorManager({
           disabled={isInviting || !email.trim()}
         >
           {isInviting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <Mail className="mr-2 h-4 w-4" />
+            <EnvelopeSimple size={16} weight="duotone" className="mr-2" />
           )}
           Send Invite
         </Button>
@@ -185,7 +185,7 @@ export function CollaboratorManager({
       {/* Collaborator list */}
       {collaborators.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-12">
-          <Users className="h-5 w-5 text-muted-foreground/40" />
+          <UsersThree size={20} weight="duotone" className="text-muted-foreground/40" />
           <p className="mt-2 text-[14px] text-muted-foreground">
             No collaborators invited yet.
           </p>
@@ -216,7 +216,7 @@ export function CollaboratorManager({
                 </span>
                 {collab.accepted_at ? (
                   <span className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
-                    <CheckCircle className="h-3 w-3" />
+                    <CheckCircle size={12} weight="duotone" />
                     Accepted
                   </span>
                 ) : (
@@ -232,7 +232,7 @@ export function CollaboratorManager({
                 onClick={() => handleRevoke(collab.id)}
                 aria-label={`Revoke invite for ${collab.name || collab.email}`}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <Trash size={14} weight="duotone" />
               </Button>
             </div>
           ))}

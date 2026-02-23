@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { stripAIMetadata } from "@/lib/strip-ai-metadata";
 import {
-  Sparkles,
-  ShieldAlert,
+  Sparkle,
+  ShieldWarning,
   Lightbulb,
-  Loader2,
-} from "lucide-react";
+  CircleNotch,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface StrategyPanelProps {
@@ -122,22 +122,22 @@ export function StrategyPanel({
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
         {marketInsights ? (
           <>
-            <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+            <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
             <p className="mt-3 text-[14px] text-muted-foreground">
               Generate an AI-powered hiring strategy based on market research
             </p>
             <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
               {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
               ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkle size={16} weight="duotone" className="mr-2" />
               )}
               Generate Strategy
             </Button>
           </>
         ) : (
           <>
-            <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+            <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
             <p className="mt-3 text-[14px] text-muted-foreground">
               Complete market research first to generate a hiring strategy.
             </p>
@@ -162,9 +162,9 @@ export function StrategyPanel({
           aria-label="Regenerate strategy"
         >
           {isGenerating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            <Sparkle size={16} weight="duotone" />
           )}
         </Button>
       </div>
@@ -364,7 +364,7 @@ export function StrategyPanel({
               {strategy.key_risks.map((r, i) => (
                 <div key={i} className="rounded-xl border border-border/40 bg-card p-5 shadow-sm">
                   <div className="flex items-start gap-3">
-                    <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <ShieldWarning size={16} weight="duotone" className="mt-0.5 shrink-0 text-amber-500" />
                     <div>
                       <p className="text-[14px] font-semibold text-foreground">{stripAIMetadata(r.risk)}</p>
                       <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">

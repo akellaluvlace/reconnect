@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CaretRight } from "@phosphor-icons/react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,7 +67,7 @@ export function Header() {
           const isLast = i === crumbs.length - 1;
           return (
             <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <ChevronRight className="h-3 w-3 text-slate-300" />}
+              {i > 0 && <CaretRight size={12} className="text-slate-300" />}
               {crumb.href && !isLast ? (
                 <Link
                   href={crumb.href}

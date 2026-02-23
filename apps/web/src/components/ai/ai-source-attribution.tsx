@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { CaretDown, CaretUp, ArrowSquareOut } from "@phosphor-icons/react";
 
 interface WebSource {
   url: string;
@@ -44,9 +44,9 @@ export function AISourceAttribution({
             Based on {sources.length} source{sources.length !== 1 ? "s" : ""}
           </span>
           {expanded ? (
-            <ChevronUp className="h-3 w-3" />
+            <CaretUp size={12} />
           ) : (
-            <ChevronDown className="h-3 w-3" />
+            <CaretDown size={12} />
           )}
         </button>
         {expanded && (
@@ -66,7 +66,7 @@ export function AISourceAttribution({
                 <span className="shrink-0 text-muted-foreground/60">
                   — {extractDomain(source.url)}
                 </span>
-                <ExternalLink className="h-2.5 w-2.5 shrink-0 text-muted-foreground/40" />
+                <ArrowSquareOut size={10} className="shrink-0 text-muted-foreground/40" />
               </li>
             ))}
           </ul>

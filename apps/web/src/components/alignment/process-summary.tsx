@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock } from "lucide-react";
+import { Clock } from "@phosphor-icons/react";
 
 interface StageInfo {
   id: string;
@@ -80,7 +80,7 @@ export function ProcessSummary({ stages }: { stages: StageInfo[] }) {
                     </span>
                   </div>
                   <p className="mt-0.5 flex items-center gap-1 text-[12px] text-muted-foreground">
-                    <Clock className="h-3 w-3" />
+                    <Clock size={12} weight="duotone" />
                     {stage.duration_minutes} minutes
                   </p>
                 </div>

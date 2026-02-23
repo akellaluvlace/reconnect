@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Upload, Loader2, FileAudio } from "lucide-react";
+import { UploadSimple, CircleNotch, FileAudio } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 const ACCEPTED_TYPES = ["audio/mp4", "audio/mpeg", "audio/webm", "video/mp4", "video/webm"];
@@ -109,7 +109,7 @@ export function ManualUpload({
         />
         {file && (
           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <FileAudio className="h-3.5 w-3.5" />
+            <FileAudio size={14} weight="duotone" />
             {file.name} ({(file.size / (1024 * 1024)).toFixed(1)} MB)
           </div>
         )}
@@ -134,9 +134,9 @@ export function ManualUpload({
         disabled={!file || !consentChecked || isUploading}
       >
         {isUploading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
         ) : (
-          <Upload className="mr-2 h-4 w-4" />
+          <UploadSimple size={16} weight="duotone" className="mr-2" />
         )}
         Upload & Transcribe
       </Button>

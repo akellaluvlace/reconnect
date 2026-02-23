@@ -84,8 +84,9 @@ This is a compliance requirement documented in the spec but has NO implementatio
 ### 10.1 — Platform Google Account Setup + OAuth
 
 > **CRITICAL**: Google Drive + Meet is the core recording infrastructure.
-> The AI pipeline (Whisper → Claude) depends on this. Not an export feature.
+> The AI pipeline depends on this. Not an export feature.
 > See `docs/INTERVIEW_RECORDING_FLOW.md` for full architecture.
+> See `docs/plans/2026-02-23-recording-pipeline-design.md` for revised design (state machine, VTT primary, manual synthesis).
 
 **Owner:** Backend
 **Supporting:** Security
@@ -95,16 +96,27 @@ This is a compliance requirement documented in the spec but has NO implementatio
 **Allowed Paths:**
 - `apps/web/src/app/api/google/**`
 - `apps/web/src/lib/google/**`
+- `supabase/migrations/` (migration #25)
 
-**Architecture (Client Decision 2026-02-20):**
+**Architecture (Client Decision 2026-02-20, revised 2026-02-23):**
 - **Shared Rec+onnect Google Workspace account** (platform-level, NOT per-org)
-- **Business Standard tier** (minimum) — enables Meet auto-recording
-- **Admin setting:** "Meetings are recorded by default" enabled in Workspace admin console
+- **Business Standard tier** (minimum) — enables Meet auto-recording + auto-transcription
+- **Admin setting:** "Meetings are recorded by default" + transcription enabled in Workspace admin console
 - **All recordings → Rec+onnect's Drive** (`Meet Recordings/` folder, no moves for MVP — isolation via app-layer RLS)
-- **Meet API** provides exact Drive file IDs for recording retrieval (no filename guessing)
+- **Meet API** provides exact Drive file IDs for recording AND transcript retrieval (no filename guessing)
 - **DB table:** `platform_google_config` (single-row, service_role only) — migration #19 deployed
+- **PRIMARY transcript source:** Google Meet built-in transcription (VTT/SBV files, ~50KB). Whisper = fallback for manual uploads only.
+- **Synthesis trigger:** MANUAL — admin/manager clicks button when all feedback is in. NOT auto-chained to transcription.
 
 **Tasks:**
+- [ ] Create migration #25: updated `recording_status` CHECK constraint + `pipeline_log JSONB[]` + `retry_count INTEGER`:
+  ```sql
+  -- States: scheduled, pending, uploaded, transcribing, transcribed, synthesizing, completed
+  -- Failed: failed_recording, failed_download, failed_transcription, failed_synthesis, no_consent
+  ALTER TABLE interviews ADD COLUMN IF NOT EXISTS pipeline_log JSONB[] DEFAULT '{}';
+  ALTER TABLE interviews ADD COLUMN IF NOT EXISTS retry_count INTEGER DEFAULT 0;
+  ```
+
 - [ ] Set up Google Cloud project:
   - Enable Google Drive API + Google Calendar API + Google Meet REST API
   - Create OAuth 2.0 credentials for the Rec+onnect service account
@@ -112,51 +124,47 @@ This is a compliance requirement documented in the spec but has NO implementatio
   - Add authorized redirect URIs
   - Scopes: `drive.meet.readonly`, `calendar.events`, `meetings.space.readonly`
 
-- [ ] Create Google client wrapper:
-```typescript
-// apps/web/src/lib/google/client.ts
-import { google } from 'googleapis';
-
-// Platform-level: one shared Rec+onnect account for all orgs
-// Tokens stored in platform_google_config (service_role only)
-export async function getGoogleClient() {
-  // Read tokens from platform_google_config (single row)
-  // Refresh if expired
-  // Return authenticated google client
-}
-```
+- [ ] Create Google client wrapper (`apps/web/src/lib/google/client.ts`):
+  - Read tokens from `platform_google_config` (single row, service_role)
+  - Auto-refresh 5 min before expiry (NOT on-demand — prevents race conditions)
+  - Return authenticated google client
+  - Log all token refresh events
 
 - [ ] Create platform config management:
   - Internal admin route to store/refresh tokens in `platform_google_config`
-  - Token auto-refresh on expiry (background job or on-demand)
-  - Connection health check endpoint
+  - Health check endpoint (`GET /api/google/health`) — cron every 15 min
+  - Alert on 2 consecutive health check failures
 
-- [ ] Create Google API helper functions:
-  - `createMeetEvent(params)` — Calendar API: create event with conferenceData + co-host
-  - `getRecordingFileId(meetingCode)` — Meet API: `conferenceRecords.list(filter=space.meeting_code=...)` → `recordings.list()` → `driveDestination.fileId`
-  - `downloadRecording(fileId)` — Drive API: download recording file by ID (`drive.meet.readonly` scope)
+- [ ] Create Google API helper modules (separate files for testability):
+  - `apps/web/src/lib/google/calendar.ts` — `createMeetEvent(params)`: Calendar API create event with conferenceData + co-host
+  - `apps/web/src/lib/google/meet.ts` — `getConferenceRecord(meetingCode)`: Meet API `conferenceRecords.list()` + `transcripts.list()` → transcript file ID
+  - `apps/web/src/lib/google/drive.ts` — `downloadTranscriptFile(fileId)`: Drive API download VTT/SBV file
+  - `apps/web/src/lib/google/vtt-parser.ts` — Parse VTT/SBV → plain text + segments array
 
 **Security Checklist:**
 - [ ] Tokens stored in `platform_google_config` (RLS enabled, NO policies = service_role only)
 - [ ] Minimal scopes requested
-- [ ] Token refresh handled automatically
+- [ ] Token refresh 5 min before expiry, not on-demand
 - [ ] No tokens exposed to client
 - [ ] API calls always go through server-side routes
+- [ ] Health check cron every 15 min
 
 **DoD Commands:**
 ```bash
 pnpm lint && pnpm typecheck
 # Test: create Meet event, verify Meet link returned
+# Test: health check endpoint returns valid token status
 ```
 
-**Output:** Platform Google integration working (auth + Calendar + Meet + Drive APIs)
+**Output:** Platform Google integration working (auth + Calendar + Meet + Drive APIs) + migration #25 deployed
 
 ---
 
-### 10.2 — Interview Scheduling + Recording Retrieval Pipeline
+### 10.2 — Interview Scheduling + Recording Pipeline (State Machine)
 
-> This is the critical path — Meet auto-records → Drive → retrieval → Whisper pipeline.
+> Critical path: Meet auto-records → Drive → VTT transcript → manual synthesis trigger.
 > See `docs/INTERVIEW_RECORDING_FLOW.md` for the complete flow.
+> See `docs/plans/2026-02-23-recording-pipeline-design.md` for state machine + vulnerability map.
 
 **Owner:** Backend
 **Supporting:** Frontend, AI Engineer
@@ -167,20 +175,32 @@ pnpm lint && pnpm typecheck
 - `apps/web/src/app/api/google/meet/route.ts`
 - `apps/web/src/app/api/google/recordings/route.ts`
 - `apps/web/src/app/api/interviews/**`
+- `apps/web/src/app/api/cron/**`
 - `apps/web/src/lib/google/**`
-- `apps/web/src/components/interview/schedule-dialog.tsx`
+- `apps/web/src/components/debrief/**`
 
-**The Recording Flow:**
+**The Revised Recording Flow:**
 ```
 1. User schedules interview in Rec+onnect
 2. App creates Calendar event (Rec+onnect account = organizer)
    - Interviewer added as CO-HOST (triggers auto-record on join)
    - Candidate added as attendee
-   - Auto-record = ON (Workspace admin default + per-event API flag)
-3. Meet link + conference ID stored on interviews row
-4. Interview happens → auto-recorded → saved to Rec+onnect's Drive
-5. App polls Meet API for recording → gets Drive fileId
-6. Whisper transcribes → Claude synthesizes (Steps 9.7 + 9.9)
+   - Auto-record = ON (Workspace admin default)
+3. Meet link + meeting code stored on interviews row. Status = 'scheduled'
+4. Interview happens → auto-recorded + auto-transcribed (Google Workspace)
+5. Interview completed → status = 'pending'
+6. Cron polls Meet API for transcript (NOT video) → gets VTT file ID
+7. VTT downloaded + parsed → status = 'transcribed'
+8. Admin clicks "Generate Synthesis" when feedback is ready → status = 'completed'
+```
+
+**State Machine (recording_status):**
+```
+scheduled → pending → uploaded → transcribed → [MANUAL] → synthesizing → completed
+                   → no_consent
+                   → failed_recording → (retry up to 3x)
+         uploaded → failed_transcription → (retry up to 3x)
+     synthesizing → failed_synthesis → (retry up to 3x)
 ```
 
 **Tasks:**
@@ -189,51 +209,76 @@ pnpm lint && pnpm typecheck
     - Auth check, validate candidate_id + stage_id
     - Call `createMeetEvent()` from 10.1 (adds interviewer as co-host)
     - Store `meet_link`, `meet_conference_id` on interview row
-    - Send email notification to interviewer + candidate (Resend, or Step 9.4)
+    - Set `recording_status = 'scheduled'`
+    - Append to `pipeline_log`: `{ from: null, to: 'scheduled', ts, detail: 'interview created' }`
+    - Send email notification to interviewer + candidate (Resend)
   - `PATCH /api/interviews/[id]` — Reschedule (update Calendar event)
   - `DELETE /api/interviews/[id]` — Cancel (delete Calendar event)
 
-- [ ] Create recording retrieval pipeline:
-  - `POST /api/google/recordings/check` — Poll for recording readiness:
-    - Input: `interview_id`
-    - Reads `meet_conference_id` from interview row
-    - Calls Meet API `conferenceRecords.recordings.list()`
-    - If recording found: get `driveDestination.fileId`
-    - Update `interviews.drive_file_id` + `recording_status = 'uploaded'`
-    - **No folder move (MVP)** — recording stays in `Meet Recordings/`, referenced by file ID
-    - Return `{ ready: true, fileId }` or `{ ready: false }`
-  - Background polling: after interview `completed_at`, check every 5 min for up to 2 hours
+- [ ] Create cron endpoint (`POST /api/cron/recording-pipeline`):
+  - Vercel Cron: runs every 5 minutes
+  - Authenticated via `CRON_SECRET` header (Vercel sets automatically)
+  - Queries interviews in retriable states: `pending`, `uploaded`
+  - For each:
+    1. **Consent gate:** If `recording_consent_at IS NULL`, set `no_consent`, skip
+    2. **Optimistic lock:** `UPDATE SET recording_status='next_state' WHERE status='current_state' RETURNING id`
+    3. **pending → uploaded:** Poll Meet API for transcript file, get VTT file ID, store `drive_file_id`
+    4. **uploaded → transcribed:** Download VTT from Drive, parse with `vtt-parser.ts`, store in `interview_transcripts`
+  - Append every transition to `pipeline_log`
+  - Respect retry budget: `retry_count <= 3`, increment on failure
 
-- [ ] Drive storage (MVP — no folder moves):
-  - Recordings stay in `Meet Recordings/` folder (default Meet behavior)
-  - App stores `drive_file_id` on interview row, accesses by ID only
-  - No folder reorganization — isolation via app-layer RLS
-  - `drive.meet.readonly` scope is sufficient (no write scope needed)
+- [ ] Transcript retrieval (VTT — primary source):
+  - `conferenceRecords.transcripts.list(parent="conferenceRecords/{id}")` → transcript file reference
+  - Download VTT/SBV file from Drive (~50KB, not 100-300MB video)
+  - Parse VTT to plain text + segments via `vtt-parser.ts`
+  - Store in `interview_transcripts` table (service_role only)
+  - **No ffmpeg, no Whisper, no large downloads for auto-recorded interviews**
+
+- [ ] Manual synthesis trigger:
+  - Button in Debrief UI: "Generate Synthesis" (visible when transcript OR feedback exists)
+  - `POST /api/interviews/[id]/synthesis` — triggers `generateFeedbackSynthesis()` pipeline
+  - Input: transcript (if available) + ALL feedback forms + candidate context
+  - Sets `recording_status = 'synthesizing'` → `'completed'` on success
+  - Manager/admin only (role check)
 
 - [ ] Create interview scheduling UI:
   - ScheduleDialog component (date picker + time + interviewer select)
   - Shows generated Meet link after scheduling
-  - Recording status indicator on interview cards
-  - "Check Recording" button (manual poll trigger)
+  - Recording status indicator on interview cards (state machine states with icons)
+  - "Retry" button on failed states (up to 3 retries)
+  - Pipeline log viewer (expandable, shows state transitions)
 
-- [ ] Consent gate check:
-  - Before recording retrieval, verify `interviews.recording_consent_at` is set
-  - If null at `completed_at` time: skip recording retrieval, mark `recording_status = 'no_consent'`
+- [ ] Consent gate (hard requirement):
+  - Before any recording retrieval, verify `interviews.recording_consent_at IS NOT NULL`
+  - If null when interview completes: skip recording pipeline, mark `no_consent`
   - Synthesis runs on feedback forms only (no transcript)
-  - See `docs/INTERVIEW_RECORDING_FLOW.md` → Consent Gate Flow
+  - Interviewer sees "no recording consent" warning in UI pre-meeting
 
-- [ ] Manual upload fallback:
-  - Upload button on interview card (if auto-record failed)
-  - Accepts audio/video file → uploads to **Supabase Storage** (MVP — no Drive write scope)
-  - Whisper downloads from Supabase Storage URL → same transcription pipeline
+- [ ] Manual upload fallback (Whisper path):
+  - Upload button on interview card (if auto-record failed or non-Meet interview)
+  - Accepts audio file (max 100MB) → uploads to **Supabase Storage**
+  - Whisper-1 API transcribes audio → stores in `interview_transcripts`
+  - Same synthesis flow applies after transcription
+  - Client-side + server-side file size validation
+
+**Guardrails:**
+- Optimistic locking on all state transitions (prevents double-processing)
+- Retry budget: max 3 per failed state, then terminal
+- Pipeline audit log: every transition appended to `pipeline_log JSONB[]`
+- Consent hard gate: `no_consent` if `recording_consent_at IS NULL`
+- Cron deduplication: `UPDATE WHERE status=X RETURNING id` — atomic claim
 
 **DoD Commands:**
 ```bash
 pnpm lint && pnpm typecheck
-# Test: schedule interview → verify Meet link created → verify conference ID stored
+# Test: schedule interview → verify Meet link + status='scheduled'
+# Test: cron advances pending → uploaded → transcribed (with mock Meet API)
+# Test: manual synthesis trigger works
+# Test: consent gate blocks recording retrieval when null
+# Test: retry budget enforced (max 3)
 ```
 
-**Output:** Interview scheduling + recording retrieval pipeline working
+**Output:** Full recording pipeline with state machine, cron orchestration, manual synthesis trigger
 
 ---
 

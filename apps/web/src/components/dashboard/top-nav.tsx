@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Settings,
-  LogOut,
-} from "lucide-react";
+import { GearSix, SignOut } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useSignOut } from "@/lib/hooks/use-sign-out";
 import { useAuthStore } from "@/stores/auth-store";
@@ -67,7 +64,7 @@ export function TopNav() {
               >
                 {item.name}
                 {active && (
-                  <span className="absolute inset-x-2 -bottom-[1px] h-[2px] rounded-full bg-foreground" />
+                  <span className="absolute inset-x-2 -bottom-[1px] h-[2px] rounded-full bg-teal-600" />
                 )}
               </Link>
             );
@@ -86,7 +83,7 @@ export function TopNav() {
             )}
             aria-label="Settings"
           >
-            <Settings className="h-4 w-4" />
+            <GearSix size={16} weight="duotone" />
           </Link>
 
           <DropdownMenu>
@@ -115,7 +112,7 @@ export function TopNav() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-3.5 w-3.5" />
+                <SignOut size={14} weight="duotone" className="mr-2" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

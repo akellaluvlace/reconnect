@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import type { Json } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, Loader2, FileText } from "lucide-react";
+import { Brain, Sparkle, CircleNotch, FileText } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface StageInfo {
@@ -197,21 +197,21 @@ export function AISynthesisPanel({
   if (!synthesis) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <Brain className="h-6 w-6 text-muted-foreground/40" />
+        <Brain size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           Generate an AI synthesis of all feedback for this candidate
         </p>
         {hasTranscript && (
           <span className="mt-2 flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-medium text-muted-foreground">
-            <FileText className="h-3 w-3" />
+            <FileText size={12} weight="duotone" />
             Transcript available
           </span>
         )}
         <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
           {isGenerating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <Sparkles className="mr-2 h-4 w-4" />
+            <Sparkle size={16} weight="duotone" className="mr-2" />
           )}
           Generate Synthesis
         </Button>
@@ -225,7 +225,7 @@ export function AISynthesisPanel({
       <div className="flex items-center justify-end gap-2">
         {metadata?.transcript_included && (
           <span className="flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-medium text-muted-foreground">
-            <FileText className="h-3 w-3" />
+            <FileText size={12} weight="duotone" />
             {metadata.transcript_truncated
               ? "Transcript (truncated)"
               : "Transcript included"}
@@ -239,9 +239,9 @@ export function AISynthesisPanel({
           aria-label="Regenerate synthesis"
         >
           {isGenerating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            <Sparkle size={16} weight="duotone" />
           )}
         </Button>
       </div>

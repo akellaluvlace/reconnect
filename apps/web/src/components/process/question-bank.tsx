@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Plus, Trash2, Loader2 } from "lucide-react";
+import { Sparkle, Plus, Trash, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import type { SuggestedQuestion } from "@reconnect/database";
 
@@ -144,9 +144,9 @@ export function QuestionBank({
           className="h-6 text-xs"
         >
           {isRegenerating ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+            <CircleNotch size={12} weight="bold" className="mr-1 animate-spin" />
           ) : (
-            <Sparkles className="mr-1 h-3 w-3" />
+            <Sparkle size={12} weight="duotone" className="mr-1" />
           )}
           Regenerate
         </Button>
@@ -180,7 +180,7 @@ export function QuestionBank({
             className="h-5 w-5 p-0 shrink-0"
             aria-label="Delete question"
           >
-            <Trash2 className="h-3 w-3 text-destructive" />
+            <Trash size={12} className="text-destructive" />
           </Button>
         </div>
       ))}
@@ -203,7 +203,7 @@ export function QuestionBank({
           disabled={!newQuestion.trim()}
           className="h-7 text-xs"
         >
-          <Plus className="h-3 w-3" />
+          <Plus size={12} />
         </Button>
       </div>
     </div>

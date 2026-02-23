@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Link2,
+  LinkSimple,
   Copy,
-  Trash2,
-  Loader2,
-  ExternalLink,
+  Trash,
+  CircleNotch,
+  ArrowSquareOut,
   Eye,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface ShareLinkData {
@@ -105,9 +105,9 @@ export function ShareableLink({
           disabled={isCreating}
         >
           {isCreating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <Link2 className="mr-2 h-4 w-4" />
+            <LinkSimple size={16} weight="duotone" className="mr-2" />
           )}
           Generate Link
         </Button>
@@ -115,7 +115,7 @@ export function ShareableLink({
 
       {shareLinks.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-12">
-          <Link2 className="h-5 w-5 text-muted-foreground/40" />
+          <LinkSimple size={20} weight="duotone" className="text-muted-foreground/40" />
           <p className="mt-2 text-[14px] text-muted-foreground">
             No share links created yet. Generate a link to share limited
             playbook information with external collaborators.
@@ -131,7 +131,7 @@ export function ShareableLink({
                 className="flex items-center justify-between rounded-xl border border-border/40 bg-card px-5 py-3.5 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  <ArrowSquareOut size={16} weight="duotone" className="text-muted-foreground" />
                   <div>
                     <p className="text-[13px] font-mono text-foreground">
                       /share/{link.token.slice(0, 8)}...
@@ -143,7 +143,7 @@ export function ShareableLink({
                         </span>
                       )}
                       <span className="flex items-center gap-0.5">
-                        <Eye className="h-3 w-3" />
+                        <Eye size={12} weight="duotone" />
                         {link.view_count ?? 0} views
                       </span>
                     </div>
@@ -166,7 +166,7 @@ export function ShareableLink({
                     onClick={() => copyLink(link.token)}
                     aria-label="Copy link"
                   >
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy size={14} weight="duotone" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -175,7 +175,7 @@ export function ShareableLink({
                     onClick={() => handleRevoke(link.id)}
                     aria-label="Revoke link"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash size={14} weight="duotone" />
                   </Button>
                 </div>
               </div>

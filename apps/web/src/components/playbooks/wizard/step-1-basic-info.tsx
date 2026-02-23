@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "@phosphor-icons/react";
 
 const step1Schema = z.object({
   title: z.string().min(1, "Title is required").max(200),
@@ -90,7 +90,7 @@ export function Step1BasicInfo() {
           />
           <Button type="submit" className="w-full">
             Continue
-            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            <ArrowRight size={14} className="ml-1.5" />
           </Button>
         </form>
       </Form>

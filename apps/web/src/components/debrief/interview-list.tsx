@@ -2,7 +2,7 @@
 
 import type { Json } from "@reconnect/database";
 import { InterviewCard } from "./interview-card";
-import { Calendar } from "lucide-react";
+import { CalendarBlank } from "@phosphor-icons/react";
 
 interface StageInfo {
   id: string;
@@ -57,7 +57,7 @@ export function InterviewList({
   if (interviews.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <Calendar className="h-6 w-6 text-muted-foreground/40" />
+        <CalendarBlank size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
           No interviews scheduled for this candidate yet.
         </p>

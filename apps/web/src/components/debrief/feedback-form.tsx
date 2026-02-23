@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Plus, X, Loader2 } from "lucide-react";
+import { ChatText, Plus, X, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface RatingEntry {
@@ -120,7 +120,7 @@ export function FeedbackForm({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <MessageSquare className="h-4 w-4" />
+          <ChatText size={16} weight="duotone" />
           Submit Feedback
         </CardTitle>
       </CardHeader>
@@ -169,7 +169,7 @@ export function FeedbackForm({
                   size="sm"
                   onClick={() => removeItem(setPros, i)}
                 >
-                  <X className="h-4 w-4" />
+                  <X size={16} />
                 </Button>
               )}
             </div>
@@ -179,7 +179,7 @@ export function FeedbackForm({
             size="sm"
             onClick={() => addItem(setPros)}
           >
-            <Plus className="mr-1 h-3 w-3" /> Add strength
+            <Plus size={12} className="mr-1" /> Add strength
           </Button>
         </div>
 
@@ -200,7 +200,7 @@ export function FeedbackForm({
                   size="sm"
                   onClick={() => removeItem(setCons, i)}
                 >
-                  <X className="h-4 w-4" />
+                  <X size={16} />
                 </Button>
               )}
             </div>
@@ -210,7 +210,7 @@ export function FeedbackForm({
             size="sm"
             onClick={() => addItem(setCons)}
           >
-            <Plus className="mr-1 h-3 w-3" /> Add concern
+            <Plus size={12} className="mr-1" /> Add concern
           </Button>
         </div>
 
@@ -248,9 +248,9 @@ export function FeedbackForm({
           disabled={isSubmitting || !focusAreasConfirmed}
         >
           {isSubmitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
           ) : (
-            <MessageSquare className="mr-2 h-4 w-4" />
+            <ChatText size={16} weight="duotone" className="mr-2" />
           )}
           Submit Feedback
         </Button>

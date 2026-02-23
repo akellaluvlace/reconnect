@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { HiringStrategy, CandidateProfile, MarketInsights } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkle, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 interface CandidateProfileBuilderProps {
@@ -102,7 +102,7 @@ export function CandidateProfileBuilder({
   if (!candidateProfile) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+        <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
         {canGenerate ? (
           <>
             <p className="mt-3 text-[14px] text-muted-foreground">
@@ -111,9 +111,9 @@ export function CandidateProfileBuilder({
             </p>
             <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
               {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
               ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkle size={16} weight="duotone" className="mr-2" />
               )}
               Generate Profile
             </Button>
@@ -140,9 +140,9 @@ export function CandidateProfileBuilder({
           aria-label="Regenerate profile"
         >
           {isGenerating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <CircleNotch size={16} weight="bold" className="animate-spin" />
           ) : (
-            <Sparkles className="h-4 w-4" />
+            <Sparkle size={16} weight="duotone" />
           )}
         </Button>
       </div>

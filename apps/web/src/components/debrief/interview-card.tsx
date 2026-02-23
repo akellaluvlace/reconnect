@@ -2,7 +2,7 @@
 
 import type { Json } from "@reconnect/database";
 import { RecordingStatus } from "./recording-status";
-import { Video, ShieldCheck } from "lucide-react";
+import { VideoCamera, ShieldCheck } from "@phosphor-icons/react";
 
 interface InterviewData {
   id: string;
@@ -69,7 +69,7 @@ export function InterviewCard({
         {/* Consent badge */}
         {interview.recording_consent_at && (
           <span className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
-            <ShieldCheck className="h-3 w-3" />
+            <ShieldCheck size={12} weight="duotone" />
             Consent
           </span>
         )}
@@ -85,7 +85,7 @@ export function InterviewCard({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[12px] font-medium text-teal-600 hover:text-teal-700 hover:underline"
           >
-            <Video className="h-3 w-3" />
+            <VideoCamera size={12} weight="duotone" />
             Meet
           </a>
         )}

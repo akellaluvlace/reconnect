@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Users } from "lucide-react";
+import { UsersThree } from "@phosphor-icons/react/dist/ssr";
 
 export default function CandidatesPage() {
   return (
@@ -10,7 +10,7 @@ export default function CandidatesPage() {
         description="View all candidates across playbooks"
       />
       <EmptyState
-        icon={Users}
+        icon={<UsersThree size={24} weight="duotone" className="text-teal-500" />}
         title="No candidates yet"
         description="Candidates will appear here once you add them to a playbook."
       />
