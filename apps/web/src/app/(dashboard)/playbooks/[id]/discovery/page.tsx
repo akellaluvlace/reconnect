@@ -11,6 +11,21 @@ import {
 } from "@reconnect/ai";
 import type { MarketInsights } from "@reconnect/database";
 
+const CompetitorListingSchema = z.object({
+  url: z.string(),
+  title: z.string(),
+  company: z.string(),
+  source: z.string(),
+  snippet: z.string(),
+  postedDate: z.string().optional(),
+  relevanceScore: z.number(),
+});
+
+const CompetitorListingsWrapperSchema = z.object({
+  listings: z.array(CompetitorListingSchema),
+  generated_at: z.string().optional(),
+});
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -58,6 +73,7 @@ export default async function DiscoveryPage({
         market_insights: parseJsonb(playbook.market_insights, MarketInsightsReadSchema, "market_insights") as MarketInsights | null,
         job_description: parseJsonb(playbook.job_description, JobDescriptionSchema, "job_description"),
         hiring_strategy: parseJsonb(playbook.hiring_strategy, HiringStrategySchema, "hiring_strategy"),
+        competitor_listings: parseJsonb(playbook.competitor_listings, CompetitorListingsWrapperSchema, "competitor_listings")?.listings ?? null,
       }}
     />
   );

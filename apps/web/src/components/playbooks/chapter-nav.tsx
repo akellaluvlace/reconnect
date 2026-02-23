@@ -2,21 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, ListChecks, Users, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const chapters = [
-  { id: "discovery", name: "Discovery", icon: Search },
-  { id: "process", name: "Process", icon: ListChecks },
-  { id: "alignment", name: "Alignment", icon: Users },
-  { id: "debrief", name: "Debrief", icon: MessageSquare },
+  { id: "discovery", name: "Discovery" },
+  { id: "process", name: "Process" },
+  { id: "alignment", name: "Alignment" },
+  { id: "debrief", name: "Debrief" },
 ];
 
 export function ChapterNav({ playbookId }: { playbookId: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className="flex space-x-1 border-b">
+    <nav className="flex shrink-0 items-center rounded-lg border border-border/60 bg-muted/40 p-1">
       {chapters.map((chapter) => {
         const href = `/playbooks/${playbookId}/${chapter.id}`;
         const isActive = pathname === href;
@@ -26,13 +25,12 @@ export function ChapterNav({ playbookId }: { playbookId: string }) {
             key={chapter.id}
             href={href}
             className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 -mb-px transition-colors",
+              "rounded-md px-4 py-2 text-sm font-medium transition-all",
               isActive
-                ? "border-primary text-primary font-medium"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/25",
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <chapter.icon className="h-4 w-4" />
             {chapter.name}
           </Link>
         );

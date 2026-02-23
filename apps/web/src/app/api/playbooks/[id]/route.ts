@@ -41,6 +41,10 @@ const updatePlaybookSchema = z.object({
     .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Hiring strategy payload too large"),
+  competitor_listings: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .refine(jsonbSizeCheck, "Competitor listings payload too large"),
 });
 
 export async function GET(
@@ -185,6 +189,8 @@ export async function PATCH(
       updateData.settings = parsed.data.settings as Json;
     if (parsed.data.hiring_strategy !== undefined)
       updateData.hiring_strategy = parsed.data.hiring_strategy as Json;
+    if (parsed.data.competitor_listings !== undefined)
+      updateData.competitor_listings = parsed.data.competitor_listings as Json;
 
     const { data, error } = await supabase
       .from("playbooks")

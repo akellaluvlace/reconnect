@@ -50,10 +50,10 @@ describe("AI_CONFIG completeness", () => {
     }
   });
 
-  it("maxTokens are reasonable (256-8192)", () => {
+  it("maxTokens are reasonable (256-16384)", () => {
     for (const [key, config] of Object.entries(AI_CONFIG)) {
       expect(config.maxTokens, `${key} maxTokens`).toBeGreaterThanOrEqual(256);
-      expect(config.maxTokens, `${key} maxTokens`).toBeLessThanOrEqual(8192);
+      expect(config.maxTokens, `${key} maxTokens`).toBeLessThanOrEqual(16384);
     }
   });
 

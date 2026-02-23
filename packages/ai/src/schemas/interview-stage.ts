@@ -16,18 +16,11 @@ export const SuggestedQuestionSchema = z.object({
 
 export const InterviewStageSchema = z.object({
   name: z.string(),
-  type: z.enum([
-    "screening",
-    "technical",
-    "behavioral",
-    "cultural",
-    "final",
-    "custom",
-  ]),
+  type: z.string(),
   duration_minutes: z.number(),
   description: z.string(),
-  focus_areas: z.array(FocusAreaSchema).min(2).max(3),
-  suggested_questions: z.array(SuggestedQuestionSchema).min(6).max(15),
+  focus_areas: z.array(FocusAreaSchema).min(1).max(5),
+  suggested_questions: z.array(SuggestedQuestionSchema).min(3).max(20),
   rationale: z.string().optional(),
 });
 

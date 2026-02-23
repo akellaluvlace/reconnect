@@ -2,62 +2,62 @@ export const AI_CONFIG = {
   marketInsights: {
     model: "claude-opus-4-6" as const,
     temperature: 0.3,
-    maxTokens: 4096,
+    maxTokens: 16384,
   },
   marketInsightsQuick: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.3,
-    maxTokens: 2048,
+    maxTokens: 8192,
   },
   jdGeneration: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.4,
-    maxTokens: 2048,
+    maxTokens: 8192,
   },
   stageGeneration: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.2,
-    maxTokens: 1024,
+    maxTokens: 8192,
   },
   questionGeneration: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.3,
-    maxTokens: 1024,
+    maxTokens: 4096,
   },
   feedbackSynthesis: {
     model: "claude-opus-4-6" as const,
     temperature: 0.1,
-    maxTokens: 4096,
+    maxTokens: 16384,
   },
   queryGeneration: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.5,
-    maxTokens: 1024,
+    maxTokens: 4096,
   },
   sourceScoring: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.1,
-    maxTokens: 1024,
+    maxTokens: 8192,
   },
   sourceExtraction: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.1,
-    maxTokens: 2048,
+    maxTokens: 8192,
   },
   strategyGeneration: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.3,
-    maxTokens: 2048,
+    maxTokens: 8192,
   },
   coverageAnalysis: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.2,
-    maxTokens: 1024,
+    maxTokens: 8192,
   },
   candidateProfile: {
     model: "claude-sonnet-4-5-20250929" as const,
     temperature: 0.3,
-    maxTokens: 1024,
+    maxTokens: 8192,
   },
 } as const;
 

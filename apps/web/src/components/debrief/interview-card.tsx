@@ -1,7 +1,6 @@
 "use client";
 
 import type { Json } from "@reconnect/database";
-import { Badge } from "@/components/ui/badge";
 import { RecordingStatus } from "./recording-status";
 import { Video, ShieldCheck } from "lucide-react";
 
@@ -25,10 +24,10 @@ interface InterviewData {
 }
 
 const STATUS_STYLES: Record<string, { label: string; color: string }> = {
-  scheduled: { label: "Scheduled", color: "bg-blue-100 text-blue-800" },
-  completed: { label: "Completed", color: "bg-green-100 text-green-800" },
-  cancelled: { label: "Cancelled", color: "bg-gray-100 text-gray-800" },
-  no_show: { label: "No Show", color: "bg-red-100 text-red-800" },
+  scheduled: { label: "Scheduled", color: "border-blue-200 bg-blue-50 text-blue-800" },
+  completed: { label: "Completed", color: "border-green-200 bg-green-50 text-green-800" },
+  cancelled: { label: "Cancelled", color: "border-border/60 bg-muted/40 text-muted-foreground" },
+  no_show: { label: "No Show", color: "border-red-200 bg-red-50 text-red-800" },
 };
 
 interface InterviewCardProps {
@@ -45,20 +44,20 @@ export function InterviewCard({
     STATUS_STYLES[interview.status ?? ""] ?? STATUS_STYLES.scheduled;
 
   return (
-    <div className="flex items-center justify-between rounded-md border px-3 py-2">
+    <div className="flex items-center justify-between rounded-xl border border-border/40 bg-card px-5 py-3.5 shadow-sm">
       <div className="flex items-center gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <Badge className={`${statusInfo.color} text-xs`}>
+            <span className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${statusInfo.color}`}>
               {statusInfo.label}
-            </Badge>
+            </span>
             {isOwnInterview && (
-              <Badge variant="outline" className="text-xs">
+              <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-800">
                 Your interview
-              </Badge>
+              </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-[12px] text-muted-foreground">
             {interview.scheduled_at
               ? new Date(interview.scheduled_at).toLocaleString()
               : "Not scheduled"}
@@ -69,12 +68,10 @@ export function InterviewCard({
       <div className="flex items-center gap-2">
         {/* Consent badge */}
         {interview.recording_consent_at && (
-          <Badge
-            className="bg-green-100 text-green-800 hover:bg-green-100 text-xs"
-          >
-            <ShieldCheck className="mr-1 h-3 w-3" />
+          <span className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
+            <ShieldCheck className="h-3 w-3" />
             Consent
-          </Badge>
+          </span>
         )}
 
         {/* Recording status */}
@@ -86,7 +83,7 @@ export function InterviewCard({
             href={interview.meet_link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+            className="inline-flex items-center gap-1 text-[12px] font-medium text-teal-600 hover:text-teal-700 hover:underline"
           >
             <Video className="h-3 w-3" />
             Meet

@@ -194,6 +194,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@reconnect/database':
+        specifier: workspace:*
+        version: link:../database
       typescript:
         specifier: ^5
         version: 5.9.3

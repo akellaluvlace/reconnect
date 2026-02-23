@@ -12,7 +12,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StageInfo {
   id: string;
@@ -59,6 +60,12 @@ interface DebriefPageClientProps {
   currentUserRole: string;
 }
 
+const debriefItems = [
+  { id: "interviews", name: "Interviews" },
+  { id: "feedback", name: "Feedback" },
+  { id: "synthesis", name: "AI Synthesis" },
+] as const;
+
 export function DebriefPageClient({
   playbookId,
   playbookTitle,
@@ -71,6 +78,7 @@ export function DebriefPageClient({
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>(
     candidates[0]?.id ?? "",
   );
+  const [activeItem, setActiveItem] = useState("interviews");
 
   const selectedCandidate = candidates.find(
     (c) => c.id === selectedCandidateId,
@@ -83,68 +91,110 @@ export function DebriefPageClient({
   const isManagerOrAdmin =
     currentUserRole === "admin" || currentUserRole === "manager";
 
+  if (candidates.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <p className="text-[14px] text-muted-foreground">
+          No candidates added yet. Add candidates to begin the debrief process.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Candidate selector */}
-      {candidates.length > 0 ? (
-        <div className="flex items-center gap-3">
-          <Label htmlFor="candidate-select" className="text-sm font-medium">
-            Candidate
-          </Label>
-          <Select
-            value={selectedCandidateId}
-            onValueChange={setSelectedCandidateId}
-          >
-            <SelectTrigger id="candidate-select" className="w-64">
-              <SelectValue placeholder="Select a candidate" />
-            </SelectTrigger>
-            <SelectContent>
-              {candidates.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                  {c.status && c.status !== "active" ? ` (${c.status})` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            No candidates added yet. Add candidates to begin the debrief
-            process.
-          </p>
-        </div>
-      )}
+    <div>
+      {/* Candidate selector — always visible above nav */}
+      <div className="mb-5 flex items-center gap-3">
+        <span className="text-[13px] font-medium text-muted-foreground">
+          Candidate
+        </span>
+        <Select
+          value={selectedCandidateId}
+          onValueChange={setSelectedCandidateId}
+        >
+          <SelectTrigger className="w-64">
+            <SelectValue placeholder="Select a candidate" />
+          </SelectTrigger>
+          <SelectContent>
+            {candidates.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+                {c.status && c.status !== "active" ? ` (${c.status})` : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {selectedCandidate && (
-        <>
-          <InterviewList
-            playbookId={playbookId}
-            candidateId={selectedCandidateId}
-            interviews={candidateInterviews}
-            stages={stages}
-            currentUserId={currentUserId}
-          />
+        <div className="flex gap-6">
+          {/* Left nav */}
+          <nav className="w-44 shrink-0 space-y-0.5 pt-0.5">
+            {debriefItems
+              .filter((item) =>
+                item.id === "synthesis" ? isManagerOrAdmin : true,
+              )
+              .map((item) => {
+                const active = activeItem === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveItem(item.id)}
+                    className={cn(
+                      "flex w-full items-center rounded-md px-3 py-2 text-left text-[13px] font-medium transition-all",
+                      active
+                        ? "bg-muted text-foreground"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    )}
+                  >
+                    {item.name}
+                  </button>
+                );
+              })}
 
-          <FeedbackList
-            candidateId={selectedCandidateId}
-            interviews={candidateInterviews}
-            stages={stages}
-            currentUserId={currentUserId}
-            isManagerOrAdmin={isManagerOrAdmin}
-          />
+            {/* AI disclaimer */}
+            <div className="mt-6 flex items-start gap-1.5 px-3 pt-4 text-[11px] text-muted-foreground">
+              <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>AI-generated content. Hiring decisions must be made by humans.</span>
+            </div>
+          </nav>
 
-          {isManagerOrAdmin && (
-            <AISynthesisPanel
-              candidateId={selectedCandidateId}
-              candidateName={selectedCandidate.name}
-              playbookTitle={playbookTitle}
-              interviews={candidateInterviews}
-              stages={stages}
-            />
-          )}
-        </>
+          {/* Vertical divider */}
+          <div className="w-px self-stretch bg-border/60" />
+
+          {/* Content area */}
+          <div className="min-w-0 flex-1">
+            {activeItem === "interviews" && (
+              <InterviewList
+                playbookId={playbookId}
+                candidateId={selectedCandidateId}
+                interviews={candidateInterviews}
+                stages={stages}
+                currentUserId={currentUserId}
+              />
+            )}
+
+            {activeItem === "feedback" && (
+              <FeedbackList
+                candidateId={selectedCandidateId}
+                interviews={candidateInterviews}
+                stages={stages}
+                currentUserId={currentUserId}
+                isManagerOrAdmin={isManagerOrAdmin}
+              />
+            )}
+
+            {activeItem === "synthesis" && isManagerOrAdmin && (
+              <AISynthesisPanel
+                candidateId={selectedCandidateId}
+                candidateName={selectedCandidate.name}
+                playbookTitle={playbookTitle}
+                interviews={candidateInterviews}
+                stages={stages}
+              />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

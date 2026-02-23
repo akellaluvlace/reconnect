@@ -245,21 +245,31 @@ describe("InterviewStageSchema", () => {
     expect(InterviewStageSchema.safeParse(validStage).success).toBe(true);
   });
 
-  it("rejects fewer than 2 focus areas", () => {
+  it("rejects zero focus areas", () => {
     const invalid = {
       ...validStage,
-      focus_areas: [validStage.focus_areas[0]],
+      focus_areas: [],
     };
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
   });
 
-  it("rejects more than 3 focus areas", () => {
+  it("accepts 1 focus area (relaxed for AI output tolerance)", () => {
+    const valid = {
+      ...validStage,
+      focus_areas: [validStage.focus_areas[0]],
+    };
+    expect(InterviewStageSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("rejects more than 5 focus areas", () => {
     const invalid = {
       ...validStage,
       focus_areas: [
         ...validStage.focus_areas,
         { name: "A", description: "B", weight: 1 },
         { name: "C", description: "D", weight: 2 },
+        { name: "E", description: "F", weight: 3 },
+        { name: "G", description: "H", weight: 4 },
       ],
     };
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
@@ -276,10 +286,10 @@ describe("InterviewStageSchema", () => {
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
   });
 
-  it("rejects fewer than 6 questions", () => {
+  it("rejects fewer than 3 questions", () => {
     const invalid = {
       ...validStage,
-      suggested_questions: validStage.suggested_questions.slice(0, 5),
+      suggested_questions: validStage.suggested_questions.slice(0, 2),
     };
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
   });

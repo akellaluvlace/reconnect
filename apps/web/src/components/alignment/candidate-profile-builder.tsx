@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import type { HiringStrategy, CandidateProfile } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+import type { HiringStrategy, CandidateProfile, MarketInsights } from "@reconnect/database";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
-import { AIIndicatorBadge } from "@/components/ai/ai-indicator-badge";
-import { User, Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface CandidateProfileBuilderProps {
   playbookId: string;
   candidateProfile: CandidateProfile | null;
   hiringStrategy: HiringStrategy | null;
+  marketInsights: MarketInsights | null;
   role: string;
   level: string;
   industry: string;
@@ -25,17 +23,33 @@ export function CandidateProfileBuilder({
   playbookId,
   candidateProfile,
   hiringStrategy,
+  marketInsights,
   role,
   level,
   industry,
   skills,
   onUpdate,
 }: CandidateProfileBuilderProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const opKey = `candidate-profile-${playbookId}`;
+  const { status, result, error } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isGenerating = status === "loading";
 
-  async function handleGenerate() {
-    setIsGenerating(true);
-    try {
+  // Apply result when operation completes
+  useEffect(() => {
+    if (status === "success" && result) {
+      onUpdate(result as CandidateProfile);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (status === "error" && error) {
+      toast.error(error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [status, result, error, onUpdate, opKey]);
+
+  function handleGenerate() {
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       const res = await fetch("/api/ai/generate-candidate-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,6 +65,12 @@ export function CandidateProfileBuilder({
               }
             : undefined,
           strategy_skills_priority: hiringStrategy?.skills_priority,
+          market_key_skills: marketInsights
+            ? {
+                required: marketInsights.key_skills.required,
+                emerging: marketInsights.key_skills.emerging,
+              }
+            : undefined,
         }),
       });
 
@@ -60,7 +80,6 @@ export function CandidateProfileBuilder({
       }
 
       const { data } = await res.json();
-      onUpdate(data);
 
       // Auto-save to playbook
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
@@ -71,34 +90,26 @@ export function CandidateProfileBuilder({
 
       if (!saveRes.ok) {
         console.error("[candidate-profile] Auto-save failed");
-        toast.error("Profile generated but failed to save");
+        toast.error("Profile generated but failed to save. Try refreshing the page.");
       }
-    } catch (err) {
-      console.error("[candidate-profile] Generation failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate profile",
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+
+      return data;
+    });
   }
+
+  const canGenerate = hiringStrategy !== null;
 
   if (!candidateProfile) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Ideal Candidate Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+        {canGenerate ? (
+          <>
+            <p className="mt-3 text-[14px] text-muted-foreground">
               Generate an AI-powered candidate profile based on your hiring
               strategy and job requirements
             </p>
-            <Button onClick={handleGenerate} disabled={isGenerating}>
+            <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
               {isGenerating ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -106,71 +117,70 @@ export function CandidateProfileBuilder({
               )}
               Generate Profile
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </>
+        ) : (
+          <p className="mt-3 text-[14px] text-muted-foreground">
+            Complete the Discovery chapter first (market research + hiring
+            strategy) to generate an AI-powered candidate profile.
+          </p>
+        )}
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Ideal Candidate Profile
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <AIIndicatorBadge />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              aria-label="Regenerate profile"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          aria-label="Regenerate profile"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Ideal Background */}
+      {candidateProfile.ideal_background && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <h3 className="text-[15px] font-semibold tracking-tight mb-3">Ideal Background</h3>
+          <p className="text-[14px] leading-relaxed text-muted-foreground">
+            {candidateProfile.ideal_background}
+          </p>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {candidateProfile.ideal_background && (
-          <div>
-            <p className="text-sm font-medium">Ideal Background</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {candidateProfile.ideal_background}
-            </p>
-          </div>
-        )}
+      )}
 
-        {candidateProfile.experience_range && (
-          <div>
-            <p className="text-sm font-medium">Experience Range</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {candidateProfile.experience_range}
-            </p>
-          </div>
-        )}
+      {/* Experience Range */}
+      {candidateProfile.experience_range && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <h3 className="text-[15px] font-semibold tracking-tight mb-3">Experience Range</h3>
+          <p className="text-[14px] leading-relaxed text-muted-foreground">
+            {candidateProfile.experience_range}
+          </p>
+        </div>
+      )}
 
+      {/* Skills */}
+      <div className="space-y-5">
         {candidateProfile.must_have_skills &&
           candidateProfile.must_have_skills.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-red-700">
-                Must-Have Skills
-              </p>
-              <div className="mt-1 flex flex-wrap gap-1">
+              <p className="mb-3 text-[13px] font-semibold text-red-700">Must-Have Skills</p>
+              <div className="flex flex-wrap gap-2">
                 {candidateProfile.must_have_skills.map((s) => (
-                  <Badge
+                  <span
                     key={s}
-                    className="bg-red-100 text-red-800 hover:bg-red-100 text-xs"
+                    className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-[13px] font-medium text-red-800"
                   >
                     {s}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             </div>
@@ -179,39 +189,39 @@ export function CandidateProfileBuilder({
         {candidateProfile.nice_to_have_skills &&
           candidateProfile.nice_to_have_skills.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-blue-700">
-                Nice-to-Have Skills
-              </p>
-              <div className="mt-1 flex flex-wrap gap-1">
+              <p className="mb-3 text-[13px] font-semibold text-foreground">Nice-to-Have Skills</p>
+              <div className="flex flex-wrap gap-2">
                 {candidateProfile.nice_to_have_skills.map((s) => (
-                  <Badge key={s} variant="outline" className="text-xs">
+                  <span
+                    key={s}
+                    className="rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-[13px] font-medium text-foreground"
+                  >
                     {s}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             </div>
           )}
+      </div>
 
-        {candidateProfile.cultural_fit_indicators &&
-          candidateProfile.cultural_fit_indicators.length > 0 && (
-            <div>
-              <p className="text-sm font-medium">Cultural Fit Indicators</p>
-              <ul className="mt-1 space-y-1">
-                {candidateProfile.cultural_fit_indicators.map((c, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-sm text-muted-foreground"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />
-                    {c}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-        <AIDisclaimer />
-      </CardContent>
-    </Card>
+      {/* Cultural Fit */}
+      {candidateProfile.cultural_fit_indicators &&
+        candidateProfile.cultural_fit_indicators.length > 0 && (
+          <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+            <h3 className="text-[15px] font-semibold tracking-tight mb-3">Cultural Fit Indicators</h3>
+            <ul className="space-y-2">
+              {candidateProfile.cultural_fit_indicators.map((c, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground"
+                >
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                  {c}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+    </div>
   );
 }

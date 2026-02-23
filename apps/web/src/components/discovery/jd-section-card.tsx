@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { AIIndicatorBadge } from "@/components/ai/ai-indicator-badge";
 import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
 
 interface JDSectionCardProps {
@@ -37,141 +35,136 @@ export function JDSectionCard({
   if (type === "text") {
     const textVal = (value as string) ?? "";
     return (
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">{title}</p>
-            <div className="flex items-center gap-1">
-              <AIIndicatorBadge />
-              {!isEditing && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setDraft(textVal);
-                    setIsEditing(true);
-                  }}
-                  aria-label={`Edit ${title}`}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              )}
+      <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setDraft(textVal);
+                setIsEditing(true);
+              }}
+              aria-label={`Edit ${title}`}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        {isEditing ? (
+          <div className="space-y-3">
+            <Textarea
+              value={draft as string}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={4}
+              autoComplete="off"
+              className="text-[14px]"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave}>
+                <Check className="mr-1.5 h-3 w-3" /> Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancel}>
+                <X className="mr-1.5 h-3 w-3" /> Cancel
+              </Button>
             </div>
           </div>
-          {isEditing ? (
-            <div className="mt-2 space-y-2">
-              <Textarea
-                value={draft as string}
-                onChange={(e) => setDraft(e.target.value)}
-                rows={3}
-                autoComplete="off"
-              />
-              <div className="flex gap-1">
-                <Button size="sm" onClick={handleSave}>
-                  <Check className="mr-1 h-3 w-3" /> Save
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleCancel}>
-                  <X className="mr-1 h-3 w-3" /> Cancel
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
-              {textVal || "No content yet"}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          <p className="text-[14px] leading-relaxed text-muted-foreground whitespace-pre-wrap">
+            {textVal || "No content yet"}
+          </p>
+        )}
+      </div>
     );
   }
 
   if (type === "list") {
     const listVal = (value as string[]) ?? [];
     return (
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">{title}</p>
-            <div className="flex items-center gap-1">
-              <AIIndicatorBadge />
-              {!isEditing && (
+      <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setDraft([...listVal]);
+                setIsEditing(true);
+              }}
+              aria-label={`Edit ${title}`}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        {isEditing ? (
+          <div className="space-y-2">
+            {(draft as string[]).map((item, i) => (
+              <div key={i} className="flex gap-2">
+                <Input
+                  value={item}
+                  onChange={(e) => {
+                    const updated = [...(draft as string[])];
+                    updated[i] = e.target.value;
+                    setDraft(updated);
+                  }}
+                  autoComplete="off"
+                  className="text-[14px]"
+                />
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="h-9 w-9 shrink-0 p-0"
                   onClick={() => {
-                    setDraft([...listVal]);
-                    setIsEditing(true);
+                    const updated = (draft as string[]).filter(
+                      (_, idx) => idx !== i,
+                    );
+                    setDraft(updated);
                   }}
-                  aria-label={`Edit ${title}`}
+                  aria-label="Remove item"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              )}
-            </div>
-          </div>
-          {isEditing ? (
-            <div className="mt-2 space-y-2">
-              {(draft as string[]).map((item, i) => (
-                <div key={i} className="flex gap-1">
-                  <Input
-                    value={item}
-                    onChange={(e) => {
-                      const updated = [...(draft as string[])];
-                      updated[i] = e.target.value;
-                      setDraft(updated);
-                    }}
-                    autoComplete="off"
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const updated = (draft as string[]).filter(
-                        (_, idx) => idx !== i,
-                      );
-                      setDraft(updated);
-                    }}
-                    aria-label="Remove item"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDraft([...(draft as string[]), ""])}
-              >
-                <Plus className="mr-1 h-3 w-3" /> Add
-              </Button>
-              <div className="flex gap-1">
-                <Button size="sm" onClick={handleSave}>
-                  <Check className="mr-1 h-3 w-3" /> Save
-                </Button>
-                <Button size="sm" variant="ghost" onClick={handleCancel}>
-                  <X className="mr-1 h-3 w-3" /> Cancel
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
               </div>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDraft([...(draft as string[]), ""])}
+            >
+              <Plus className="mr-1.5 h-3 w-3" /> Add item
+            </Button>
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" onClick={handleSave}>
+                <Check className="mr-1.5 h-3 w-3" /> Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancel}>
+                <X className="mr-1.5 h-3 w-3" /> Cancel
+              </Button>
             </div>
-          ) : (
-            <ul className="mt-1 space-y-1">
-              {listVal.length > 0 ? (
-                listVal.map((item, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-sm text-muted-foreground"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />
-                    {item}
-                  </li>
-                ))
-              ) : (
-                <li className="text-sm text-muted-foreground">No items yet</li>
-              )}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {listVal.length > 0 ? (
+              listVal.map((item, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground"
+                >
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                  {item}
+                </li>
+              ))
+            ) : (
+              <li className="text-[14px] text-muted-foreground">No items yet</li>
+            )}
+          </ul>
+        )}
+      </div>
     );
   }
 
@@ -183,89 +176,88 @@ export function JDSectionCard({
   };
 
   return (
-    <Card>
-      <CardContent className="pt-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">{title}</p>
-          <div className="flex items-center gap-1">
-            <AIIndicatorBadge />
-            {!isEditing && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDraft({ ...salaryVal });
-                  setIsEditing(true);
-                }}
-                aria-label={`Edit ${title}`}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            )}
+    <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
+        {!isEditing && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              setDraft({ ...salaryVal });
+              setIsEditing(true);
+            }}
+            aria-label={`Edit ${title}`}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+      {isEditing ? (
+        <div className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-[12px] font-medium text-muted-foreground">Min</label>
+              <Input
+                type="number"
+                value={(draft as { min: number }).min}
+                onChange={(e) =>
+                  setDraft({
+                    ...(draft as { min: number; max: number; currency: string }),
+                    min: parseInt(e.target.value) || 0,
+                  })
+                }
+                autoComplete="off"
+                className="text-[14px]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-medium text-muted-foreground">Max</label>
+              <Input
+                type="number"
+                value={(draft as { max: number }).max}
+                onChange={(e) =>
+                  setDraft({
+                    ...(draft as { min: number; max: number; currency: string }),
+                    max: parseInt(e.target.value) || 0,
+                  })
+                }
+                autoComplete="off"
+                className="text-[14px]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[12px] font-medium text-muted-foreground">Currency</label>
+              <Input
+                value={(draft as { currency: string }).currency}
+                onChange={(e) =>
+                  setDraft({
+                    ...(draft as { min: number; max: number; currency: string }),
+                    currency: e.target.value,
+                  })
+                }
+                autoComplete="off"
+                className="text-[14px]"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleSave}>
+              <Check className="mr-1.5 h-3 w-3" /> Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleCancel}>
+              <X className="mr-1.5 h-3 w-3" /> Cancel
+            </Button>
           </div>
         </div>
-        {isEditing ? (
-          <div className="mt-2 space-y-2">
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground">Min</label>
-                <Input
-                  type="number"
-                  value={(draft as { min: number }).min}
-                  onChange={(e) =>
-                    setDraft({
-                      ...(draft as { min: number; max: number; currency: string }),
-                      min: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Max</label>
-                <Input
-                  type="number"
-                  value={(draft as { max: number }).max}
-                  onChange={(e) =>
-                    setDraft({
-                      ...(draft as { min: number; max: number; currency: string }),
-                      max: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Currency</label>
-                <Input
-                  value={(draft as { currency: string }).currency}
-                  onChange={(e) =>
-                    setDraft({
-                      ...(draft as { min: number; max: number; currency: string }),
-                      currency: e.target.value,
-                    })
-                  }
-                  autoComplete="off"
-                />
-              </div>
-            </div>
-            <div className="flex gap-1">
-              <Button size="sm" onClick={handleSave}>
-                <Check className="mr-1 h-3 w-3" /> Save
-              </Button>
-              <Button size="sm" variant="ghost" onClick={handleCancel}>
-                <X className="mr-1 h-3 w-3" /> Cancel
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="mt-1 text-sm text-muted-foreground">
-            {salaryVal.min > 0
-              ? `${salaryVal.currency} ${salaryVal.min.toLocaleString()} – ${salaryVal.max.toLocaleString()}`
-              : "Not set"}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      ) : (
+        <p className="text-[20px] font-bold tabular-nums tracking-tight">
+          {salaryVal.min > 0
+            ? `${salaryVal.currency} ${salaryVal.min.toLocaleString()} – ${salaryVal.max.toLocaleString()}`
+            : "Not set"}
+        </p>
+      )}
+    </div>
   );
 }

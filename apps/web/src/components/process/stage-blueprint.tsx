@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import {
   DndContext,
   closestCenter,
@@ -18,13 +19,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { HiringStrategy, JobDescription } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { StageCard } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
 import { StageEditDialog } from "./stage-edit-dialog";
-import { Sparkles, Loader2, Plus, Layers } from "lucide-react";
+import { Sparkles, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
 
@@ -87,7 +86,26 @@ export function StageBlueprint({
   level,
   industry,
 }: StageBlueprintProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const opKey = `stages-${playbookId}`;
+  const { status: genStatus, result: genResult, error: genError } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isGenerating = genStatus === "loading";
+
+  // Apply result when operation completes
+  useEffect(() => {
+    if (genStatus === "success" && genResult) {
+      const created = genResult as StageData[];
+      onStagesChange(created);
+      toast.success(`Generated ${created.length} interview stages`);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (genStatus === "error" && genError) {
+      toast.error(genError);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [genStatus, genResult, genError, onStagesChange, opKey]);
+
   const [editingStage, setEditingStage] = useState<StageData | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -98,13 +116,15 @@ export function StageBlueprint({
     }),
   );
 
-  async function handleGenerate() {
-    setIsGenerating(true);
-    try {
+  function handleGenerate() {
+    // Capture current stages for deletion inside the closure
+    const currentStages = stages;
+
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       // Delete existing stages first if regenerating
-      if (stages.length > 0) {
+      if (currentStages.length > 0) {
         const deleteResults = await Promise.allSettled(
-          stages.map((s) =>
+          currentStages.map((s) =>
             fetch(`/api/playbooks/${playbookId}/stages/${s.id}`, {
               method: "DELETE",
             }),
@@ -175,19 +195,11 @@ export function StageBlueprint({
 
       if (result.errors?.length > 0) {
         console.warn("[blueprint] Partial stage creation failures:", result.errors);
-        toast.warning(`Created ${created.length} stages, ${result.errors.length} failed`);
-      } else {
-        toast.success(`Generated ${created.length} interview stages`);
+        toast.warning(`Created ${created.length} stages, but ${result.errors.length} failed to save`);
       }
-      onStagesChange(created);
-    } catch (err) {
-      console.error("[blueprint] Generation failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate stages",
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+
+      return created;
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -257,107 +269,103 @@ export function StageBlueprint({
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-4">
+      {/* Header */}
+      {stages.length > 0 && (
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Layers className="h-5 w-5" />
-            Interview Process
-          </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {strategy?.process_speed && (
-              <Badge variant="outline">
+              <span className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-semibold text-foreground">
                 {SPEED_LABELS[strategy.process_speed.recommendation] ??
                   strategy.process_speed.recommendation}
-              </Badge>
+              </span>
             )}
-            {stages.length > 0 && <TotalTimeline stages={stages} />}
+            <TotalTimeline stages={stages} />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setEditingStage(null);
+                setIsDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-1 h-3 w-3" />
+              Add Stage
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              aria-label="Regenerate stages"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
-        {stages.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-8">
-            <p className="text-sm text-muted-foreground">
-              No interview stages yet. Generate an AI-powered process or add
-              stages manually.
-            </p>
-            <div className="flex gap-2">
-              <Button onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2 h-4 w-4" />
-                )}
-                Generate Interview Process
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditingStage(null);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Stage
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={stages.map((s) => s.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {stages.map((stage, i) => (
-                  <SortableStageCard
-                    key={stage.id}
-                    stage={stage}
-                    index={i}
-                    onEdit={() => {
-                      setEditingStage(stage);
-                      setIsDialogOpen(true);
-                    }}
-                    onDelete={() => handleDelete(stage.id)}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
+      )}
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setEditingStage(null);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <Plus className="mr-1 h-3 w-3" />
-                Add Stage
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleGenerate}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-1 h-3 w-3" />
-                )}
-                Regenerate All
-              </Button>
-            </div>
+      {stages.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+          <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+          <p className="mt-3 text-[14px] text-muted-foreground">
+            No interview stages yet. Generate an AI-powered process or add
+            stages manually.
+          </p>
+          <div className="mt-4 flex gap-2">
+            <Button onClick={handleGenerate} disabled={isGenerating}>
+              {isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Generate Interview Process
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingStage(null);
+                setIsDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Stage
+            </Button>
           </div>
-        )}
-      </CardContent>
+        </div>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={stages.map((s) => s.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {stages.map((stage, i) => (
+                <SortableStageCard
+                  key={stage.id}
+                  stage={stage}
+                  index={i}
+                  onEdit={() => {
+                    setEditingStage(stage);
+                    setIsDialogOpen(true);
+                  }}
+                  onDelete={() => handleDelete(stage.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
 
       <StageEditDialog
         open={isDialogOpen}
@@ -366,6 +374,6 @@ export function StageBlueprint({
         stage={editingStage}
         onSave={handleStageSaved}
       />
-    </Card>
+    </div>
   );
 }

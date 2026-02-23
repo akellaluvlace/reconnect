@@ -38,6 +38,19 @@ export class AIRateLimitError extends AIError {
   readonly transient = true;
 }
 
+/** Thrown when max_tokens is hit — deterministic, never retry */
+export class AIOutputTruncatedError extends AIError {
+  constructor(endpoint: string, maxTokens: number, outputTokens: number) {
+    super(
+      `Output truncated for ${endpoint}: used ${outputTokens}/${maxTokens} tokens. Increase maxTokens in AI_CONFIG.`,
+      "VALIDATION_ERROR",
+    );
+    this.name = "AIOutputTruncatedError";
+  }
+
+  readonly transient = false;
+}
+
 export class AISearchError extends AIError {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, "SEARCH_ERROR", options);

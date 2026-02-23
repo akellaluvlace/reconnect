@@ -15,7 +15,6 @@ export const SourceScoreSchema = z.object({
   authority_score: z.number().min(0).max(1),
   relevance_score: z.number().min(0).max(1),
   overall_score: z.number().min(0).max(1),
-  reasoning: z.string(),
 });
 
 export const SourceScoringSchema = z.object({

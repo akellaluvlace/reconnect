@@ -1,15 +1,19 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import type { JobDescription, MarketInsights, HiringStrategy } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import { JDSectionCard } from "./jd-section-card";
-import { FileText, Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Info } from "lucide-react";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
-import { useState } from "react";
+
+const SALARY_LABELS: Record<string, string> = {
+  lead: "Lead Market",
+  match: "Match Market",
+  lag: "Below Market",
+};
 
 interface JDStructuredEditorProps {
   playbookId: string;
@@ -20,6 +24,7 @@ interface JDStructuredEditorProps {
   level: string;
   industry: string;
   onUpdate: (jd: JobDescription) => void;
+  activeItem: string;
 }
 
 export function JDStructuredEditor({
@@ -31,8 +36,24 @@ export function JDStructuredEditor({
   level,
   industry,
   onUpdate,
+  activeItem,
 }: JDStructuredEditorProps) {
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  const opKey = `jd-${playbookId}`;
+  const { status, result, error } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isRegenerating = status === "loading";
+
+  useEffect(() => {
+    if (status === "success" && result) {
+      onUpdate(result as JobDescription);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (status === "error" && error) {
+      toast.error(error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [status, result, error, onUpdate, opKey]);
 
   const saveToServer = useCallback(
     async (data: unknown) => {
@@ -57,9 +78,8 @@ export function JDStructuredEditor({
     save(updated);
   }
 
-  async function handleRegenerate() {
-    setIsRegenerating(true);
-    try {
+  function handleRegenerate() {
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       const body: Record<string, unknown> = {
         role,
         level,
@@ -108,9 +128,7 @@ export function JDStructuredEditor({
       }
 
       const { data } = await res.json();
-      onUpdate(data);
 
-      // Auto-save
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -118,85 +136,71 @@ export function JDStructuredEditor({
       });
       if (!saveRes.ok) {
         console.error("[jd-editor] Auto-save after regeneration failed");
-        toast.error("Generated new JD but failed to save — please try saving again");
+        toast.error("JD regenerated but failed to save. Try refreshing the page.");
       }
-    } catch (err) {
-      console.error("[jd-editor] Regeneration failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to regenerate job description",
-      );
-    } finally {
-      setIsRegenerating(false);
-    }
+
+      return data;
+    });
   }
 
   if (!jobDescription) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Job Description
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <p className="text-sm text-muted-foreground">
-              No job description yet. Generate one using AI.
-            </p>
-            <Button onClick={handleRegenerate} disabled={isRegenerating}>
-              {isRegenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Generate Job Description
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          No job description yet. Generate one using AI.
+        </p>
+        <Button className="mt-4" onClick={handleRegenerate} disabled={isRegenerating}>
+          {isRegenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="mr-2 h-4 w-4" />
+          )}
+          Generate Job Description
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Job Description
-          </CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRegenerate}
-            disabled={isRegenerating}
-          >
-            {isRegenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Sparkles className="mr-2 h-4 w-4" />
-            )}
-            Regenerate
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="space-y-4">
+      {/* Header — always visible */}
+      <div className="flex items-center justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRegenerate}
+          disabled={isRegenerating}
+        >
+          {isRegenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="mr-2 h-4 w-4" />
+          )}
+          Regenerate
+        </Button>
+      </div>
+
+      {activeItem === "summary" && (
         <JDSectionCard
           title="Summary"
           type="text"
           value={jobDescription.summary}
           onChange={(val) => handleSectionChange("summary", val)}
         />
+      )}
 
+      {activeItem === "responsibilities" && (
         <JDSectionCard
           title="Responsibilities"
           type="list"
           value={jobDescription.responsibilities}
           onChange={(val) => handleSectionChange("responsibilities", val)}
         />
+      )}
 
-        <div className="grid gap-3 md:grid-cols-2">
+      {activeItem === "required" && (
+        <>
           <JDSectionCard
             title="Required Qualifications"
             type="list"
@@ -208,35 +212,75 @@ export function JDStructuredEditor({
               })
             }
           />
-          <JDSectionCard
-            title="Preferred Qualifications"
-            type="list"
-            value={jobDescription.requirements?.preferred}
-            onChange={(val) =>
-              handleSectionChange("requirements", {
-                ...jobDescription.requirements,
-                preferred: val,
-              })
-            }
-          />
-        </div>
+          {strategy?.skills_priority?.must_have && strategy.skills_priority.must_have.length > 0 && (
+            <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-4 py-3 text-[12px] text-muted-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                Strategy must-haves: <span className="font-semibold text-foreground">{strategy.skills_priority.must_have.join(", ")}</span>
+              </span>
+            </div>
+          )}
+        </>
+      )}
 
+      {activeItem === "preferred" && (
+        <JDSectionCard
+          title="Preferred Qualifications"
+          type="list"
+          value={jobDescription.requirements?.preferred}
+          onChange={(val) =>
+            handleSectionChange("requirements", {
+              ...jobDescription.requirements,
+              preferred: val,
+            })
+          }
+        />
+      )}
+
+      {activeItem === "benefits" && (
         <JDSectionCard
           title="Benefits"
           type="list"
           value={jobDescription.benefits}
           onChange={(val) => handleSectionChange("benefits", val)}
         />
+      )}
 
-        <JDSectionCard
-          title="Salary Range"
-          type="salary"
-          value={jobDescription.salary_range}
-          onChange={(val) => handleSectionChange("salary_range", val)}
-        />
-
-        <AIDisclaimer />
-      </CardContent>
-    </Card>
+      {activeItem === "salary-range" && (
+        <>
+          <JDSectionCard
+            title="Salary Range"
+            type="salary"
+            value={jobDescription.salary_range}
+            onChange={(val) => handleSectionChange("salary_range", val)}
+          />
+          {(strategy?.salary_positioning || marketInsights?.salary) && (
+            <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-4 py-3 text-[12px] text-muted-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                {strategy?.salary_positioning && (
+                  <>
+                    Strategy: <span className="font-semibold text-foreground">
+                      {SALARY_LABELS[strategy.salary_positioning.strategy] ?? strategy.salary_positioning.strategy}
+                      {" "}({strategy.salary_positioning.recommended_range.currency} {strategy.salary_positioning.recommended_range.min.toLocaleString()}–{strategy.salary_positioning.recommended_range.max.toLocaleString()})
+                    </span>
+                  </>
+                )}
+                {strategy?.salary_positioning && marketInsights?.salary && (
+                  <span className="mx-1.5 text-muted-foreground/40">|</span>
+                )}
+                {marketInsights?.salary && (
+                  <>
+                    Market: <span className="font-semibold text-foreground">
+                      {marketInsights.salary.currency} {marketInsights.salary.min.toLocaleString()}–{marketInsights.salary.max.toLocaleString()}
+                    </span>
+                  </>
+                )}
+              </span>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

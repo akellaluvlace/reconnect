@@ -49,6 +49,21 @@ export const MarketInsightsSchema = z.object({
 
 export type MarketInsightsOutput = z.infer<typeof MarketInsightsSchema>;
 
+/**
+ * Schema for synthesis step — omits sources and metadata which are
+ * added programmatically after the AI call. This avoids the model
+ * wasting tokens generating source URLs that get overwritten.
+ */
+export const MarketInsightsSynthesisSchema = MarketInsightsSchema.omit({
+  sources: true,
+  metadata: true,
+  phase: true,
+});
+
+export type MarketInsightsSynthesisOutput = z.infer<
+  typeof MarketInsightsSynthesisSchema
+>;
+
 /** Schema for quick phase (no sources required) */
 export const QuickMarketInsightsSchema = MarketInsightsSchema.omit({
   sources: true,

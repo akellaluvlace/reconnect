@@ -38,7 +38,7 @@ describe("HiringStrategy — schema vs domain type", () => {
       "disclaimer",
     ];
     for (const key of domainKeys) {
-      expect(shape, `Missing key: ${key}`).toHaveProperty(key);
+      expect(shape, `Missing key: ${String(key)}`).toHaveProperty(String(key));
     }
   });
 
@@ -86,7 +86,7 @@ describe("CoverageAnalysis — schema vs domain type", () => {
       "disclaimer",
     ];
     for (const key of domainKeys) {
-      expect(shape, `Missing key: ${key}`).toHaveProperty(key);
+      expect(shape, `Missing key: ${String(key)}`).toHaveProperty(String(key));
     }
   });
 
@@ -126,7 +126,9 @@ describe("FocusArea — schema vs domain type", () => {
       rationale: "Critical for the role",
     });
 
-    const _typed: FocusArea = data;
+    // weight: z.number().int().min(1).max(4) widens to `number` but domain type is 1|2|3|4.
+    // Runtime validation guarantees the range; cast is safe here.
+    const _typed: FocusArea = data as FocusArea;
     expect(_typed.rationale).toBe("Critical for the role");
   });
 
@@ -137,7 +139,7 @@ describe("FocusArea — schema vs domain type", () => {
       weight: 3,
     });
 
-    const _typed: FocusArea = data;
+    const _typed: FocusArea = data as FocusArea;
     expect(_typed.rationale).toBeUndefined();
   });
 });

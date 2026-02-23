@@ -7,9 +7,9 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 9 COMPLETE + HARDENED + MUTATION TESTED — Chapters: Alignment + Debrief
-**Status:** Steps 1-9 complete + hardened. Zod v4.3.6 migrated. 21 migrations deployed. 233 DB tests + 251 AI tests + 476 web tests green. 7 E2E smoke tests pass. Mutation testing: 15 mutations, 100% kill rate. Typecheck clean. Google OAuth + Microsoft OAuth both verified working (axil.ie domain).
-**Next task:** Step 10.1-10.2 (Platform Google setup + recording pipeline). UI/UX polish pass needed on playbooks.
+**Step:** Step 9 COMPLETE + HARDENED + Dashboard overhaul + Discovery intelligence
+**Status:** Steps 1-9 complete + hardened. Dashboard UI overhaul (teal/gold/cream). Competitor Listings (Tavily → DB-persisted). Discovery cross-references (strategy ← market data, JD ← strategy hints). Code review fixes: Zod JSONB validation, div-by-zero guard, PATCH error handling, dead-link fallback. 476 web + 293 AI tests green. 24 migrations. Typecheck clean.
+**Next task:** Step 10.1-10.2 (Platform Google setup + recording pipeline).
 **Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) + Google Workspace account setup needed for live testing.
 
 **Build order:** 10.1-10.2 → 10.3-10.8
@@ -69,6 +69,10 @@ Read files ONLY when the situation matches:
 | `docs/Reconnect_Technical_Specification_v3.md` | For original spec details |
 | `docs/Reconnect_Setup_Guide.md` | During Step 1 service account setup |
 | `docs/Reconnect_Project_Context.md` | For commercial terms or timeline context |
+
+| `apps/web/.next/dev/logs/next-development.log` | When debugging AI pipeline flow — contains all `[TRACE:]` and `[AI:]` logs |
+| `packages/ai/src/tracer.ts` | Reference for trace format and `checkParams()` helper |
+| `packages/ai/src/logger.ts` | Reference for API call logging format and `pipelineLogger` stats |
 
 **Never read** unless debugging a past decision: `docs/DOCUMENT_REVIEW_LOG.md`, `docs/SESSION_LOG_2026-02-03.md`
 
@@ -139,6 +143,35 @@ Before implementing a review fix, check:
 
 ---
 
+## Pipeline Tracer Protocol
+
+Two instrumentation layers trace every AI pipeline call. **Check these logs FIRST when debugging flow issues — before reading source code.**
+
+### Where: `apps/web/.next/dev/logs/next-development.log`
+
+### PipelineTrace (`[TRACE:pipeline:step]`) — data flow
+Every pipeline has `PipelineTrace` wired in (`packages/ai/src/tracer.ts`). Shows what params went in, what came out, what was missing.
+
+**Reading the chain — look for these in sequence:**
+1. `[TRACE:quickInsights]` → wizard generates quick market data
+2. `[TRACE:deepInsights]` + `[TRACE:deepResearch]` → background deep research (60-80s)
+3. `[TRACE:generateHiringStrategy]` → should show `salary_range`, `required_skills_count > 0`
+4. `[TRACE:generateJobDescription]` → should show `has_market_context=true, has_strategy_context=true`
+5. `[TRACE:generateStages]` → should show `has_jd_context=true, has_strategy_context=true`
+6. `[TRACE:analyzeCoverage]` → should show `stages_count > 0, required_requirements > 0`
+7. `[TRACE:generateCandidateProfile]` → should show `has_market_skills=true` (after fix)
+
+**Red flags:** `has_*_context=false`, `*_count=0`, `FAIL`, `warnings_count > 0`, `"No context data provided"`
+
+### PipelineLogger (`[AI:endpoint]`) — API calls
+Every Anthropic API call logged (`packages/ai/src/logger.ts`). Format: `[AI:endpoint] model=X tokens=IN+OUT latency=Xms stop=X`
+
+**Red flags:** `latency > 60000ms`, `COERCED`, `ERROR=`, `stop=max_tokens`
+
+### DO NOT check Playwright logs (`.playwright-mcp/`) — those are E2E test console captures, not pipeline traces.
+
+---
+
 ## Pre-Beta Checklist (Gate Before 10.6)
 
 Everything below MUST pass before any beta tester gets access. Not optional.
@@ -175,6 +208,14 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **Rate limiting:** No AI endpoint rate limiting. Could allow credit burn during beta if abused.
 - **16 lint errors:** All `no-explicit-any` in test files. Zero production impact.
 
+### Pipeline Flow Issues (identified 2026-02-22 via tracer logs)
+- **Deep research fire-and-forget — no recovery.** Wizard fires `keepalive` fetch and navigates away. If the request dies (network, browser kill), deep research never runs. User is stuck on Market Research tab with Strategy locked forever. **Fix:** Add "Retry deep research" button that shows after polling times out (~120s with no phase change).
+- **Vercel function timeout on deep research.** Deep research takes 60-80s of server work after returning 202. **Decision:** Use Vercel Pro (300s timeout). Verify `maxDuration` is set on the deep research route handler. If hobby tier ever used, deep research will silently die.
+- **Candidate profile — no gating on Alignment page.** User can navigate to Alignment and generate candidate profile with zero context (no strategy, no market skills, no JD). Tracer confirmed: "No context data provided — profile will be based on model knowledge only". **Fix:** Disable Generate button until `hiringStrategy` exists, or show warning explaining profile quality depends on completing Discovery + Process first.
+- **Stage generation latency variance.** 81s to 124s across runs. Same model, similar input. Near timeout boundary. **Fix:** Monitor in production, consider splitting into smaller calls if timeouts occur.
+- **`parseJsonb` transient failure on page load.** Quick-phase market data can fail validation when Discovery page loads during deep research. Causes brief `null` marketInsights state. Self-resolves when polling updates. **Fix (low priority):** Use a looser schema for quick-phase data, or handle null gracefully in tab gating (already does — tabs stay locked).
+- **Stage question count under target.** AI consistently generates 4-5 questions when prompt asks for 6+. Not a data flow issue — AI compliance. **Fix (low priority):** Strengthen prompt constraints or add retry on under-count.
+
 ---
 
 ## Session End Protocol
@@ -190,10 +231,10 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-02-21 (a):** Google OAuth + Microsoft OAuth verified working. Fixed auth callback to surface real provider errors. Azure required Token Configuration email claim + ID tokens enabled. Domain: axil.ie.
-- **2026-02-20 (e):** Zod v4.3.6 migration. Upgraded from v3.25.76 (stale "v3 only" constraint was false positive — `@hookform/resolvers@5.2.2` supports v4). Fixed `z.record()` (9 occurrences), `z.literal()` errorMap→message (2), RFC 4122 UUID validation (~20 test UUIDs). Anthropic SDK Zod v4 compat resolved. 476 web + 251 AI tests green. Typecheck clean.
-- **2026-02-20 (d):** Mutation testing + E2E. 15 mutations, 100% kill rate (5 gaps patched). 11 mutation-killer tests. E2E: 7/7 smoke pass (port 3001).
-- **2026-02-20 (c):** Step 9 deep hardening. Fixed 8 CRITICAL + 9 HIGH bugs. Contract tests (118) + hardening tests (199). 465 web + 251 AI tests green.
-- **2026-02-20 (b):** Step 9 COMPLETE. Candidate profile AI pipeline, 7 API routes, 15 UI components, email skeleton, consent/share pages. 251 AI + 147 web tests green.
+- **2026-02-23 (b):** Dashboard UI overhaul (teal/gold/cream design system). Competitor Listings + Discovery intelligence + code review fixes (Zod JSONB validation, div-by-zero, PATCH error handling, dead-link fallback). 476 web + 293 AI tests green. Committed + PR.
+- **2026-02-23 (a):** Competitor Listings feature: Tavily search API route, DB-persisted JSONB column on playbooks (migration #24), dead link filtering, markdown stripping. Discovery cross-references: strategy ← market data, JD ← strategy+market hints. Typecheck clean.
+- **2026-02-22 (a):** Sequential pipeline enforced. Wizard → quick insights only. Discovery tabs gated. Candidate profile receives market_key_skills. Tracer logs verified. 476 web tests green.
+- **2026-02-21 (a):** Google OAuth + Microsoft OAuth verified working. Fixed auth callback error surfacing. Azure Token Config email claim + ID tokens. Domain: axil.ie.
+- **2026-02-20 (e):** Zod v4.3.6 migration from v3.25.76. Fixed `z.record()` (9), `z.literal()` errorMap→message (2), UUID validation (~20). 476 web + 251 AI tests green.
 
 > Keep max 5 entries. Remove oldest when adding new.

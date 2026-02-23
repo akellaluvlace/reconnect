@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@reconnect/database";
 import { supabaseUrl, supabaseAnonKey } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback", "/api/health"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -48,9 +48,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // On auth service failure (not just "no user"), don't redirect — let through
-  if (!user && authError && !isPublicPath) {
-    console.error("[middleware] Auth service error, allowing request through");
+  // On auth SERVICE failure (5xx, network), don't redirect — let through
+  // But "no session" / "invalid token" errors (4xx) should still redirect to login
+  const isServiceError = authError && authError.status !== undefined && authError.status >= 500;
+  if (!user && isServiceError && !isPublicPath) {
+    console.error("[middleware] Auth service error, allowing request through:", authError.message);
     return response;
   }
 

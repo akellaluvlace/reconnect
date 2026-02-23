@@ -902,6 +902,7 @@ export type Database = {
       playbooks: {
         Row: {
           candidate_profile: Json | null
+          competitor_listings: Json | null
           created_at: string | null
           created_by: string | null
           department: string | null
@@ -921,6 +922,7 @@ export type Database = {
         }
         Insert: {
           candidate_profile?: Json | null
+          competitor_listings?: Json | null
           created_at?: string | null
           created_by?: string | null
           department?: string | null
@@ -940,6 +942,7 @@ export type Database = {
         }
         Update: {
           candidate_profile?: Json | null
+          competitor_listings?: Json | null
           created_at?: string | null
           created_by?: string | null
           department?: string | null

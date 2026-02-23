@@ -1,7 +1,9 @@
 export {
   MarketInsightsSchema,
+  MarketInsightsSynthesisSchema,
   QuickMarketInsightsSchema,
   type MarketInsightsOutput,
+  type MarketInsightsSynthesisOutput,
   type QuickMarketInsightsOutput,
 } from "./market-insights";
 

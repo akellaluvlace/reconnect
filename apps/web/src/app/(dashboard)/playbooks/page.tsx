@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { PageHeader } from "@/components/ui/page-header";
 import { PlaybookList } from "@/components/playbooks/playbook-list";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle } from "lucide-react";
@@ -10,27 +9,30 @@ export default async function PlaybooksPage() {
   const supabase = await createClient();
   const { data: playbooks, error } = await supabase
     .from("playbooks")
-    .select("id, title, department, status, created_at")
-    .order("created_at", { ascending: false });
+    .select("id, title, department, status, created_at, updated_at")
+    .order("updated_at", { ascending: false });
 
   if (error) {
     console.error("[playbooks] Failed to load:", error.message);
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Playbooks"
-        description="Manage your recruitment playbooks"
-        actions={
-          <Button asChild>
-            <Link href="/playbooks/new">
-              <Plus className="mr-2 h-4 w-4" />
-              New Playbook
-            </Link>
-          </Button>
-        }
-      />
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Playbooks</h1>
+          <p className="mt-1 text-[14px] text-muted-foreground">
+            Manage your recruitment playbooks
+          </p>
+        </div>
+        <Button asChild size="sm">
+          <Link href="/playbooks/new">
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            New Playbook
+          </Link>
+        </Button>
+      </div>
+
       {error ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />

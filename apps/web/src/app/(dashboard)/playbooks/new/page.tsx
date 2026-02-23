@@ -10,10 +10,12 @@ export default function NewPlaybookPage() {
   const { draft } = usePlaybookStore();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="mx-auto max-w-2xl space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">New Playbook</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl font-semibold tracking-tight">
+          New Playbook
+        </h1>
+        <p className="mt-1 text-[14px] text-muted-foreground">
           Create a new recruitment playbook with AI-powered guidance
         </p>
       </div>

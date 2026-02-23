@@ -9,6 +9,7 @@ export { searchWeb, searchWebParallel, type SearchResult } from "./search-client
 export {
   AIError,
   AIValidationError,
+  AIOutputTruncatedError,
   AIRateLimitError,
   AISearchError,
   AITimeoutError,
@@ -20,6 +21,15 @@ export { sanitizeInput, wrapUserContent } from "./sanitize";
 
 // Retry
 export { withRetry, withModelEscalation } from "./retry";
+
+// Logger
+export { pipelineLogger, type PipelineLogEntry } from "./logger";
+
+// Coercion
+export { coerceAIResponse } from "./coerce";
+
+// Tracer
+export { PipelineTrace, checkParams } from "./tracer";
 
 
 // Schemas (also available via @reconnect/ai/schemas)

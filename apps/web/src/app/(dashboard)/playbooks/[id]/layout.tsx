@@ -38,22 +38,25 @@ export default async function PlaybookLayout({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="space-y-0">
+      {/* Playbook header: title left, chapter toggle right */}
+      <div className="flex items-center justify-between pb-6">
+        <div className="flex min-w-0 items-center gap-3">
+          <h1 className="truncate text-2xl font-semibold tracking-tight">
             {playbook.title}
           </h1>
-          {playbook.department && (
-            <p className="text-muted-foreground mt-1">{playbook.department}</p>
-          )}
+          <StatusBadge status={playbook.status} />
         </div>
-        <StatusBadge status={playbook.status} />
+        <ChapterNav playbookId={id} />
       </div>
 
-      <ChapterNav playbookId={id} />
+      {/* Divider */}
+      <div className="h-px bg-border/60" />
 
-      {children}
+      {/* Chapter content */}
+      <div className="pt-6">
+        {children}
+      </div>
     </div>
   );
 }

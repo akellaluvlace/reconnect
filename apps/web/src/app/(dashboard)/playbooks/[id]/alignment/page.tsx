@@ -6,6 +6,7 @@ import { parseJsonb } from "@/lib/utils/parse-jsonb";
 import {
   HiringStrategySchema,
   CandidateProfileSchema,
+  MarketInsightsSchema,
 } from "@reconnect/ai";
 
 const UUID_REGEX =
@@ -66,6 +67,7 @@ export default async function AlignmentPage({
         skills: parseJsonb(playbook.skills, z.array(z.string()), "skills"),
         hiring_strategy: parseJsonb(playbook.hiring_strategy, HiringStrategySchema, "hiring_strategy"),
         candidate_profile: parseJsonb(playbook.candidate_profile, CandidateProfileSchema, "candidate_profile"),
+        market_insights: parseJsonb(playbook.market_insights, MarketInsightsSchema, "market_insights"),
       }}
       initialStages={(stages ?? []).map((s) => ({
         id: s.id,

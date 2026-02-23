@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Json } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
-import { AIIndicatorBadge } from "@/components/ai/ai-indicator-badge";
 import { Brain, Sparkles, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,31 +69,50 @@ interface AISynthesisPanelProps {
 export function AISynthesisPanel({
   candidateId,
   candidateName,
+  playbookTitle,
   interviews,
   stages,
 }: AISynthesisPanelProps) {
   const [synthesis, setSynthesis] = useState<SynthesisData | null>(null);
   const [metadata, setMetadata] = useState<SynthesisMetadata | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  const opKey = `synthesis-${candidateId}`;
+  const { status, result, error } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isGenerating = status === "loading";
+
+  // Apply result when operation completes
+  useEffect(() => {
+    if (status === "success" && result) {
+      const r = result as { data: SynthesisData; metadata: SynthesisMetadata };
+      setSynthesis(r.data);
+      setMetadata(r.metadata);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (status === "error" && error) {
+      toast.error(error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [status, result, error, opKey]);
 
   // Check if any interview has a transcript
   const hasTranscript = interviews.some(
     (i) => i.recording_status === "completed",
   );
 
-  async function handleGenerate() {
-    setIsGenerating(true);
-    try {
-      // Fetch real feedback from all completed interviews
-      const completedInterviews = interviews.filter(
-        (i) => i.status === "completed",
-      );
+  function handleGenerate() {
+    // Pre-validate synchronously before starting the async operation
+    const completedInterviews = interviews.filter(
+      (i) => i.status === "completed",
+    );
 
-      if (completedInterviews.length === 0) {
-        toast.error("No completed interviews to synthesize");
-        return;
-      }
+    if (completedInterviews.length === 0) {
+      toast.error("No completed interviews to synthesize");
+      return;
+    }
 
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       const feedbackForms: Array<{
         interviewer_name: string;
         ratings: Array<{ category: string; score: number }>;
@@ -137,7 +153,7 @@ export function AISynthesisPanel({
             : [];
 
           feedbackForms.push({
-            interviewer_name: stage?.name ?? "Interviewer",
+            interviewer_name: fb.interviewer_name ?? stage?.name ?? "Interviewer",
             ratings,
             pros,
             cons,
@@ -147,8 +163,7 @@ export function AISynthesisPanel({
       }
 
       if (feedbackForms.length === 0) {
-        toast.error("No feedback submitted yet — cannot generate synthesis");
-        return;
+        throw new Error("No feedback submitted yet — cannot generate synthesis");
       }
 
       // Pick the first completed interview with a transcript
@@ -161,7 +176,7 @@ export function AISynthesisPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_name: candidateName,
-          role: stages[0]?.name ?? "Role",
+          role: playbookTitle || "Role",
           stage_name: "All Stages",
           feedback_forms: feedbackForms,
           interview_id: transcriptInterview?.id,
@@ -174,215 +189,185 @@ export function AISynthesisPanel({
         throw new Error(err.error || "Failed to generate synthesis");
       }
 
-      const result = await res.json();
-      setSynthesis(result.data);
-      setMetadata(result.metadata);
-    } catch (err) {
-      console.error("[ai-synthesis] Generation failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate synthesis",
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+      const apiResult = await res.json();
+      return { data: apiResult.data, metadata: apiResult.metadata };
+    });
   }
 
   if (!synthesis) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            AI Synthesis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <p className="text-sm text-muted-foreground">
-              Generate an AI synthesis of all feedback for this candidate
-            </p>
-            {hasTranscript && (
-              <Badge variant="secondary" className="text-xs">
-                <FileText className="mr-1 h-3 w-3" />
-                Transcript available
-              </Badge>
-            )}
-            <Button onClick={handleGenerate} disabled={isGenerating}>
-              {isGenerating ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Generate Synthesis
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <Brain className="h-6 w-6 text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          Generate an AI synthesis of all feedback for this candidate
+        </p>
+        {hasTranscript && (
+          <span className="mt-2 flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-medium text-muted-foreground">
+            <FileText className="h-3 w-3" />
+            Transcript available
+          </span>
+        )}
+        <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
+          {isGenerating ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="mr-2 h-4 w-4" />
+          )}
+          Generate Synthesis
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            AI Synthesis
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <AIIndicatorBadge />
-            {metadata?.transcript_included && (
-              <Badge variant="secondary" className="text-xs">
-                <FileText className="mr-1 h-3 w-3" />
-                {metadata.transcript_truncated
-                  ? "Transcript (truncated)"
-                  : "Transcript included"}
-              </Badge>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              aria-label="Regenerate synthesis"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-            </Button>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-end gap-2">
+        {metadata?.transcript_included && (
+          <span className="flex items-center gap-1 rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-medium text-muted-foreground">
+            <FileText className="h-3 w-3" />
+            {metadata.transcript_truncated
+              ? "Transcript (truncated)"
+              : "Transcript included"}
+          </span>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleGenerate}
+          disabled={isGenerating}
+          aria-label="Regenerate synthesis"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Summary */}
+      {synthesis.summary && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <h3 className="text-[15px] font-semibold tracking-tight mb-3">Summary</h3>
+          <p className="text-[14px] leading-relaxed text-muted-foreground">
+            {synthesis.summary}
+          </p>
+        </div>
+      )}
+
+      {/* Rating Overview */}
+      {synthesis.rating_overview && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm text-center">
+            <p className="text-[28px] font-bold tabular-nums tracking-tight">
+              {synthesis.rating_overview.average_score.toFixed(1)}
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">Average score (out of 4)</p>
+          </div>
+          <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm text-center">
+            <p className="text-[28px] font-bold tabular-nums tracking-tight">
+              {synthesis.rating_overview.total_feedback_count}
+            </p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground">Feedback forms</p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Summary */}
-        {synthesis.summary && (
-          <div>
-            <p className="text-sm font-medium">Summary</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {synthesis.summary}
-            </p>
-          </div>
-        )}
+      )}
 
-        {/* Consensus */}
-        {synthesis.consensus && (
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Team Consensus</p>
-            {synthesis.consensus.areas_of_agreement.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-green-700">Areas of Agreement</p>
-                <ul className="mt-1 space-y-1">
-                  {synthesis.consensus.areas_of_agreement.map((a, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {synthesis.consensus.areas_of_disagreement.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-amber-700">Areas of Disagreement</p>
-                <ul className="mt-1 space-y-1">
-                  {synthesis.consensus.areas_of_disagreement.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Key Strengths */}
-        {synthesis.key_strengths.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-green-700">Key Strengths</p>
-            <ul className="mt-1 space-y-1">
-              {synthesis.key_strengths.map((s, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                >
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-500" />
-                  {s}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Key Concerns */}
-        {synthesis.key_concerns.length > 0 && (
-          <div>
-            <p className="text-sm font-medium text-red-700">Key Concerns</p>
-            <ul className="mt-1 space-y-1">
-              {synthesis.key_concerns.map((c, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                >
-                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
-                  {c}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Rating Overview */}
-        {synthesis.rating_overview && (
-          <div>
-            <p className="text-sm font-medium">Rating Overview</p>
-            <div className="mt-1 flex flex-wrap gap-2">
-              <Badge variant="secondary" className="text-xs">
-                Average: {synthesis.rating_overview.average_score.toFixed(1)}/4
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                {synthesis.rating_overview.total_feedback_count} feedback forms
-              </Badge>
-            </div>
-            {synthesis.rating_overview.score_distribution.length > 0 && (
-              <div className="mt-2 flex gap-2">
-                {synthesis.rating_overview.score_distribution.map((d) => (
-                  <Badge key={d.score} variant="outline" className="text-xs">
-                    Score {d.score}: {d.count}
-                  </Badge>
+      {/* Consensus */}
+      {synthesis.consensus && (
+        <div className="space-y-3">
+          {synthesis.consensus.areas_of_agreement.length > 0 && (
+            <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+              <h3 className="text-[15px] font-semibold tracking-tight text-green-700 mb-3">Areas of Agreement</h3>
+              <ul className="space-y-2">
+                {synthesis.consensus.areas_of_agreement.map((a, i) => (
+                  <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                    {a}
+                  </li>
                 ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Discussion Points */}
-        {synthesis.discussion_points &&
-          synthesis.discussion_points.length > 0 && (
-            <div>
-              <p className="text-sm font-medium">Discussion Points</p>
-              <ol className="mt-1 space-y-1 list-decimal list-inside">
-                {synthesis.discussion_points.map((d, i) => (
-                  <li key={i} className="text-sm text-muted-foreground">
+              </ul>
+            </div>
+          )}
+          {synthesis.consensus.areas_of_disagreement.length > 0 && (
+            <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+              <h3 className="text-[15px] font-semibold tracking-tight text-amber-700 mb-3">Areas of Disagreement</h3>
+              <ul className="space-y-2">
+                {synthesis.consensus.areas_of_disagreement.map((d, i) => (
+                  <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                     {d}
                   </li>
                 ))}
-              </ol>
+              </ul>
             </div>
           )}
+        </div>
+      )}
 
-        {/* AI Disclaimer from synthesis output */}
-        {synthesis.disclaimer && (
-          <p className="text-xs text-muted-foreground italic border-l-2 border-muted pl-2">
-            {synthesis.disclaimer}
-          </p>
+      {/* Key Strengths */}
+      {synthesis.key_strengths.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <h3 className="text-[15px] font-semibold tracking-tight text-green-700 mb-3">Key Strengths</h3>
+          <ul className="space-y-2">
+            {synthesis.key_strengths.map((s, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground"
+              >
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400" />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Key Concerns */}
+      {synthesis.key_concerns.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <h3 className="text-[15px] font-semibold tracking-tight text-red-700 mb-3">Key Concerns</h3>
+          <ul className="space-y-2">
+            {synthesis.key_concerns.map((c, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground"
+              >
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+                {c}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Discussion Points */}
+      {synthesis.discussion_points &&
+        synthesis.discussion_points.length > 0 && (
+          <div className="space-y-3">
+            {synthesis.discussion_points.map((d, i) => (
+              <div
+                key={i}
+                className="flex gap-4 rounded-xl border border-border/40 bg-card p-5 shadow-sm"
+              >
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[11px] font-bold text-teal-700">
+                  {i + 1}
+                </span>
+                <p className="text-[14px] leading-relaxed text-muted-foreground">
+                  {d}
+                </p>
+              </div>
+            ))}
+          </div>
         )}
 
-        <AIDisclaimer />
-      </CardContent>
-    </Card>
+      {/* AI Disclaimer from synthesis output */}
+      {synthesis.disclaimer && (
+        <p className="text-[12px] text-muted-foreground italic border-l-2 border-border/60 pl-3">
+          {synthesis.disclaimer}
+        </p>
+      )}
+    </div>
   );
 }

@@ -76,12 +76,12 @@ describe("CandidateProfileSchema", () => {
     expect(result.success).toBe(false);
   });
 
-  it("enforces min 1 must_have_skills when provided", () => {
+  it("accepts empty must_have_skills array (AI tolerance)", () => {
     const result = CandidateProfileSchema.safeParse({
       ...validProfile,
       must_have_skills: [],
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it("rejects non-string items in skill arrays", () => {

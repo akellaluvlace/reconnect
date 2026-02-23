@@ -182,44 +182,26 @@ describe("Cascade Integrity Tests", () => {
   });
 
   describe("Known cascade gaps are documented", () => {
-    // GAP: interviews.stage_id references interview_stages(id) with NO ON DELETE action.
-    // This means deleting a stage while interviews reference it will fail with FK violation.
-    // Recommended fix: ON DELETE SET NULL (interview keeps history, stage ref becomes null).
-    it("interviews.stage_id has no ON DELETE CASCADE (known gap)", () => {
-      const hasCascade = hasCascadePolicy(
-        normalizedSQL,
-        "stage_id",
-        "ON DELETE CASCADE",
-      );
+    // FIXED by migration #22: interviews.stage_id now has ON DELETE SET NULL.
+    it("interviews.stage_id has ON DELETE SET NULL", () => {
       const hasSetNull = hasCascadePolicy(
         normalizedSQL,
         "stage_id",
         "ON DELETE SET NULL",
       );
 
-      // GAP: interviews.stage_id has NO ON DELETE action (defaults to NO ACTION).
-      // This test documents the gap. If a migration adds a cascade later, this
-      // test will need updating.
-      expect(hasCascade || hasSetNull).toBe(false);
+      expect(hasSetNull).toBe(true);
     });
 
-    // GAP: candidates.current_stage_id references interview_stages(id) with NO ON DELETE action.
-    // Similar to above — deleting a stage while a candidate references it will fail.
-    // Recommended fix: ON DELETE SET NULL (candidate loses current stage ref, can be reassigned).
-    it("candidates.current_stage_id has no ON DELETE action (known gap)", () => {
-      const hasCascade = hasCascadePolicy(
-        normalizedSQL,
-        "current_stage_id",
-        "ON DELETE CASCADE",
-      );
+    // FIXED by migration #22: candidates.current_stage_id now has ON DELETE SET NULL.
+    it("candidates.current_stage_id has ON DELETE SET NULL", () => {
       const hasSetNull = hasCascadePolicy(
         normalizedSQL,
         "current_stage_id",
         "ON DELETE SET NULL",
       );
 
-      // GAP: candidates.current_stage_id has NO ON DELETE action (defaults to NO ACTION).
-      expect(hasCascade || hasSetNull).toBe(false);
+      expect(hasSetNull).toBe(true);
     });
   });
 

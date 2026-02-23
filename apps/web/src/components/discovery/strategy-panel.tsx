@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import type { MarketInsights, HiringStrategy } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
-import { AIIndicatorBadge } from "@/components/ai/ai-indicator-badge";
+import { stripAIMetadata } from "@/lib/strip-ai-metadata";
 import {
-  Target,
   Sparkles,
   ShieldAlert,
   Lightbulb,
@@ -24,6 +22,7 @@ interface StrategyPanelProps {
   level: string;
   industry: string;
   onUpdate: (data: HiringStrategy) => void;
+  activeItem: string;
 }
 
 const MARKET_CLASS_LABELS: Record<string, { label: string; color: string }> = {
@@ -52,17 +51,32 @@ export function StrategyPanel({
   level,
   industry,
   onUpdate,
+  activeItem,
 }: StrategyPanelProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
+  const opKey = `strategy-${playbookId}`;
+  const { status, result, error } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isGenerating = status === "loading";
 
-  async function handleGenerate() {
+  useEffect(() => {
+    if (status === "success" && result) {
+      onUpdate(result as HiringStrategy);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (status === "error" && error) {
+      toast.error(error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [status, result, error, onUpdate, opKey]);
+
+  function handleGenerate() {
     if (!marketInsights) {
       toast.error("Market insights required to generate strategy");
       return;
     }
 
-    setIsGenerating(true);
-    try {
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       const res = await fetch("/api/ai/generate-strategy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,9 +101,7 @@ export function StrategyPanel({
       }
 
       const { data } = await res.json();
-      onUpdate(data);
 
-      // Auto-save to playbook
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -98,49 +110,40 @@ export function StrategyPanel({
 
       if (!saveRes.ok) {
         console.error("[strategy] Auto-save failed");
-        toast.error("Strategy generated but failed to save");
+        toast.error("Strategy generated but failed to save. Try refreshing the page.");
       }
-    } catch (err) {
-      console.error("[strategy] Generation failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to generate strategy",
-      );
-    } finally {
-      setIsGenerating(false);
-    }
+
+      return data;
+    });
   }
 
   if (!strategy) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Hiring Strategy
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {marketInsights ? (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <p className="text-sm text-muted-foreground">
-                Generate an AI-powered hiring strategy based on market research
-              </p>
-              <Button onClick={handleGenerate} disabled={isGenerating}>
-                {isGenerating ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="mr-2 h-4 w-4" />
-                )}
-                Generate Strategy
-              </Button>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        {marketInsights ? (
+          <>
+            <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+            <p className="mt-3 text-[14px] text-muted-foreground">
+              Generate an AI-powered hiring strategy based on market research
+            </p>
+            <Button className="mt-4" onClick={handleGenerate} disabled={isGenerating}>
+              {isGenerating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Generate Strategy
+            </Button>
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-6 w-6 text-muted-foreground/40" />
+            <p className="mt-3 text-[14px] text-muted-foreground">
               Complete market research first to generate a hiring strategy.
             </p>
-          )}
-        </CardContent>
-      </Card>
+          </>
+        )}
+      </div>
     );
   }
 
@@ -148,178 +151,260 @@ export function StrategyPanel({
   const speed = SPEED_LABELS[strategy.process_speed.recommendation];
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Hiring Strategy
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <AIIndicatorBadge />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating || !marketInsights}
-              aria-label="Regenerate strategy"
-            >
-              {isGenerating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Market Classification */}
-        <div className="flex items-start gap-3">
-          <Badge className={mc?.color ?? ""}>
+    <div className="space-y-4">
+      {/* Header — always visible */}
+      <div className="flex items-center justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleGenerate}
+          disabled={isGenerating || !marketInsights}
+          aria-label="Regenerate strategy"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* ── Market Classification ── */}
+      {activeItem === "classification" && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <Badge className={`text-[12px] font-semibold ${mc?.color ?? ""}`}>
             {mc?.label ?? strategy.market_classification}
           </Badge>
-          <p className="text-sm text-muted-foreground">
-            {strategy.market_classification_rationale}
+
+          {/* Supporting market data points */}
+          {marketInsights && (
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-[12px] text-muted-foreground">
+              <span>
+                Availability: <span className="font-semibold text-foreground">{marketInsights.candidate_availability.level}</span>
+              </span>
+              <span>
+                Active postings: <span className="font-semibold text-foreground">{marketInsights.competition.job_postings_count}</span>
+              </span>
+              <span>
+                Saturation: <span className="font-semibold text-foreground">{marketInsights.competition.market_saturation}</span>
+              </span>
+            </div>
+          )}
+
+          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+            {stripAIMetadata(strategy.market_classification_rationale)}
           </p>
         </div>
+      )}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Salary Positioning */}
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm font-medium">Salary Positioning</p>
-              <Badge variant="outline" className="mt-1">
-                {SALARY_LABELS[strategy.salary_positioning.strategy] ??
-                  strategy.salary_positioning.strategy}
-              </Badge>
-              <p className="mt-1 text-lg font-semibold">
-                {strategy.salary_positioning.recommended_range.currency}{" "}
-                {strategy.salary_positioning.recommended_range.min.toLocaleString()}
-                –
-                {strategy.salary_positioning.recommended_range.max.toLocaleString()}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {strategy.salary_positioning.rationale}
-              </p>
-            </CardContent>
-          </Card>
+      {/* ── Salary Positioning ── */}
+      {activeItem === "salary" && (() => {
+        const rec = strategy.salary_positioning.recommended_range;
+        const mkt = marketInsights?.salary;
+        // Compute delta vs market median if both exist and median is non-zero
+        const medianDelta = mkt && mkt.median > 0
+          ? Math.round(((rec.min + rec.max) / 2 - mkt.median) / mkt.median * 100)
+          : null;
 
-          {/* Process Speed */}
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm font-medium">Process Speed</p>
-              <Badge className={speed?.color ?? ""}>
-                {speed?.label ?? strategy.process_speed.recommendation}
-              </Badge>
-              <p className="mt-1 text-sm">
-                Max {strategy.process_speed.max_stages} stages &middot; Target{" "}
-                {strategy.process_speed.target_days} days
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {strategy.process_speed.rationale}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        return (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <span className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-semibold text-foreground">
+            {SALARY_LABELS[strategy.salary_positioning.strategy] ??
+              strategy.salary_positioning.strategy}
+          </span>
+          <p className="mt-4 text-[28px] font-bold tabular-nums tracking-tight">
+            {rec.currency}{" "}
+            {rec.min.toLocaleString()}
+            {" – "}
+            {rec.max.toLocaleString()}
+          </p>
+          <p className="mt-0.5 text-[13px] text-muted-foreground">Recommended range</p>
 
-        {/* Competitive Differentiators */}
-        <div>
-          <p className="text-sm font-medium">Competitive Differentiators</p>
-          <ul className="mt-1 space-y-1">
-            {strategy.competitive_differentiators.map((d, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2 text-sm text-muted-foreground"
-              >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500" />
-                {d}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Skills Priority */}
-        <div>
-          <p className="text-sm font-medium">Skills Priority</p>
-          <div className="mt-2 grid gap-3 md:grid-cols-3">
-            <div>
-              <p className="text-xs font-medium text-red-700">Must Have</p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {strategy.skills_priority.must_have.map((s) => (
-                  <Badge key={s} className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">
-                    {s}
-                  </Badge>
-                ))}
-              </div>
+          {/* Market comparison */}
+          {mkt && (
+            <div className="mt-3 flex items-center gap-3 rounded-lg bg-muted/50 px-4 py-2.5 text-[12px]">
+              <span className="text-muted-foreground">
+                Market range: <span className="font-semibold text-foreground">{mkt.currency} {mkt.min.toLocaleString()} – {mkt.max.toLocaleString()}</span>
+              </span>
+              {medianDelta !== null && medianDelta !== 0 && (
+                <>
+                  <span className="text-muted-foreground/40">|</span>
+                  <span className={medianDelta > 0 ? "font-semibold text-teal-700" : "font-semibold text-amber-700"}>
+                    {medianDelta > 0 ? "+" : ""}{medianDelta}% vs market median
+                  </span>
+                </>
+              )}
             </div>
-            <div>
-              <p className="text-xs font-medium text-blue-700">Nice to Have</p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {strategy.skills_priority.nice_to_have.map((s) => (
-                  <Badge key={s} variant="outline" className="text-xs">
-                    {s}
-                  </Badge>
-                ))}
-              </div>
+          )}
+
+          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+            {stripAIMetadata(strategy.salary_positioning.rationale)}
+          </p>
+        </div>
+        );
+      })()}
+
+      {/* ── Process Speed ── */}
+      {activeItem === "speed" && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <Badge className={`text-[12px] font-semibold ${speed?.color ?? ""}`}>
+            {speed?.label ?? strategy.process_speed.recommendation}
+          </Badge>
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <div className="rounded-lg bg-muted/50 px-5 py-4 text-center">
+              <p className="text-[24px] font-bold tabular-nums">{strategy.process_speed.max_stages}</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">Max stages</p>
             </div>
-            <div>
-              <p className="text-xs font-medium text-green-700">
-                Emerging Premium
+            <div className="rounded-lg bg-muted/50 px-5 py-4 text-center">
+              <p className="text-[24px] font-bold tabular-nums">{strategy.process_speed.target_days}</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">Target days</p>
+              {marketInsights?.time_to_hire && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Market avg: ~{marketInsights.time_to_hire.average_days}d
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+            {stripAIMetadata(strategy.process_speed.rationale)}
+          </p>
+        </div>
+      )}
+
+      {/* ── Competitive Differentiators ── */}
+      {activeItem === "differentiators" && (
+        <div className="space-y-3">
+          {strategy.competitive_differentiators.map((d, i) => (
+            <div
+              key={i}
+              className="flex gap-4 rounded-xl border border-border/40 bg-card p-5 shadow-sm"
+            >
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[11px] font-bold text-teal-700">
+                {i + 1}
+              </span>
+              <p className="text-[14px] leading-relaxed text-muted-foreground">
+                {stripAIMetadata(d)}
               </p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {strategy.skills_priority.emerging_premium.map((s) => (
-                  <Badge
-                    key={s}
-                    className="bg-green-100 text-green-800 hover:bg-green-100 text-xs"
-                  >
-                    {s}
-                  </Badge>
-                ))}
-              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Skills Priority ── */}
+      {activeItem === "skills" && (() => {
+        // Build sets for O(1) lookup of market skills
+        const marketRequired = new Set(
+          (marketInsights?.key_skills?.required ?? []).map((s) => s.toLowerCase()),
+        );
+        const marketEmerging = new Set(
+          (marketInsights?.key_skills?.emerging ?? []).map((s) => s.toLowerCase()),
+        );
+
+        function skillTag(skill: string) {
+          const lower = skill.toLowerCase();
+          if (marketRequired.has(lower)) {
+            return <span className="ml-1.5 rounded bg-teal-100 px-1 py-0.5 text-[10px] font-bold uppercase leading-none text-teal-800">In demand</span>;
+          }
+          if (marketEmerging.has(lower)) {
+            return <span className="ml-1.5 rounded bg-green-100 px-1 py-0.5 text-[10px] font-bold uppercase leading-none text-green-800">Emerging</span>;
+          }
+          return null;
+        }
+
+        return (
+        <div className="space-y-5">
+          <div>
+            <p className="mb-3 text-[13px] font-semibold text-red-700">Must Have</p>
+            <div className="flex flex-wrap gap-2">
+              {strategy.skills_priority.must_have.map((s) => (
+                <span
+                  key={s}
+                  className="flex items-center rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-[13px] font-medium text-red-800"
+                >
+                  {s}{skillTag(s)}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-3 text-[13px] font-semibold text-foreground">Nice to Have</p>
+            <div className="flex flex-wrap gap-2">
+              {strategy.skills_priority.nice_to_have.map((s) => (
+                <span
+                  key={s}
+                  className="flex items-center rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-[13px] font-medium text-foreground"
+                >
+                  {s}{skillTag(s)}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-3 text-[13px] font-semibold text-green-700">Emerging Premium</p>
+            <div className="flex flex-wrap gap-2">
+              {strategy.skills_priority.emerging_premium.map((s) => (
+                <span
+                  key={s}
+                  className="flex items-center rounded-md border border-green-200 bg-green-50 px-3 py-1.5 text-[13px] font-medium text-green-800"
+                >
+                  {s}{skillTag(s)}
+                </span>
+              ))}
             </div>
           </div>
         </div>
+        );
+      })()}
 
-        {/* Risks */}
-        {strategy.key_risks.length > 0 && (
-          <div>
-            <p className="flex items-center gap-1 text-sm font-medium">
-              <ShieldAlert className="h-4 w-4 text-amber-600" />
-              Key Risks
-            </p>
-            <div className="mt-1 space-y-2">
+      {/* ── Key Risks ── */}
+      {activeItem === "risks" && (
+        <>
+          {strategy.key_risks.length > 0 ? (
+            <div className="space-y-3">
               {strategy.key_risks.map((r, i) => (
-                <div key={i} className="rounded-md bg-muted/50 p-2">
-                  <p className="text-sm font-medium">{r.risk}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Mitigation: {r.mitigation}
+                <div key={i} className="rounded-xl border border-border/40 bg-card p-5 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <div>
+                      <p className="text-[14px] font-semibold text-foreground">{stripAIMetadata(r.risk)}</p>
+                      <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+                        <span className="font-semibold text-teal-700">Mitigation:</span> {stripAIMetadata(r.mitigation)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-8 text-center text-[14px] text-muted-foreground">No key risks identified.</p>
+          )}
+        </>
+      )}
+
+      {/* ── Recommendations ── */}
+      {activeItem === "recommendations" && (
+        <>
+          {strategy.recommendations.length > 0 ? (
+            <div className="space-y-3">
+              {strategy.recommendations.map((r, i) => (
+                <div
+                  key={i}
+                  className="flex gap-4 rounded-xl border border-border/40 bg-card p-5 shadow-sm"
+                >
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gold-500/10 text-[11px] font-bold text-gold-600">
+                    {i + 1}
+                  </span>
+                  <p className="text-[14px] leading-relaxed text-muted-foreground">
+                    {stripAIMetadata(r)}
                   </p>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Recommendations */}
-        {strategy.recommendations.length > 0 && (
-          <div>
-            <p className="flex items-center gap-1 text-sm font-medium">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
-              Recommendations
-            </p>
-            <ol className="mt-1 space-y-1 list-decimal list-inside">
-              {strategy.recommendations.map((r, i) => (
-                <li key={i} className="text-sm text-muted-foreground">
-                  {r}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        <AIDisclaimer />
-      </CardContent>
-    </Card>
+          ) : (
+            <p className="py-8 text-center text-[14px] text-muted-foreground">No recommendations available.</p>
+          )}
+        </>
+      )}
+    </div>
   );
 }

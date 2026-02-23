@@ -2,7 +2,6 @@
 
 import type { Json } from "@reconnect/database";
 import { InterviewCard } from "./interview-card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 
 interface StageInfo {
@@ -55,64 +54,59 @@ export function InterviewList({
     (i) => !stages.some((s) => s.id === i.stage_id),
   );
 
+  if (interviews.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <Calendar className="h-6 w-6 text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          No interviews scheduled for this candidate yet.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Interviews
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {interviews.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No interviews scheduled for this candidate yet.
-          </p>
-        ) : (
-          <>
-            {grouped
-              .filter((g) => g.interviews.length > 0)
-              .map((g) => (
-                <div key={g.stage.id}>
-                  <p className="mb-2 text-sm font-medium text-muted-foreground">
-                    {g.stage.name}
-                  </p>
-                  <div className="space-y-2">
-                    {g.interviews.map((interview) => (
-                      <InterviewCard
-                        key={interview.id}
-                        interview={interview}
-                        stageName={g.stage.name}
-                        isOwnInterview={
-                          interview.interviewer_id === currentUserId
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
+    <div className="space-y-5">
+      {grouped
+        .filter((g) => g.interviews.length > 0)
+        .map((g) => (
+          <div key={g.stage.id}>
+            <p className="mb-3 text-[13px] font-semibold text-muted-foreground">
+              {g.stage.name}
+            </p>
+            <div className="space-y-2">
+              {g.interviews.map((interview) => (
+                <InterviewCard
+                  key={interview.id}
+                  interview={interview}
+                  stageName={g.stage.name}
+                  isOwnInterview={
+                    interview.interviewer_id === currentUserId
+                  }
+                />
               ))}
-            {unmatchedInterviews.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-medium text-muted-foreground">
-                  Other
-                </p>
-                <div className="space-y-2">
-                  {unmatchedInterviews.map((interview) => (
-                    <InterviewCard
-                      key={interview.id}
-                      interview={interview}
-                      stageName="Unassigned"
-                      isOwnInterview={
-                        interview.interviewer_id === currentUserId
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          </div>
+        ))}
+      {unmatchedInterviews.length > 0 && (
+        <div>
+          <p className="mb-3 text-[13px] font-semibold text-muted-foreground">
+            Other
+          </p>
+          <div className="space-y-2">
+            {unmatchedInterviews.map((interview) => (
+              <InterviewCard
+                key={interview.id}
+                interview={interview}
+                stageName="Unassigned"
+                isOwnInterview={
+                  interview.interviewer_id === currentUserId
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

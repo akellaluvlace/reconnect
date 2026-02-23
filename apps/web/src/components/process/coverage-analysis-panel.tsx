@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { CoverageAnalysis, JobDescription } from "@reconnect/database";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
-import { AIIndicatorBadge } from "@/components/ai/ai-indicator-badge";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -15,11 +12,13 @@ import {
   Lightbulb,
   Loader2,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
 
 interface CoverageAnalysisPanelProps {
+  playbookId: string;
   role: string;
   level: string;
   jd: JobDescription;
@@ -27,29 +26,46 @@ interface CoverageAnalysisPanelProps {
 }
 
 const SEVERITY_CONFIG = {
-  critical: { color: "bg-red-100 text-red-800", icon: AlertTriangle },
-  important: { color: "bg-orange-100 text-orange-800", icon: AlertTriangle },
-  minor: { color: "bg-yellow-100 text-yellow-800", icon: Info },
+  critical: { color: "border-red-200 bg-red-50 text-red-800", icon: AlertTriangle },
+  important: { color: "border-orange-200 bg-orange-50 text-orange-800", icon: AlertTriangle },
+  minor: { color: "border-yellow-200 bg-yellow-50 text-yellow-800", icon: Info },
 };
 
 const STRENGTH_CONFIG = {
-  strong: "bg-green-100 text-green-800",
-  moderate: "bg-blue-100 text-blue-800",
-  weak: "bg-orange-100 text-orange-800",
+  strong: "border-green-200 bg-green-50 text-green-800",
+  moderate: "border-blue-200 bg-blue-50 text-blue-800",
+  weak: "border-orange-200 bg-orange-50 text-orange-800",
 };
 
 export function CoverageAnalysisPanel({
+  playbookId,
   role,
   level,
   jd,
   stages,
 }: CoverageAnalysisPanelProps) {
   const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  async function handleAnalyze() {
-    setIsAnalyzing(true);
-    try {
+  const opKey = `coverage-${playbookId}`;
+  const { status, result, error } = useAIGenerationStore(
+    (s) => s.operations[opKey] ?? IDLE_OP,
+  );
+  const isAnalyzing = status === "loading";
+
+  // Apply result when operation completes
+  useEffect(() => {
+    if (status === "success" && result) {
+      setAnalysis(result as CoverageAnalysis);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (status === "error" && error) {
+      toast.error(error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [status, result, error, opKey]);
+
+  function handleAnalyze() {
+    useAIGenerationStore.getState().startOperation(opKey, async () => {
       const res = await fetch("/api/ai/analyze-coverage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -78,191 +94,175 @@ export function CoverageAnalysisPanel({
       }
 
       const { data } = await res.json();
-      setAnalysis(data);
-    } catch (err) {
-      console.error("[coverage] Analysis failed:", err);
-      toast.error(
-        err instanceof Error ? err.message : "Failed to analyze coverage",
-      );
-    } finally {
-      setIsAnalyzing(false);
-    }
+      return data;
+    });
   }
 
   if (!analysis) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            Coverage Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center gap-3 py-4">
-            <p className="text-sm text-muted-foreground">
-              Analyze how well your interview stages cover the job requirements
-            </p>
-            <Button onClick={handleAnalyze} disabled={isAnalyzing}>
-              {isAnalyzing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldCheck className="mr-2 h-4 w-4" />
-              )}
-              Analyze Coverage
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <ShieldCheck className="h-6 w-6 text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          Analyze how well your interview stages cover the job requirements
+        </p>
+        <Button className="mt-4" onClick={handleAnalyze} disabled={isAnalyzing}>
+          {isAnalyzing ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <ShieldCheck className="mr-2 h-4 w-4" />
+          )}
+          Analyze Coverage
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleAnalyze}
+          disabled={isAnalyzing}
+          aria-label="Re-analyze coverage"
+        >
+          {isAnalyzing ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
+      {/* Overall Score */}
+      <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5" />
-            Coverage Analysis
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <AIIndicatorBadge />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              aria-label="Re-analyze coverage"
-            >
-              {isAnalyzing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldCheck className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <span className="text-[13px] font-medium text-muted-foreground">Overall Coverage</span>
+          <span className="text-[28px] font-bold tabular-nums tracking-tight">
+            {analysis.overall_coverage_score}%
+          </span>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Overall Score */}
-        <div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">Overall Coverage</span>
-            <span className="font-semibold">
-              {analysis.overall_coverage_score}%
-            </span>
-          </div>
-          <Progress
-            value={analysis.overall_coverage_score}
-            className="mt-1 h-2"
-          />
-        </div>
+        <Progress
+          value={analysis.overall_coverage_score}
+          className="mt-3 h-2.5"
+        />
+      </div>
 
-        {/* Requirements Covered */}
-        {analysis.requirements_covered.length > 0 && (
-          <div>
-            <p className="text-sm font-medium flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+      {/* Requirements Covered */}
+      {analysis.requirements_covered.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <h3 className="text-[15px] font-semibold tracking-tight">
               Requirements Covered ({analysis.requirements_covered.length})
-            </p>
-            <div className="mt-1 space-y-1">
-              {analysis.requirements_covered.map((rc, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between text-xs rounded-md bg-muted/50 px-2 py-1.5"
-                >
-                  <span className="truncate flex-1">{rc.requirement}</span>
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <span className="text-muted-foreground">
-                      {rc.covered_by_stage}
-                    </span>
-                    <Badge
-                      className={`${STRENGTH_CONFIG[rc.coverage_strength] ?? ""} text-[10px]`}
-                    >
-                      {rc.coverage_strength}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            </h3>
           </div>
-        )}
-
-        {/* Gaps */}
-        {analysis.gaps.length > 0 && (
-          <div>
-            <p className="text-sm font-medium flex items-center gap-1">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              Gaps ({analysis.gaps.length})
-            </p>
-            <div className="mt-1 space-y-2">
-              {analysis.gaps.map((gap, i) => {
-                const config = SEVERITY_CONFIG[gap.severity];
-                const Icon = config.icon;
-                return (
-                  <div key={i} className="rounded-md border p-2">
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="text-xs font-medium flex-1 truncate">
-                        {gap.requirement}
-                      </span>
-                      <Badge className={`${config.color} text-[10px]`}>
-                        {gap.severity}
-                      </Badge>
-                    </div>
-                    <p className="mt-1 text-[10px] text-muted-foreground pl-5">
-                      {gap.suggestion}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Redundancies */}
-        {analysis.redundancies.length > 0 && (
-          <div>
-            <p className="text-sm font-medium flex items-center gap-1">
-              <Info className="h-4 w-4 text-blue-600" />
-              Redundancies ({analysis.redundancies.length})
-            </p>
-            <div className="mt-1 space-y-1">
-              {analysis.redundancies.map((r, i) => (
-                <div key={i} className="text-xs rounded-md bg-muted/50 px-2 py-1.5">
-                  <span className="font-medium">{r.focus_area}</span>
-                  <span className="text-muted-foreground">
-                    {" "}
-                    appears in: {r.appears_in_stages.join(", ")}
+          <div className="space-y-2">
+            {analysis.requirements_covered.map((rc, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg bg-muted/30 px-4 py-2.5"
+              >
+                <span className="text-[13px] text-foreground truncate flex-1">{rc.requirement}</span>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <span className="text-[12px] text-muted-foreground">
+                    {rc.covered_by_stage}
                   </span>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {r.recommendation}
+                  <span
+                    className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
+                      STRENGTH_CONFIG[rc.coverage_strength] ?? ""
+                    }`}
+                  >
+                    {rc.coverage_strength}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Gaps */}
+      {analysis.gaps.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <h3 className="text-[15px] font-semibold tracking-tight">
+              Gaps ({analysis.gaps.length})
+            </h3>
+          </div>
+          <div className="space-y-3">
+            {analysis.gaps.map((gap, i) => {
+              const config = SEVERITY_CONFIG[gap.severity];
+              const Icon = config.icon;
+              return (
+                <div key={i} className="rounded-lg border border-border/40 p-4">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0 text-amber-500" />
+                    <span className="text-[13px] font-medium text-foreground flex-1 truncate">
+                      {gap.requirement}
+                    </span>
+                    <span
+                      className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${config.color}`}
+                    >
+                      {gap.severity}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground pl-6">
+                    {gap.suggestion}
                   </p>
                 </div>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Redundancies */}
+      {analysis.redundancies.length > 0 && (
+        <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Info className="h-4 w-4 text-blue-600" />
+            <h3 className="text-[15px] font-semibold tracking-tight">
+              Redundancies ({analysis.redundancies.length})
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {analysis.redundancies.map((r, i) => (
+              <div key={i} className="rounded-lg bg-muted/30 px-4 py-3">
+                <span className="text-[13px] font-medium text-foreground">{r.focus_area}</span>
+                <span className="text-[12px] text-muted-foreground">
+                  {" "}appears in: {r.appears_in_stages.join(", ")}
+                </span>
+                <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">
+                  {r.recommendation}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations */}
+      {analysis.recommendations.length > 0 && (
+        <div className="space-y-3">
+          {analysis.recommendations.map((r, i) => (
+            <div
+              key={i}
+              className="flex gap-4 rounded-xl border border-border/40 bg-card p-5 shadow-sm"
+            >
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-50 text-[11px] font-bold text-amber-700">
+                {i + 1}
+              </span>
+              <p className="text-[14px] leading-relaxed text-muted-foreground">
+                {r}
+              </p>
             </div>
-          </div>
-        )}
-
-        {/* Recommendations */}
-        {analysis.recommendations.length > 0 && (
-          <div>
-            <p className="text-sm font-medium flex items-center gap-1">
-              <Lightbulb className="h-4 w-4 text-amber-500" />
-              Recommendations
-            </p>
-            <ol className="mt-1 space-y-1 list-decimal list-inside">
-              {analysis.recommendations.map((r, i) => (
-                <li key={i} className="text-xs text-muted-foreground">
-                  {r}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        <AIDisclaimer />
-      </CardContent>
-    </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

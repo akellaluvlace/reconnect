@@ -3,6 +3,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateHiringStrategy, AIError } from "@reconnect/ai";
 
+// Strategy generation can take ~47s — set generous timeout for Vercel
+export const maxDuration = 120;
+
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
   level: z.string().min(1).max(100),
@@ -18,22 +21,22 @@ const RequestSchema = z.object({
     competition: z.object({
       companies_hiring: z.array(z.string().max(200)),
       job_postings_count: z.number(),
-      market_saturation: z.string().max(20),
+      market_saturation: z.string().max(50),
     }),
     time_to_hire: z.object({
       average_days: z.number(),
       range: z.object({ min: z.number(), max: z.number() }),
     }),
     candidate_availability: z.object({
-      level: z.string().max(20),
-      description: z.string().max(500),
+      level: z.string().max(50),
+      description: z.string().max(2000),
     }),
     key_skills: z.object({
-      required: z.array(z.string().max(100)),
-      emerging: z.array(z.string().max(100)),
-      declining: z.array(z.string().max(100)),
+      required: z.array(z.string().max(300)),
+      emerging: z.array(z.string().max(300)),
+      declining: z.array(z.string().max(300)),
     }),
-    trends: z.array(z.string().max(500)),
+    trends: z.array(z.string().max(2000)),
   }),
 });
 
@@ -58,6 +61,7 @@ export async function POST(req: NextRequest) {
 
     const parsed = RequestSchema.safeParse(body);
     if (!parsed.success) {
+      console.error("[generate-strategy] Validation failed:", JSON.stringify(parsed.error.issues, null, 2));
       return NextResponse.json(
         { error: "Invalid input", issues: parsed.error.issues },
         { status: 400 },

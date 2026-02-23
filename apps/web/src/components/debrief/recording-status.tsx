@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Circle,
   Upload,
@@ -16,37 +15,37 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "Pending",
-    color: "bg-gray-100 text-gray-800",
+    color: "border-border/60 bg-muted/40 text-muted-foreground",
     Icon: Circle,
   },
   uploading: {
     label: "Uploading",
-    color: "bg-blue-100 text-blue-800",
+    color: "border-blue-200 bg-blue-50 text-blue-800",
     Icon: Upload,
   },
   uploaded: {
     label: "Uploaded",
-    color: "bg-blue-100 text-blue-800",
+    color: "border-blue-200 bg-blue-50 text-blue-800",
     Icon: Upload,
   },
   transcribing: {
     label: "Transcribing",
-    color: "bg-amber-100 text-amber-800",
+    color: "border-amber-200 bg-amber-50 text-amber-800",
     Icon: Loader2,
   },
   completed: {
     label: "Ready",
-    color: "bg-green-100 text-green-800",
+    color: "border-green-200 bg-green-50 text-green-800",
     Icon: CheckCircle,
   },
   failed: {
     label: "Failed",
-    color: "bg-red-100 text-red-800",
+    color: "border-red-200 bg-red-50 text-red-800",
     Icon: XCircle,
   },
   no_consent: {
     label: "No Consent",
-    color: "bg-gray-100 text-gray-600",
+    color: "border-border/60 bg-muted/40 text-muted-foreground",
     Icon: Ban,
   },
 };
@@ -64,11 +63,11 @@ export function RecordingStatus({ status }: RecordingStatusProps) {
   const { label, color, Icon } = config;
 
   return (
-    <Badge className={`${color} text-xs`} variant="secondary">
+    <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium ${color}`}>
       <Icon
-        className={`mr-1 h-3 w-3 ${status === "transcribing" ? "animate-spin" : ""}`}
+        className={`h-3 w-3 ${status === "transcribing" ? "animate-spin" : ""}`}
       />
       {label}
-    </Badge>
+    </span>
   );
 }

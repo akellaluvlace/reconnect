@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   GripVertical,
   ChevronDown,
@@ -24,12 +22,12 @@ interface StageCardProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  screening: "bg-blue-100 text-blue-800",
-  technical: "bg-purple-100 text-purple-800",
-  behavioral: "bg-amber-100 text-amber-800",
-  cultural: "bg-green-100 text-green-800",
-  final: "bg-red-100 text-red-800",
-  custom: "bg-gray-100 text-gray-800",
+  screening: "border-blue-200 bg-blue-50 text-blue-800",
+  technical: "border-purple-200 bg-purple-50 text-purple-800",
+  behavioral: "border-amber-200 bg-amber-50 text-amber-800",
+  cultural: "border-green-200 bg-green-50 text-green-800",
+  final: "border-red-200 bg-red-50 text-red-800",
+  custom: "border-border/60 bg-muted/40 text-foreground",
 };
 
 export function StageCard({
@@ -45,8 +43,8 @@ export function StageCard({
   const questions = (stage.suggested_questions ?? []) as SuggestedQuestion[];
 
   return (
-    <Card className="relative">
-      <CardContent className="pt-4">
+    <div className="rounded-xl border border-border/40 bg-card shadow-sm">
+      <div className="p-5">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div
@@ -56,26 +54,28 @@ export function StageCard({
             <GripVertical className="h-5 w-5" />
           </div>
 
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal-50 text-[11px] font-bold text-teal-700">
             {index + 1}
-          </div>
+          </span>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium truncate">{stage.name}</h3>
-              <Badge
-                className={
+              <h3 className="text-[14px] font-semibold tracking-tight truncate">
+                {stage.name}
+              </h3>
+              <span
+                className={`rounded-md border px-2 py-0.5 text-[11px] font-medium ${
                   TYPE_COLORS[stage.type] ?? TYPE_COLORS.custom
-                }
+                }`}
               >
                 {stage.type}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
+              </span>
+              <span className="text-[12px] text-muted-foreground">
                 {stage.duration_minutes}min
               </span>
             </div>
             {stage.rationale && (
-              <p className="mt-0.5 text-xs italic text-muted-foreground truncate">
+              <p className="mt-0.5 text-[12px] italic text-muted-foreground truncate">
                 {stage.rationale as string}
               </p>
             )}
@@ -85,6 +85,7 @@ export function StageCard({
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
               onClick={onEdit}
               aria-label="Edit stage"
             >
@@ -93,14 +94,16 @@ export function StageCard({
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
               onClick={onDelete}
               aria-label="Delete stage"
             >
-              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
+              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
               onClick={() => setExpanded(!expanded)}
               aria-label={expanded ? "Collapse" : "Expand"}
             >
@@ -115,9 +118,9 @@ export function StageCard({
 
         {/* Expanded Content */}
         {expanded && (
-          <div className="mt-4 space-y-4 border-t pt-4">
+          <div className="mt-4 space-y-4 border-t border-border/40 pt-4">
             {stage.description && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[14px] leading-relaxed text-muted-foreground">
                 {stage.description}
               </p>
             )}
@@ -125,52 +128,51 @@ export function StageCard({
             {/* Focus Areas */}
             {focusAreas.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-sm font-medium">Focus Areas</h4>
+                <h4 className="text-[13px] font-semibold text-foreground">Focus Areas</h4>
                 {focusAreas.map((fa, i) => {
                   const faQuestions = questions.filter(
                     (q) => q.focus_area === fa.name,
                   );
                   return (
-                    <div key={i} className="rounded-md bg-muted/50 p-3">
+                    <div key={i} className="rounded-lg border border-border/40 bg-muted/30 p-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm">{fa.name}</span>
-                        <Badge variant="outline" className="text-xs">
+                        <span className="text-[13px] font-medium text-foreground">{fa.name}</span>
+                        <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                           Weight: {fa.weight}/4
-                        </Badge>
+                        </span>
                       </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
+                      <p className="mt-1 text-[12px] text-muted-foreground">
                         {fa.description}
                       </p>
                       {fa.rationale && (
-                        <p className="mt-0.5 text-xs italic text-muted-foreground">
+                        <p className="mt-0.5 text-[12px] italic text-muted-foreground">
                           {fa.rationale}
                         </p>
                       )}
 
                       {/* Questions for this focus area */}
                       {faQuestions.length > 0 && (
-                        <div className="mt-2 space-y-2">
+                        <div className="mt-3 space-y-2">
                           {faQuestions.map((q, qi) => (
                             <div
                               key={qi}
-                              className="flex items-start gap-2 pl-2 border-l-2 border-muted"
+                              className="flex items-start gap-2 border-l-2 border-teal-200 pl-3"
                             >
-                              <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-muted-foreground" />
+                              <MessageSquare className="mt-0.5 h-3 w-3 shrink-0 text-teal-500" />
                               <div>
-                                <p className="text-xs">{q.question}</p>
-                                <p className="text-[10px] text-muted-foreground">
+                                <p className="text-[12px] text-foreground">{q.question}</p>
+                                <p className="text-[11px] text-muted-foreground">
                                   Purpose: {q.purpose}
                                 </p>
                                 {q.look_for.length > 0 && (
-                                  <div className="mt-0.5 flex flex-wrap gap-1">
+                                  <div className="mt-1 flex flex-wrap gap-1">
                                     {q.look_for.map((lf, li) => (
-                                      <Badge
+                                      <span
                                         key={li}
-                                        variant="secondary"
-                                        className="text-[10px] px-1 py-0"
+                                        className="rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
                                       >
                                         {lf}
-                                      </Badge>
+                                      </span>
                                     ))}
                                   </div>
                                 )}
@@ -186,7 +188,7 @@ export function StageCard({
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

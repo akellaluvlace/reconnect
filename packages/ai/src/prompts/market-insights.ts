@@ -83,7 +83,7 @@ URL: ${s.url}
 Title: ${s.title}
 Preview: ${s.content.slice(0, 300)}`).join("\n\n")}
 
-For each source, provide recency_score, authority_score, relevance_score, overall_score (weighted average), and brief reasoning.`,
+For each source, provide recency_score, authority_score, relevance_score, and overall_score (weighted average).`,
 
   /** Deep research: Step 4 — Extract structured data from a source */
   extractionSystem: `You are a data extraction specialist. Extract structured recruitment market data from the provided text.

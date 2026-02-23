@@ -1,10 +1,17 @@
-import { AIRateLimitError, AIValidationError, AIError } from "./errors";
+import {
+  AIRateLimitError,
+  AIValidationError,
+  AIOutputTruncatedError,
+  AIError,
+} from "./errors";
 import type { AIEndpoint } from "./config";
 
 /** Check if an error is transient (worth retrying) */
 function isTransientError(error: unknown): boolean {
   // Validation errors are deterministic — retrying won't help
   if (error instanceof AIValidationError) return false;
+  // Truncation is deterministic — same input = same truncation
+  if (error instanceof AIOutputTruncatedError) return false;
   // Config errors (missing API key) are deterministic
   if (error instanceof AIError && error.code === "CONFIG_ERROR") return false;
   // Rate limits are transient

@@ -1,6 +1,5 @@
 import { requireAuth } from "@/lib/auth/require-auth";
-import { Sidebar } from "@/components/dashboard/sidebar";
-import { Header } from "@/components/dashboard/header";
+import { TopNav } from "@/components/dashboard/top-nav";
 import { AuthListener } from "@/components/dashboard/auth-listener";
 
 export default async function DashboardLayout({
@@ -11,13 +10,10 @@ export default async function DashboardLayout({
   await requireAuth();
 
   return (
-    <div className="flex h-screen min-w-[1024px]">
+    <div className="min-h-screen min-w-[1024px] bg-background">
       <AuthListener />
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-      </div>
+      <TopNav />
+      <main className="mx-auto max-w-[1400px] px-6 py-8">{children}</main>
     </div>
   );
 }

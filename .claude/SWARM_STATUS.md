@@ -1,7 +1,7 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-02-20
-**Current Macro Step:** Step 9 COMPLETE + HARDENED + MUTATION TESTED (Alignment + Debrief)
+**Last Updated:** 2026-02-23
+**Current Macro Step:** Step 9 COMPLETE + HARDENED + Discovery UX enhancements
 **Active Micro Steps:** None — ready for Step 10
 
 ---
@@ -61,8 +61,7 @@
 
 ## Next Actions
 
-1. **NOW:** Deploy migration #22 (FK cascade fix) to Supabase
-2. **NOW:** Step 10.1-10.2 (Platform Google setup + recording pipeline) — build incrementally, verify each API against real Google before connecting
+1. **NOW:** Step 10.1-10.2 (Platform Google setup + recording pipeline) — build incrementally, verify each API against real Google before connecting
 3. **Then:** Step 10.3 (bug fixes + rate limiting on AI endpoints)
 4. **Then:** Step 10.4-10.5 (security audit + production deploy)
 5. **Then:** Pre-Beta Checklist (see CLAUDE.md) — MUST pass before 10.6
