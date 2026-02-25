@@ -29,6 +29,20 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Verify playbook belongs to user's organization (defense-in-depth beyond RLS)
+    const { data: playbook, error: playbookError } = await supabase
+      .from("playbooks")
+      .select("organization_id")
+      .eq("id", playbookId)
+      .single();
+
+    if (playbookError || !playbook) {
+      return NextResponse.json(
+        { error: "Playbook not found" },
+        { status: 404 },
+      );
+    }
+
     const { data, error } = await supabase
       .from("share_links")
       .select("*")
@@ -100,6 +114,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Invalid input", issues: parsed.error.issues },
         { status: 400 },
+      );
+    }
+
+    // Verify playbook belongs to user's organization (defense-in-depth beyond RLS)
+    const { data: targetPlaybook, error: targetPlaybookError } = await supabase
+      .from("playbooks")
+      .select("organization_id")
+      .eq("id", parsed.data.playbook_id)
+      .single();
+
+    if (targetPlaybookError || !targetPlaybook) {
+      return NextResponse.json(
+        { error: "Playbook not found" },
+        { status: 404 },
       );
     }
 

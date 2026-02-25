@@ -48,10 +48,16 @@ export default async function SharePage({
     .order("order_index", { ascending: true });
 
   // Minimal data scope: candidate first name + role, stages, focus areas, questions
-  const playbook = link.playbooks as unknown as {
-    id: string;
-    title: string;
-  } | null;
+  // Safely extract playbook fields — Supabase returns a joined object
+  const rawPlaybook = link.playbooks;
+  const playbook =
+    rawPlaybook &&
+    typeof rawPlaybook === "object" &&
+    !Array.isArray(rawPlaybook) &&
+    "id" in rawPlaybook &&
+    "title" in rawPlaybook
+      ? { id: String(rawPlaybook.id), title: String(rawPlaybook.title) }
+      : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -92,15 +98,18 @@ export default async function SharePage({
                               (fa) =>
                                 typeof fa === "object" && fa !== null && !Array.isArray(fa) && "name" in fa,
                             )
-                            .map((fa, i) => (
-                              <Badge
-                                key={i}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {String((fa as { name: string }).name)}
-                              </Badge>
-                            ))}
+                            .map((fa) => {
+                              const name = String((fa as Record<string, unknown>).name);
+                              return (
+                                <Badge
+                                  key={name}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {name}
+                                </Badge>
+                              );
+                            })}
                         </div>
                       </div>
                     )}

@@ -561,7 +561,7 @@ describe("Authorization Matrix", () => {
         }
         if (table === "playbooks") {
           return chainBuilder({
-            data: { title: "Test Playbook" },
+            data: { organization_id: ORG_ID, title: "Test Playbook" },
             error: null,
           });
         }

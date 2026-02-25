@@ -28,14 +28,22 @@ export async function POST(req: NextRequest) {
     // Use service_role to look up the collaborator by invite_token
     const serviceClient = createServiceRoleClient();
 
-    // Find the collaborator with this invite token
+    // Find the collaborator with this invite token (must not be expired)
     const { data: collaborator, error: lookupError } = await serviceClient
       .from("collaborators")
-      .select("id, playbook_id")
+      .select("id, playbook_id, expires_at")
       .eq("invite_token", token)
       .single();
 
     if (lookupError || !collaborator || !collaborator.playbook_id) {
+      return NextResponse.json(
+        { error: "Invalid or expired consent token" },
+        { status: 404 },
+      );
+    }
+
+    // Verify token has not expired
+    if (collaborator.expires_at && new Date(collaborator.expires_at) < new Date()) {
       return NextResponse.json(
         { error: "Invalid or expired consent token" },
         { status: 404 },

@@ -286,8 +286,8 @@ describe("CONTRACT: POST /api/collaborators/invite", () => {
 
   it("happy path: response matches CollaboratorInviteResponseSchema", async () => {
     setupAuth();
-    // After profile check (users table), the invite INSERT returns single collaborator
-    // The route also queries "playbooks" for the email — we need that to succeed too
+    // After profile check (users table), the invite does org boundary check on playbooks,
+    // then INSERT on collaborators, then fetches playbook title for email
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
         return chainBuilder({
@@ -297,7 +297,7 @@ describe("CONTRACT: POST /api/collaborators/invite", () => {
       }
       if (table === "playbooks") {
         return chainBuilder({
-          data: { title: "Test Playbook" },
+          data: { organization_id: ORG_ID, title: "Test Playbook" },
           error: null,
         });
       }

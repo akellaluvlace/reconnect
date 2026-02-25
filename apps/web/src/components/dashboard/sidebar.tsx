@@ -17,11 +17,11 @@ import { useAuthStore } from "@/stores/auth-store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
-const primaryNav: { name: string; href: string; icon: PhosphorIcon }[] = [
-  { name: "Dashboard", href: "/", icon: House },
-  { name: "Playbooks", href: "/playbooks", icon: BookOpenText },
-  { name: "Candidates", href: "/candidates", icon: UsersThree },
-  { name: "Team", href: "/team", icon: UserPlus },
+const primaryNav: { name: string; href: string; icon: PhosphorIcon; enabled: boolean }[] = [
+  { name: "Dashboard", href: "/", icon: House, enabled: true },
+  { name: "Playbooks", href: "/playbooks", icon: BookOpenText, enabled: true },
+  { name: "Candidates", href: "/candidates", icon: UsersThree, enabled: false },
+  { name: "Team", href: "/team", icon: UserPlus, enabled: false },
 ];
 
 const utilityNav: { name: string; href: string; icon: PhosphorIcon }[] = [
@@ -56,6 +56,19 @@ export function Sidebar() {
       <nav className="flex-1 px-3 pt-2">
         <div className="space-y-0.5">
           {primaryNav.map((item) => {
+            if (!item.enabled) {
+              const Icon = item.icon;
+              return (
+                <span
+                  key={item.name}
+                  className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-slate-300"
+                  title="Coming soon"
+                >
+                  <Icon size={18} className="shrink-0 text-slate-300" />
+                  {item.name}
+                </span>
+              );
+            }
             const active = isActive(item.href);
             const Icon = item.icon;
             return (

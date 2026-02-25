@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { MarketInsights, JobDescription, HiringStrategy } from "@reconnect/database";
 import { MarketIntelligencePanel } from "./market-intelligence-panel";
 import { StrategyPanel } from "./strategy-panel";
@@ -110,18 +110,16 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
 
   // Lifted polling state — survives section switches
   const [isDeepResearchPolling, setIsDeepResearchPolling] = useState(false);
-  const deepResearchStartRef = useRef<number | null>(null);
+  const [deepResearchStartedAt, setDeepResearchStartedAt] = useState<number | null>(null);
 
   const handlePollingStart = useCallback(() => {
-    if (!deepResearchStartRef.current) {
-      deepResearchStartRef.current = Date.now();
-    }
+    setDeepResearchStartedAt((prev) => prev ?? Date.now());
     setIsDeepResearchPolling(true);
   }, []);
 
   const handlePollingStop = useCallback(() => {
     setIsDeepResearchPolling(false);
-    deepResearchStartRef.current = null;
+    setDeepResearchStartedAt(null);
   }, []);
 
   // Tab gating: deep research → strategy → JD
@@ -237,7 +235,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
               isPolling={isDeepResearchPolling}
               onPollingStart={handlePollingStart}
               onPollingStop={handlePollingStop}
-              pollingStartedAt={deepResearchStartRef.current}
+              pollingStartedAt={deepResearchStartedAt}
               role={playbook.title}
               level={playbook.level ?? ""}
               industry={playbook.industry ?? ""}

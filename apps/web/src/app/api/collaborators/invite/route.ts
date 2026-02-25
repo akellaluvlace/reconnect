@@ -60,6 +60,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Verify playbook belongs to user's organization (defense-in-depth beyond RLS)
+    const { data: playbook, error: playbookError } = await supabase
+      .from("playbooks")
+      .select("organization_id")
+      .eq("id", parsed.data.playbook_id)
+      .single();
+
+    if (playbookError || !playbook || playbook.organization_id !== profile.organization_id) {
+      return NextResponse.json(
+        { error: "Playbook not found" },
+        { status: 404 },
+      );
+    }
+
     const inviteToken = randomBytes(32).toString("hex");
     const expiresAt = new Date(
       Date.now() + 7 * 24 * 60 * 60 * 1000,

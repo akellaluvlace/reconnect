@@ -7,14 +7,15 @@ import {
   ListChecks,
   Target,
   ChatCircleDots,
+  Lock,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 const chapters = [
-  { id: "discovery", name: "Discovery", icon: MagnifyingGlass },
-  { id: "process", name: "Process", icon: ListChecks },
-  { id: "alignment", name: "Alignment", icon: Target },
-  { id: "debrief", name: "Debrief", icon: ChatCircleDots },
+  { id: "discovery", name: "Discovery", icon: MagnifyingGlass, enabled: true },
+  { id: "process", name: "Process", icon: ListChecks, enabled: false },
+  { id: "alignment", name: "Alignment", icon: Target, enabled: false },
+  { id: "debrief", name: "Debrief", icon: ChatCircleDots, enabled: false },
 ];
 
 export function ChapterNav({ playbookId }: { playbookId: string }) {
@@ -26,6 +27,20 @@ export function ChapterNav({ playbookId }: { playbookId: string }) {
         const href = `/playbooks/${playbookId}/${chapter.id}`;
         const isActive = pathname === href;
         const Icon = chapter.icon;
+
+        if (!chapter.enabled) {
+          return (
+            <span
+              key={chapter.id}
+              className="flex cursor-not-allowed items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground/50"
+              title="Coming soon"
+            >
+              <Icon size={16} className="opacity-40" />
+              {chapter.name}
+              <Lock size={12} className="opacity-40" />
+            </span>
+          );
+        }
 
         return (
           <Link

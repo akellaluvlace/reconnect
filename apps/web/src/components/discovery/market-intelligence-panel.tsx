@@ -10,7 +10,6 @@ import { stripAIMetadata } from "@/lib/strip-ai-metadata";
 import {
   UsersThree,
   Buildings,
-  Lightning,
   ArrowsClockwise,
   CircleNotch,
   CurrencyDollar,

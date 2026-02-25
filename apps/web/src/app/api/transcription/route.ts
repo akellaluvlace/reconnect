@@ -39,14 +39,21 @@ export async function POST(req: NextRequest) {
     const { interview_id, recording_url } = parsed.data;
 
     // SSRF prevention: only allow Supabase Storage and Google Drive URLs
-    const allowedHosts = [
+    // Exact hostname match only — no subdomain bypass, HTTPS required
+    const allowedHosts = new Set([
       "vfufxduwywrnwbjtwdjz.supabase.co",
       "www.googleapis.com",
       "drive.google.com",
-    ];
+    ]);
     try {
       const urlObj = new URL(recording_url);
-      if (!allowedHosts.some((h) => urlObj.hostname === h || urlObj.hostname.endsWith(`.${h}`))) {
+      if (urlObj.protocol !== "https:") {
+        return NextResponse.json(
+          { error: "Only HTTPS URLs are allowed" },
+          { status: 400 },
+        );
+      }
+      if (!allowedHosts.has(urlObj.hostname.toLowerCase())) {
         return NextResponse.json(
           { error: "Recording URL must be from an allowed source" },
           { status: 400 },

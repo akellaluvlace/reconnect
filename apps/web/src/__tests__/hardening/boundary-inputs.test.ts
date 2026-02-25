@@ -142,6 +142,12 @@ function setupCollaboratorProfile(role = "admin") {
         error: null,
       });
     }
+    if (table === "playbooks") {
+      return chainBuilder({
+        data: { organization_id: "org-1", title: "Test Playbook" },
+        error: null,
+      });
+    }
     return chainBuilder({ data: MOCK_COLLABORATOR, error: null });
   });
 }

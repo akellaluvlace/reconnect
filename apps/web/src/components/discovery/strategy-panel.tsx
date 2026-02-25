@@ -9,7 +9,6 @@ import { stripAIMetadata } from "@/lib/strip-ai-metadata";
 import {
   Sparkle,
   ShieldWarning,
-  Lightbulb,
   CircleNotch,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";

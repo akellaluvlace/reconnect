@@ -16,10 +16,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { name: "Dashboard", href: "/" },
-  { name: "Playbooks", href: "/playbooks" },
-  { name: "Candidates", href: "/candidates" },
-  { name: "Team", href: "/team" },
+  { name: "Dashboard", href: "/", enabled: true },
+  { name: "Playbooks", href: "/playbooks", enabled: true },
+  { name: "Candidates", href: "/candidates", enabled: false },
+  { name: "Team", href: "/team", enabled: false },
 ];
 
 export function TopNav() {
@@ -50,6 +50,17 @@ export function TopNav() {
         {/* Nav items */}
         <nav className="flex items-center gap-1">
           {navItems.map((item) => {
+            if (!item.enabled) {
+              return (
+                <span
+                  key={item.name}
+                  className="cursor-not-allowed rounded-md px-3 py-1.5 text-[13px] font-medium text-muted-foreground/40"
+                  title="Coming soon"
+                >
+                  {item.name}
+                </span>
+              );
+            }
             const active = isActive(item.href);
             return (
               <Link

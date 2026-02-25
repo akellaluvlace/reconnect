@@ -10,7 +10,7 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 **Step:** Step 10 DESIGN APPROVED — ready for implementation
 **Status:** Steps 1-9 complete + hardened. Premium design polish + Phosphor duotone icons. Step 10 recording pipeline redesigned: state machine (12 states), Google Meet VTT as primary transcript (not Whisper), manual synthesis trigger, optimistic locking, pipeline audit log, retry budget. Design doc at `docs/plans/2026-02-23-recording-pipeline-design.md`. 12 vulnerabilities mapped with mitigations. 476 web + 293 AI tests green. 24 migrations. Typecheck clean.
 **Next task:** Step 10.1 (Platform Google setup + migration #25) → 10.2 (recording pipeline implementation).
-**Blockers:** External API keys (Anthropic, Tavily, OpenAI, Resend, Google Cloud) + Google Workspace account setup needed for live testing.
+**Blockers:** None — all API keys available. Google Workspace account setup needed for live Meet/Drive testing.
 
 **Build order:** 10.1 (migration #25 + Google OAuth + helpers) → 10.2 (cron + state machine + UI) → 10.3-10.8
 
@@ -31,6 +31,8 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 ## Hard Constraints
 
 These are non-negotiable client decisions. Do not ask about them — they're settled.
+
+- **NO git commands without explicit user approval** — never commit, push, branch, checkout, stash, reset, or any other git operation unless the user explicitly asks for it. This includes creating commits after completing work. Always wait for the user to say "commit", "push", etc.
 
 - **Desktop-only** — no mobile responsive, min 1024px
 - **Ratings 1-4** — NOT 1-5

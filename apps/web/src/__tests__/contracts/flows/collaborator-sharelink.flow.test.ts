@@ -187,7 +187,7 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
       }
       if (table === "playbooks") {
         return chainBuilder({
-          data: { title: "Engineering Playbook" },
+          data: { organization_id: ORG_ID, title: "Engineering Playbook" },
           error: null,
         });
       }
@@ -224,6 +224,12 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
       if (table === "users") {
         return chainBuilder({
           data: { role: "admin" },
+          error: null,
+        });
+      }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: ORG_ID },
           error: null,
         });
       }
@@ -266,7 +272,7 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
       }
       if (table === "playbooks") {
         return chainBuilder({
-          data: { title: "Test Playbook" },
+          data: { organization_id: ORG_ID, title: "Test Playbook" },
           error: null,
         });
       }
@@ -298,6 +304,12 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
           error: null,
         });
       }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: ORG_ID },
+          error: null,
+        });
+      }
       return chainBuilder({ data: MOCK_SHARE_LINK, error: null });
     });
 
@@ -315,8 +327,21 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
   it("Step 4: DELETE /api/share-links/[id] — returns { success: true }", async () => {
     setupAuth();
 
-    // Track whether update was called (to verify soft delete below)
-    const updateBuilder = chainBuilder({ data: null, error: null });
+    // The DELETE route first checks existence via .select("id").single(),
+    // then soft-deletes via .update({ is_active: false })
+    // We need a builder where .single() returns the link (existence check passes)
+    // and the thenable resolves to null (for the update).
+    let callCount = 0;
+    const shareLinkBuilder = chainBuilder({ data: null, error: null });
+    shareLinkBuilder.single = vi.fn().mockImplementation(() => {
+      callCount++;
+      // First .single() call = existence check → return link data
+      if (callCount === 1) {
+        return Promise.resolve({ data: { id: SHARE_LINK_ID }, error: null });
+      }
+      // Subsequent calls → update result
+      return Promise.resolve({ data: null, error: null });
+    });
 
     mockFrom.mockImplementation((table: string) => {
       if (table === "users") {
@@ -325,8 +350,8 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
           error: null,
         });
       }
-      // share_links update (soft delete)
-      return updateBuilder;
+      // share_links existence check + soft delete
+      return shareLinkBuilder;
     });
 
     const res = await shareLinksDELETE(
@@ -371,7 +396,15 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
       shareLinkBuilder[method] = vi.fn().mockReturnValue(shareLinkBuilder);
     }
     shareLinkBuilder.update = updateMock.mockReturnValue(shareLinkBuilder);
-    shareLinkBuilder.single = vi.fn().mockResolvedValue({ data: null, error: null });
+    // First .single() = existence check (return link), subsequent = update result
+    let singleCallCount = 0;
+    shareLinkBuilder.single = vi.fn().mockImplementation(() => {
+      singleCallCount++;
+      if (singleCallCount === 1) {
+        return Promise.resolve({ data: { id: SHARE_LINK_ID }, error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     shareLinkBuilder.then = (resolve: any) => resolve({ data: null, error: null });
 
@@ -440,7 +473,7 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
     );
     expect(linkRes.status).toBe(403);
 
-    // Share link delete should be 403
+    // Share link delete should be 403 (role check before existence check)
     vi.clearAllMocks();
     setupAuth();
     mockFrom.mockImplementation((table: string) => {
@@ -469,6 +502,12 @@ describe("FLOW: Collaborator Invite -> Share Link -> Revoke", () => {
       if (table === "users") {
         return chainBuilder({
           data: { role: "admin" },
+          error: null,
+        });
+      }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: ORG_ID },
           error: null,
         });
       }

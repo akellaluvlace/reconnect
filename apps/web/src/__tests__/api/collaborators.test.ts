@@ -188,7 +188,21 @@ describe("POST /api/collaborators/invite", () => {
 
   it("returns 201 with created collaborator on success", async () => {
     setupAuth();
-    setupProfileAndTable("admin", MOCK_COLLABORATOR);
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({
+          data: { role: "admin", organization_id: "org-1" },
+          error: null,
+        });
+      }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: "org-1", title: "Test Playbook" },
+          error: null,
+        });
+      }
+      return chainBuilder({ data: MOCK_COLLABORATOR, error: null });
+    });
 
     const res = await POST(makePost(VALID_INVITE));
 
@@ -199,7 +213,21 @@ describe("POST /api/collaborators/invite", () => {
 
   it("returns 201 when manager invites", async () => {
     setupAuth();
-    setupProfileAndTable("manager", MOCK_COLLABORATOR);
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({
+          data: { role: "manager", organization_id: "org-1" },
+          error: null,
+        });
+      }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: "org-1", title: "Test Playbook" },
+          error: null,
+        });
+      }
+      return chainBuilder({ data: MOCK_COLLABORATOR, error: null });
+    });
 
     const res = await POST(makePost(VALID_INVITE));
 
@@ -208,7 +236,21 @@ describe("POST /api/collaborators/invite", () => {
 
   it("returns 500 when DB insert fails", async () => {
     setupAuth();
-    setupProfileAndTable("admin", null, { message: "constraint violation" });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({
+          data: { role: "admin", organization_id: "org-1" },
+          error: null,
+        });
+      }
+      if (table === "playbooks") {
+        return chainBuilder({
+          data: { organization_id: "org-1", title: "Test Playbook" },
+          error: null,
+        });
+      }
+      return chainBuilder({ data: null, error: { message: "constraint violation" } });
+    });
 
     const res = await POST(makePost(VALID_INVITE));
 

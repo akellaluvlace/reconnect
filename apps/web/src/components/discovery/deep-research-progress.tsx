@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, Circle, CircleNotch } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
@@ -24,44 +24,28 @@ interface DeepResearchProgressProps {
 }
 
 export function DeepResearchProgress({ isActive, startedAt }: DeepResearchProgressProps) {
-  const [activeStep, setActiveStep] = useState(0);
-  const [progress, setProgress] = useState(0);
+  // Track elapsed time in state — only updated inside interval callback (not synchronously in effect)
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (!isActive || !startedAt) {
-      setActiveStep(0);
-      setProgress(0);
-      return;
-    }
-
-    function computeState() {
-      const elapsed = Date.now() - startedAt!;
-
-      // Calculate which step we're on based on cumulative durations
-      let cumulative = 0;
-      let currentStep = 0;
-      for (let i = 0; i < STEPS.length - 1; i++) {
-        cumulative += STEPS[i].duration;
-        if (elapsed >= cumulative) {
-          currentStep = i + 1;
-        } else {
-          break;
-        }
-      }
-
-      setActiveStep(currentStep);
-
-      // Progress bar: scale to 80% over the first 4 steps, then hold
-      const pct = Math.min((elapsed / TOTAL_FINITE_TIME) * 80, 80);
-      setProgress(pct);
-    }
-
-    // Run immediately so remount after tab switch shows correct position
-    computeState();
-
-    const interval = setInterval(computeState, 200);
+    if (!isActive || !startedAt) return;
+    // First tick fires after 200ms — imperceptible delay for a progress indicator
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - startedAt);
+    }, 200);
     return () => clearInterval(interval);
   }, [isActive, startedAt]);
+  let activeStep = 0;
+  let cumulative = 0;
+  for (let i = 0; i < STEPS.length - 1; i++) {
+    cumulative += STEPS[i].duration;
+    if (elapsed >= cumulative) {
+      activeStep = i + 1;
+    } else {
+      break;
+    }
+  }
+  const progress = isActive ? Math.min((elapsed / TOTAL_FINITE_TIME) * 80, 80) : 0;
 
   if (!isActive) return null;
 

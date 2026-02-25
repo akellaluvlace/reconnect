@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Json } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
@@ -77,24 +77,34 @@ export function AISynthesisPanel({
   const [metadata, setMetadata] = useState<SynthesisMetadata | null>(null);
 
   const opKey = `synthesis-${candidateId}`;
-  const { status, result, error } = useAIGenerationStore(
+  const { status } = useAIGenerationStore(
     (s) => s.operations[opKey] ?? IDLE_OP,
   );
   const isGenerating = status === "loading";
 
-  // Apply result when operation completes
-  useEffect(() => {
-    if (status === "success" && result) {
-      const r = result as { data: SynthesisData; metadata: SynthesisMetadata };
+  // Subscribe to store changes to apply results (avoids setState in useEffect body)
+  const handleStoreChange = useCallback((op: { status: string; result: unknown; error: string | null }) => {
+    if (op.status === "success" && op.result) {
+      const r = op.result as { data: SynthesisData; metadata: SynthesisMetadata };
       setSynthesis(r.data);
       setMetadata(r.metadata);
       useAIGenerationStore.getState().clearOperation(opKey);
     }
-    if (status === "error" && error) {
-      toast.error(error);
+    if (op.status === "error" && op.error) {
+      toast.error(op.error);
       useAIGenerationStore.getState().clearOperation(opKey);
     }
-  }, [status, result, error, opKey]);
+  }, [opKey]);
+
+  useEffect(() => {
+    return useAIGenerationStore.subscribe((state, prevState) => {
+      const op = state.operations[opKey];
+      const prevOp = prevState.operations[opKey];
+      if (op && op !== prevOp) {
+        handleStoreChange(op);
+      }
+    });
+  }, [opKey, handleStoreChange]);
 
   // Check if any interview has a transcript
   const hasTranscript = interviews.some(

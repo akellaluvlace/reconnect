@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { CoverageAnalysis, JobDescription } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Warning,
   Info,
-  Lightbulb,
   CircleNotch,
   CheckCircle,
   Sparkle,
@@ -47,22 +46,32 @@ export function CoverageAnalysisPanel({
   const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(null);
 
   const opKey = `coverage-${playbookId}`;
-  const { status, result, error } = useAIGenerationStore(
+  const { status } = useAIGenerationStore(
     (s) => s.operations[opKey] ?? IDLE_OP,
   );
   const isAnalyzing = status === "loading";
 
-  // Apply result when operation completes
+  // Subscribe to store changes to apply results (avoids setState in useEffect body)
+  const handleStoreChange = useCallback((op: { status: string; result: unknown; error: string | null }) => {
+    if (op.status === "success" && op.result) {
+      setAnalysis(op.result as CoverageAnalysis);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+    if (op.status === "error" && op.error) {
+      toast.error(op.error);
+      useAIGenerationStore.getState().clearOperation(opKey);
+    }
+  }, [opKey]);
+
   useEffect(() => {
-    if (status === "success" && result) {
-      setAnalysis(result as CoverageAnalysis);
-      useAIGenerationStore.getState().clearOperation(opKey);
-    }
-    if (status === "error" && error) {
-      toast.error(error);
-      useAIGenerationStore.getState().clearOperation(opKey);
-    }
-  }, [status, result, error, opKey]);
+    return useAIGenerationStore.subscribe((state, prevState) => {
+      const op = state.operations[opKey];
+      const prevOp = prevState.operations[opKey];
+      if (op && op !== prevOp) {
+        handleStoreChange(op);
+      }
+    });
+  }, [opKey, handleStoreChange]);
 
   function handleAnalyze() {
     useAIGenerationStore.getState().startOperation(opKey, async () => {

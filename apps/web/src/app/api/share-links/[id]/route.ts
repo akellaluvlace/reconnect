@@ -50,6 +50,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Verify share link exists and belongs to user's org (defense-in-depth beyond RLS)
+    const { data: link, error: linkError } = await supabase
+      .from("share_links")
+      .select("id")
+      .eq("id", id)
+      .single();
+
+    if (linkError || !link) {
+      return NextResponse.json(
+        { error: "Share link not found" },
+        { status: 404 },
+      );
+    }
+
     // Soft-delete: set is_active = false
     const { error } = await supabase
       .from("share_links")

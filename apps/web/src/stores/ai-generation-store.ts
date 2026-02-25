@@ -58,8 +58,9 @@ export const useAIGenerationStore = create<AIGenerationStore>((set, get) => ({
 
   clearOperation: (key) => {
     set((s) => {
-      const { [key]: _, ...rest } = s.operations;
-      return { operations: rest };
+      const ops = { ...s.operations };
+      delete ops[key];
+      return { operations: ops };
     });
   },
 }));

@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
     }
 
     const playbookId = req.nextUrl.searchParams.get("playbook_id");
-    if (!playbookId) {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!playbookId || !UUID_RE.test(playbookId)) {
       return NextResponse.json(
-        { error: "playbook_id query parameter is required" },
+        { error: "Valid playbook_id UUID is required" },
         { status: 400 },
       );
     }
