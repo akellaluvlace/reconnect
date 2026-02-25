@@ -74,13 +74,16 @@ export function MarketIntelligencePanel({
   const [listingsError, setListingsError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollCountRef = useRef(0);
+  const pollingStartedRef = useRef(false);
 
   const MAX_POLL_ATTEMPTS = 60;
 
   // Poll for deep research completion when in quick phase
   useEffect(() => {
-    if (marketInsights?.phase !== "quick" || isPolling) return;
+    if (marketInsights?.phase !== "quick") return;
+    if (pollingStartedRef.current) return;
 
+    pollingStartedRef.current = true;
     onPollingStart();
     pollCountRef.current = 0;
     pollRef.current = setInterval(async () => {
@@ -88,6 +91,7 @@ export function MarketIntelligencePanel({
       if (pollCountRef.current >= MAX_POLL_ATTEMPTS) {
         onPollingStop();
         setPollingTimedOut(true);
+        pollingStartedRef.current = false;
         if (pollRef.current) clearInterval(pollRef.current);
         return;
       }
@@ -99,6 +103,7 @@ export function MarketIntelligencePanel({
         if (mi?.phase === "deep") {
           onUpdate(mi);
           onPollingStop();
+          pollingStartedRef.current = false;
           if (pollRef.current) clearInterval(pollRef.current);
           toast.success("Deep research complete", {
             description: `${mi.sources?.length ?? 0} web sources analyzed`,
@@ -111,8 +116,9 @@ export function MarketIntelligencePanel({
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      pollingStartedRef.current = false;
     };
-  }, [marketInsights?.phase, playbookId, onUpdate, isPolling, onPollingStart, onPollingStop]);
+  }, [marketInsights?.phase, playbookId, onUpdate, onPollingStart, onPollingStop]);
 
   if (!marketInsights) {
     return (
