@@ -15,28 +15,28 @@ const RequestSchema = z.object({
       min: z.number(),
       max: z.number(),
       median: z.number(),
-      currency: z.string().max(10),
+      currency: z.string(),
       confidence: z.number(),
     }),
     competition: z.object({
-      companies_hiring: z.array(z.string().max(200)),
+      companies_hiring: z.array(z.string()),
       job_postings_count: z.number(),
-      market_saturation: z.string().max(50),
+      market_saturation: z.string(),
     }),
     time_to_hire: z.object({
       average_days: z.number(),
       range: z.object({ min: z.number(), max: z.number() }),
     }),
     candidate_availability: z.object({
-      level: z.string().max(50),
-      description: z.string().max(2000),
+      level: z.string(),
+      description: z.string(),
     }),
     key_skills: z.object({
-      required: z.array(z.string().max(300)),
-      emerging: z.array(z.string().max(300)),
-      declining: z.array(z.string().max(300)),
+      required: z.array(z.string()),
+      emerging: z.array(z.string()),
+      declining: z.array(z.string()),
     }),
-    trends: z.array(z.string().max(2000)),
+    trends: z.array(z.string()),
   }),
 });
 

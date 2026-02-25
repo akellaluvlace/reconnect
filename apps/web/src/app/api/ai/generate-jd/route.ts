@@ -28,17 +28,17 @@ const RequestSchema = z.object({
     .object({
       salary_positioning: z
         .object({
-          strategy: z.string().max(50),
+          strategy: z.string(),
           recommended_range: z
             .object({ min: z.number(), max: z.number(), currency: z.string() })
             .optional(),
         })
         .optional(),
-      competitive_differentiators: z.array(z.string().max(500)).max(10).optional(),
+      competitive_differentiators: z.array(z.string()).optional(),
       skills_priority: z
         .object({
-          must_have: z.array(z.string().max(200)).max(15),
-          nice_to_have: z.array(z.string().max(200)).max(15),
+          must_have: z.array(z.string()),
+          nice_to_have: z.array(z.string()),
         })
         .optional(),
     })

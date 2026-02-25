@@ -7,18 +7,18 @@ const RequestSchema = z.object({
   role: z.string().min(1).max(200),
   level: z.string().min(1).max(100),
   jd_requirements: z.object({
-    required: z.array(z.string().max(500)),
-    preferred: z.array(z.string().max(500)),
-    responsibilities: z.array(z.string().max(500)),
+    required: z.array(z.string()),
+    preferred: z.array(z.string()),
+    responsibilities: z.array(z.string()),
   }),
   stages: z.array(
     z.object({
-      name: z.string().max(200),
-      type: z.string().max(50),
+      name: z.string(),
+      type: z.string(),
       focus_areas: z.array(
         z.object({
-          name: z.string().max(200),
-          description: z.string().max(500),
+          name: z.string(),
+          description: z.string(),
         }),
       ),
     }),

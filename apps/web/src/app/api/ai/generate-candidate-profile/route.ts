@@ -7,23 +7,23 @@ const RequestSchema = z.object({
   role: z.string().min(1).max(200),
   level: z.string().min(1).max(100),
   industry: z.string().min(1).max(200),
-  skills: z.array(z.string().max(100)).max(30).optional(),
+  skills: z.array(z.string()).optional(),
   jd_requirements: z
     .object({
-      required: z.array(z.string().max(200)).max(20),
-      preferred: z.array(z.string().max(200)).max(20),
+      required: z.array(z.string()),
+      preferred: z.array(z.string()),
     })
     .optional(),
   strategy_skills_priority: z
     .object({
-      must_have: z.array(z.string().max(100)).max(15),
-      nice_to_have: z.array(z.string().max(100)).max(15),
+      must_have: z.array(z.string()),
+      nice_to_have: z.array(z.string()),
     })
     .optional(),
   market_key_skills: z
     .object({
-      required: z.array(z.string().max(100)).max(15),
-      emerging: z.array(z.string().max(100)).max(10),
+      required: z.array(z.string()),
+      emerging: z.array(z.string()),
     })
     .optional(),
 });
