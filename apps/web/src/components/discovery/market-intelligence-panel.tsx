@@ -80,15 +80,25 @@ export function MarketIntelligencePanel({
 
   // Poll for deep research completion when in quick phase
   useEffect(() => {
-    if (marketInsights?.phase !== "quick") return;
-    if (pollingStartedRef.current) return;
+    console.log("[POLL] effect run — phase:", marketInsights?.phase, "refGuard:", pollingStartedRef.current);
+    if (marketInsights?.phase !== "quick") {
+      console.log("[POLL] skipping — phase is not quick");
+      return;
+    }
+    if (pollingStartedRef.current) {
+      console.log("[POLL] skipping — already started");
+      return;
+    }
 
+    console.log("[POLL] starting polling for playbook:", playbookId);
     pollingStartedRef.current = true;
     onPollingStart();
     pollCountRef.current = 0;
     pollRef.current = setInterval(async () => {
       pollCountRef.current += 1;
+      console.log("[POLL] tick", pollCountRef.current, "of", MAX_POLL_ATTEMPTS);
       if (pollCountRef.current >= MAX_POLL_ATTEMPTS) {
+        console.log("[POLL] timed out");
         onPollingStop();
         setPollingTimedOut(true);
         pollingStartedRef.current = false;
@@ -97,10 +107,15 @@ export function MarketIntelligencePanel({
       }
       try {
         const res = await fetch(`/api/playbooks/${playbookId}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.log("[POLL] fetch failed:", res.status);
+          return;
+        }
         const data = await res.json();
         const mi = data.market_insights as MarketInsights | null;
+        console.log("[POLL] got phase:", mi?.phase);
         if (mi?.phase === "deep") {
+          console.log("[POLL] deep found! updating UI");
           onUpdate(mi);
           onPollingStop();
           pollingStartedRef.current = false;
@@ -109,12 +124,13 @@ export function MarketIntelligencePanel({
             description: `${mi.sources?.length ?? 0} web sources analyzed`,
           });
         }
-      } catch {
-        // Silently retry
+      } catch (err) {
+        console.log("[POLL] fetch error:", err);
       }
     }, 5000);
 
     return () => {
+      console.log("[POLL] cleanup — clearing interval");
       if (pollRef.current) clearInterval(pollRef.current);
       pollingStartedRef.current = false;
     };
