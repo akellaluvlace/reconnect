@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -155,13 +155,20 @@ export async function POST(
     );
   }
 
-  console.log("[deep-research:POST] Accepted — starting background deep research for org:", userData.organization_id);
+  const orgId = userData.organization_id;
 
-  // Run deep research in background — don't await, return 202 immediately
-  // so the client fetch completes before page navigation kills it
-  triggerDeepResearch(supabase, userData.organization_id, cacheKeyParsed.data, playbookId)
-    .then((res) => console.log("[deep-research:BG] Finished, status:", res.status))
-    .catch((err) => console.error("[deep-research:BG] Unhandled error:", err));
+  console.log("[deep-research:POST] Accepted — starting background deep research for org:", orgId);
+
+  // Use after() to keep the serverless function alive after sending the 202 response.
+  // Without this, Vercel kills the function as soon as the response is sent.
+  after(async () => {
+    try {
+      await triggerDeepResearch(supabase, orgId, cacheKeyParsed.data, playbookId);
+      console.log("[deep-research:BG] Finished successfully");
+    } catch (err) {
+      console.error("[deep-research:BG] Unhandled error:", err);
+    }
+  });
 
   return NextResponse.json({ status: "accepted" }, { status: 202 });
 }
