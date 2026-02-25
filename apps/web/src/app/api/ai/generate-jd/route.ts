@@ -28,17 +28,17 @@ const RequestSchema = z.object({
     .object({
       salary_positioning: z
         .object({
-          strategy: z.string().max(20),
+          strategy: z.string().max(50),
           recommended_range: z
             .object({ min: z.number(), max: z.number(), currency: z.string() })
             .optional(),
         })
         .optional(),
-      competitive_differentiators: z.array(z.string().max(200)).max(5).optional(),
+      competitive_differentiators: z.array(z.string().max(500)).max(10).optional(),
       skills_priority: z
         .object({
-          must_have: z.array(z.string().max(100)).max(10),
-          nice_to_have: z.array(z.string().max(100)).max(10),
+          must_have: z.array(z.string().max(200)).max(15),
+          nice_to_have: z.array(z.string().max(200)).max(15),
         })
         .optional(),
     })
@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
 
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
+    console.warn("[generate-jd] Validation failed:", JSON.stringify(parsed.error.issues));
     return NextResponse.json(
       { error: "Invalid input", issues: parsed.error.issues },
       { status: 400 },

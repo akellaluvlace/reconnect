@@ -124,6 +124,7 @@ export function JDStructuredEditor({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
+        if (err.issues) console.error("[jd-editor] Validation issues:", JSON.stringify(err.issues, null, 2));
         throw new Error(err.error || "Failed to regenerate JD");
       }
 
