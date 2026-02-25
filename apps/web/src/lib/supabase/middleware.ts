@@ -58,6 +58,10 @@ export async function updateSession(request: NextRequest) {
 
   // Redirect unauthenticated users from protected routes
   if (!user && !isPublicPath) {
+    // API routes should return 401 JSON, not redirect to HTML login page
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
