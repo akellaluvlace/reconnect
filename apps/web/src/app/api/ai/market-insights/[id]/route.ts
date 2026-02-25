@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   generateDeepInsights,
   PROMPT_VERSIONS,
@@ -163,7 +164,7 @@ export async function POST(
   // Without this, Vercel kills the function as soon as the response is sent.
   after(async () => {
     try {
-      await triggerDeepResearch(supabase, orgId, cacheKeyParsed.data, playbookId);
+      await triggerDeepResearch(orgId, cacheKeyParsed.data, playbookId);
       console.log("[deep-research:BG] Finished successfully");
     } catch (err) {
       console.error("[deep-research:BG] Unhandled error:", err);
@@ -173,14 +174,17 @@ export async function POST(
   return NextResponse.json({ status: "accepted" }, { status: 202 });
 }
 
-/** Shared trigger logic for both GET and POST */
+/** Shared trigger logic — uses service-role client for DB writes
+ *  because the user's auth context may not survive after() on Vercel. */
 async function triggerDeepResearch(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
   cacheKey: string,
   playbookId?: string,
 ) {
-  const { data: quickCached, error: quickError } = await supabase
+  // Service-role client bypasses RLS — reliable inside after()
+  const db = createServiceRoleClient();
+
+  const { data: quickCached, error: quickError } = await db
     .from("ai_research_cache")
     .select("search_params")
     .eq("organization_id", orgId)
@@ -194,10 +198,7 @@ async function triggerDeepResearch(
 
   if (!quickCached) {
     console.log("[deep-research] Quick cache not found for key:", cacheKey.slice(0, 16) + "...", "org:", orgId);
-    return NextResponse.json(
-      { error: "Quick research not found — run market-insights first" },
-      { status: 404 },
-    );
+    return;
   }
 
   console.log("[deep-research] Found quick cache, search_params:", JSON.stringify(quickCached.search_params).slice(0, 100));
@@ -214,10 +215,7 @@ async function triggerDeepResearch(
   const paramsParsed = SearchParamsSchema.safeParse(quickCached.search_params);
   if (!paramsParsed.success) {
     console.error("[deep-research] Corrupted search_params in cache:", quickCached.search_params);
-    return NextResponse.json(
-      { error: "Cached search params are corrupted — rerun market-insights" },
-      { status: 500 },
-    );
+    return;
   }
 
   const input = paramsParsed.data;
@@ -231,7 +229,7 @@ async function triggerDeepResearch(
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await db
       .from("ai_research_cache")
       .upsert(
         {
@@ -255,7 +253,7 @@ async function triggerDeepResearch(
     // Write deep results back to the playbook so the UI polling picks it up
     if (playbookId) {
       console.log("[deep-research] Writing deep results back to playbook:", playbookId);
-      const { error: playbookError } = await supabase
+      const { error: playbookError } = await db
         .from("playbooks")
         .update({ market_insights: deepInsights as unknown as Json })
         .eq("id", playbookId);
@@ -267,18 +265,8 @@ async function triggerDeepResearch(
       }
     }
 
-    console.log("[deep-research] DONE — returning success");
-    return NextResponse.json({
-      status: "complete",
-      data: deepInsights,
-      cached: false,
-    });
+    console.log("[deep-research] DONE — success");
   } catch (error) {
     console.error("[deep-research] FAILED:", error instanceof Error ? error.message : error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate deep research";
-    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

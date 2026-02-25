@@ -182,6 +182,92 @@ export function JDStructuredEditor({
         </Button>
       </div>
 
+      {activeItem === "full-listing" && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-border/40 bg-card p-8 shadow-sm">
+            <h2 className="text-[22px] font-bold tracking-tight text-foreground">
+              {role}
+            </h2>
+            {level && (
+              <p className="mt-1 text-[14px] text-muted-foreground">{level} · {industry}</p>
+            )}
+
+            {jobDescription.summary && (
+              <div className="mt-6">
+                <p className="text-[14px] leading-relaxed text-foreground/80 whitespace-pre-wrap">
+                  {jobDescription.summary}
+                </p>
+              </div>
+            )}
+
+            {jobDescription.responsibilities && jobDescription.responsibilities.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Responsibilities</h3>
+                <ul className="space-y-2">
+                  {jobDescription.responsibilities.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-foreground/80">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {jobDescription.requirements?.required && jobDescription.requirements.required.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Required Qualifications</h3>
+                <ul className="space-y-2">
+                  {jobDescription.requirements.required.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-foreground/80">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {jobDescription.requirements?.preferred && jobDescription.requirements.preferred.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Preferred Qualifications</h3>
+                <ul className="space-y-2">
+                  {jobDescription.requirements.preferred.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-foreground/80">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {jobDescription.benefits && jobDescription.benefits.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Benefits</h3>
+                <ul className="space-y-2">
+                  {jobDescription.benefits.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-foreground/80">
+                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-teal-400" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {jobDescription.salary_range && jobDescription.salary_range.min > 0 && (
+              <div className="mt-6">
+                <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-2">Salary Range</h3>
+                <p className="text-[18px] font-bold tabular-nums tracking-tight">
+                  {jobDescription.salary_range.currency} {jobDescription.salary_range.min.toLocaleString()} – {jobDescription.salary_range.max.toLocaleString()}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {activeItem === "summary" && (
         <JDSectionCard
           title="Summary"

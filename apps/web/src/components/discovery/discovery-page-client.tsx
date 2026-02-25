@@ -68,6 +68,7 @@ const strategyItems = [
 ] as const;
 
 const jdItems = [
+  { id: "full-listing", name: "Full Listing" },
   { id: "summary", name: "Summary" },
   { id: "responsibilities", name: "Responsibilities" },
   { id: "required", name: "Required Qualifications" },
@@ -87,7 +88,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
   const [activeItems, setActiveItems] = useState<Record<SectionId, string>>({
     "market-research": "overview",
     "hiring-strategy": "classification",
-    "job-description": "summary",
+    "job-description": "full-listing",
   });
 
   const [marketInsights, setMarketInsights] = useState<MarketInsights | null>(
