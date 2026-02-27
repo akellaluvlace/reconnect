@@ -219,7 +219,16 @@ export function Step2RoleDetails() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setStep(1)}
+              onClick={() => {
+                const values = form.getValues();
+                updateRoleDetails({
+                  level: values.level,
+                  skills: values.skills,
+                  industry: values.industry === "Other" ? (values.customIndustry?.trim() || "") : values.industry,
+                  location: values.location ?? "",
+                });
+                setStep(1);
+              }}
             >
               <ArrowLeft size={14} className="mr-1.5" />
               Back
