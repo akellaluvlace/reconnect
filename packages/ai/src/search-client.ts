@@ -56,6 +56,58 @@ export async function searchWeb(
   }
 }
 
+/** Job board domains used for verified posting count */
+const JOB_BOARD_DOMAINS = [
+  "indeed.ie",
+  "indeed.com",
+  "linkedin.com",
+  "glassdoor.ie",
+  "glassdoor.com",
+  "irishjobs.ie",
+  "jobs.ie",
+  "irishtechnews.ie",
+];
+
+/**
+ * Count verified job postings by searching actual job boards.
+ * Returns the deduplicated count + which domains had results.
+ * One Tavily call with includeDomains — no AI involved.
+ */
+export async function countJobPostings(
+  role: string,
+  location: string,
+): Promise<{ count: number; domains: string[] }> {
+  const client = getSearchClient();
+
+  try {
+    const response = await client.search(`${role} jobs ${location}`, {
+      searchDepth: "basic",
+      maxResults: 20,
+      includeAnswer: false,
+      includeRawContent: false,
+      includeDomains: JOB_BOARD_DOMAINS,
+    });
+
+    const results = response.results ?? [];
+    const domains = new Set<string>();
+    for (const r of results) {
+      try {
+        domains.add(new URL(r.url).hostname.replace(/^www\./, ""));
+      } catch {
+        // skip malformed URLs
+      }
+    }
+
+    return { count: results.length, domains: [...domains] };
+  } catch (error) {
+    console.warn(
+      "[AI Search] Job posting count failed:",
+      error instanceof Error ? error.message : error,
+    );
+    return { count: 0, domains: [] };
+  }
+}
+
 /**
  * Run multiple search queries in parallel, dedup by URL.
  */

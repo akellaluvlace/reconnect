@@ -181,9 +181,9 @@ export function StrategyPanel({
               <span>
                 Availability: <span className="font-semibold text-foreground">{marketInsights.candidate_availability.level}</span>
               </span>
-              {marketInsights.competition.job_postings_count != null && (
+              {marketInsights.competition.job_postings_count != null && marketInsights.competition.job_postings_count > 0 && (
               <span>
-                Active postings: <span className="font-semibold text-foreground">{marketInsights.competition.job_postings_count}</span>
+                Listings found: <span className="font-semibold text-foreground">{marketInsights.competition.job_postings_count}+</span>
               </span>
               )}
               <span>

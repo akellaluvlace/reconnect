@@ -128,13 +128,11 @@ ${JSON.stringify(e.data, null, 2)}`).join("\n\n")}
 
 Provide:
 - Salary range with confidence (weighted by source quality and agreement)
-- Competition data (companies hiring, market saturation)
+- Competition data (companies hiring, market saturation). Do NOT include job_postings_count — posting counts are sourced separately from job boards.
 - Time-to-hire estimate
 - Candidate availability assessment
 - Skills analysis (required, emerging, declining)
 - Market trends
-
-For job_postings_count: ONLY include this field if 2 or more sources provided an explicit estimated_postings number. Average the corroborating values. If fewer than 2 sources have posting counts, omit job_postings_count entirely — do NOT estimate or infer a count.
 
 Set confidence scores per field based on source agreement. Include source attribution.`,
 } as const;

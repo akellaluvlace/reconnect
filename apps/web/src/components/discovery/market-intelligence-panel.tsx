@@ -373,13 +373,15 @@ export function MarketIntelligencePanel({
               <p className="text-[13px] font-medium text-muted-foreground">Competition</p>
             </div>
             <div className="flex items-baseline gap-3">
-              {mi.competition.job_postings_count != null && (
+              {mi.competition.job_postings_count != null && mi.competition.job_postings_count > 0 && (
                 <p className="text-[28px] font-bold tabular-nums tracking-tight">
-                  {mi.competition.job_postings_count}
+                  {mi.competition.job_postings_count}+
                 </p>
               )}
               <p className="text-[14px] text-muted-foreground">
-                {mi.competition.job_postings_count != null ? "active postings · " : ""}
+                {mi.competition.job_postings_count != null && mi.competition.job_postings_count > 0
+                  ? "listings found · "
+                  : ""}
                 {mi.competition.market_saturation} saturation
               </p>
             </div>

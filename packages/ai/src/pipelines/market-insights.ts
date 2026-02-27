@@ -14,6 +14,7 @@ import {
   type DeepResearchInput,
   type DeepResearchResult,
 } from "./deep-research";
+import { countJobPostings } from "../search-client";
 import { PipelineTrace, checkParams } from "../tracer";
 
 export interface MarketInsightsInput {
@@ -107,19 +108,28 @@ export async function generateDeepInsights(
   });
   s1.ok({});
 
-  // --- Deep research (steps 1-4) ---
+  // --- Deep research (steps 1-4) + verified job posting count (parallel) ---
   const s2 = trace.step("deep-research", { sub_pipeline: "deepResearch" });
   let research: DeepResearchResult;
+  let verifiedPostings: { count: number; domains: string[] } = { count: 0, domains: [] };
   try {
     const researchInput: DeepResearchInput = {
       ...input,
       market_focus: marketFocus,
     };
-    research = await runDeepResearch(researchInput);
+    // Run deep research + job board count in parallel
+    const [researchResult, postingsResult] = await Promise.all([
+      runDeepResearch(researchInput),
+      countJobPostings(input.role, input.location || "Ireland"),
+    ]);
+    research = researchResult;
+    verifiedPostings = postingsResult;
     s2.ok({
       extractions: research.extractions.length,
       sources: research.sources.length,
       source_count: research.source_count,
+      verified_postings: verifiedPostings.count,
+      verified_postings_domains: verifiedPostings.domains,
     });
   } catch (err) {
     s2.fail(err instanceof Error ? err.message : String(err));
@@ -156,8 +166,20 @@ export async function generateDeepInsights(
     );
 
     // --- Step 6: Assemble final output ---
+
+    // Override AI's job_postings_count with verified Tavily count.
+    // Only set if Tavily actually found listings (count > 0).
+    const synthesisData = { ...synthesisResult.data };
+    const aiCount = synthesisData.competition.job_postings_count;
+    synthesisData.competition = {
+      ...synthesisData.competition,
+      job_postings_count: verifiedPostings.count > 0
+        ? verifiedPostings.count
+        : undefined,
+    };
+
     const result: MarketInsightsOutput = {
-      ...synthesisResult.data,
+      ...synthesisData,
       phase: "deep",
       sources: research.sources,
       metadata: {
@@ -177,10 +199,16 @@ export async function generateDeepInsights(
       model_used: result.metadata.model_used,
       availability: result.candidate_availability.level,
       trends: result.trends.length,
+      verified_postings_count: verifiedPostings.count,
+      verified_postings_domains: verifiedPostings.domains,
+      ai_postings_count_discarded: aiCount,
     });
     const outWarnings: string[] = [];
     if (research.extractions.length === 0) outWarnings.push("No extractions — synthesis based on model knowledge only despite deep research");
     if (result.salary.confidence < 0.5) outWarnings.push(`Low salary confidence even after deep research: ${result.salary.confidence}`);
+    if (aiCount != null && aiCount !== verifiedPostings.count) {
+      outWarnings.push(`Replaced AI-hallucinated postings count (${aiCount}) with verified Tavily count (${verifiedPostings.count}) from ${verifiedPostings.domains.join(", ")}`);
+    }
     s4.ok({}, outWarnings);
 
     s3.ok({ model: synthesisResult.model });
