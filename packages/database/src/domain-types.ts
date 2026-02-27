@@ -7,7 +7,18 @@ export type UserRole = "admin" | "manager" | "interviewer"; // CHECK constraint
 export type PlaybookStatus = "draft" | "active" | "archived"; // CHECK constraint
 export type CandidateStatus = "active" | "hired" | "rejected" | "withdrawn"; // CHECK constraint
 export type InterviewStatus = "scheduled" | "completed" | "cancelled" | "no_show"; // CHECK constraint
-export type RecordingStatus = "pending" | "uploading" | "uploaded" | "transcribing" | "completed" | "failed" | "no_consent"; // CHECK constraint
+export type RecordingStatus =
+  | "scheduled"
+  | "pending"
+  | "uploaded"
+  | "transcribed"
+  | "synthesizing"
+  | "completed"
+  | "failed_recording"
+  | "failed_download"
+  | "failed_transcription"
+  | "failed_synthesis"
+  | "no_consent"; // CHECK constraint — see migration #25
 export type CollaboratorRole = "viewer" | "interviewer"; // CHECK constraint
 export type JdTemplateStyle = "formal" | "creative" | "concise"; // CHECK constraint
 export type SynthesisType = "initial" | "updated" | "final"; // Application-level enum (no DB CHECK constraint)
@@ -86,7 +97,7 @@ export interface MarketInsights {
   };
   competition: {
     companies_hiring: string[];
-    job_postings_count: number;
+    job_postings_count?: number;
     market_saturation: "low" | "medium" | "high";
   };
   time_to_hire: {

@@ -20,7 +20,7 @@ const RequestSchema = z.object({
     }),
     competition: z.object({
       companies_hiring: z.array(z.string()),
-      job_postings_count: z.number(),
+      job_postings_count: z.number().optional(),
       market_saturation: z.string(),
     }),
     time_to_hire: z.object({

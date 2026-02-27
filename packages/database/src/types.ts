@@ -707,9 +707,11 @@ export type Database = {
           interviewer_id: string | null
           meet_conference_id: string | null
           meet_link: string | null
+          pipeline_log: Json[] | null
           recording_consent_at: string | null
           recording_status: string | null
           recording_url: string | null
+          retry_count: number | null
           scheduled_at: string | null
           stage_id: string | null
           status: string | null
@@ -725,9 +727,11 @@ export type Database = {
           interviewer_id?: string | null
           meet_conference_id?: string | null
           meet_link?: string | null
+          pipeline_log?: Json[] | null
           recording_consent_at?: string | null
           recording_status?: string | null
           recording_url?: string | null
+          retry_count?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
           status?: string | null
@@ -743,9 +747,11 @@ export type Database = {
           interviewer_id?: string | null
           meet_conference_id?: string | null
           meet_link?: string | null
+          pipeline_log?: Json[] | null
           recording_consent_at?: string | null
           recording_status?: string | null
           recording_url?: string | null
+          retry_count?: number | null
           scheduled_at?: string | null
           stage_id?: string | null
           status?: string | null

@@ -7,7 +7,7 @@ import { Step2RoleDetails } from "@/components/playbooks/wizard/step-2-role-deta
 import { Step3Generate } from "@/components/playbooks/wizard/step-3-generate";
 
 export default function NewPlaybookPage() {
-  const { draft } = usePlaybookStore();
+  const { draft, setStep } = usePlaybookStore();
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -20,7 +20,7 @@ export default function NewPlaybookPage() {
         </p>
       </div>
 
-      <WizardProgress currentStep={draft.step} />
+      <WizardProgress currentStep={draft.step} onStepClick={setStep} />
 
       {draft.step === 1 && <Step1BasicInfo />}
       {draft.step === 2 && <Step2RoleDetails />}

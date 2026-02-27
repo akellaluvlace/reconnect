@@ -9,18 +9,35 @@ const steps = [
   { number: 3, label: "Generate" },
 ];
 
-export function WizardProgress({ currentStep }: { currentStep: number }) {
+export function WizardProgress({
+  currentStep,
+  onStepClick,
+}: {
+  currentStep: number;
+  onStepClick?: (step: number) => void;
+}) {
   return (
     <div className="flex items-center gap-3">
       {steps.map((step, i) => {
         const isComplete = currentStep > step.number;
         const isCurrent = currentStep === step.number;
         const isPending = currentStep < step.number;
+        const isClickable = isComplete && onStepClick;
 
         return (
           <div key={step.number} className="flex items-center gap-3">
             {/* Step indicator */}
-            <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              className={cn(
+                "flex items-center gap-2.5",
+                isClickable && "cursor-pointer hover:opacity-80",
+                !isClickable && "cursor-default",
+              )}
+              onClick={() => isClickable && onStepClick(step.number)}
+              disabled={!isClickable}
+              aria-label={isComplete ? `Go back to ${step.label}` : undefined}
+            >
               <div
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200",
@@ -39,7 +56,7 @@ export function WizardProgress({ currentStep }: { currentStep: number }) {
               >
                 {step.label}
               </span>
-            </div>
+            </button>
 
             {/* Connector line */}
             {i < steps.length - 1 && (

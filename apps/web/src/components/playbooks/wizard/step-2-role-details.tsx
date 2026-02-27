@@ -49,29 +49,39 @@ const step2Schema = z.object({
     .min(1, "At least one skill is required")
     .max(15, "Maximum 15 skills allowed"),
   industry: z.string().min(1, "Industry is required"),
+  customIndustry: z.string().max(100).optional(),
   location: z.string().max(200).optional(),
-});
+}).refine(
+  (data) => data.industry !== "Other" || (data.customIndustry && data.customIndustry.trim().length > 0),
+  { message: "Please enter your industry", path: ["customIndustry"] },
+);
 
 type Step2Values = z.infer<typeof step2Schema>;
 
 export function Step2RoleDetails() {
   const { draft, updateRoleDetails, setStep } = usePlaybookStore();
 
+  // Check if stored industry matches a preset; if not, it was a custom entry
+  const isCustomIndustry = draft.roleDetails.industry && !industries.includes(draft.roleDetails.industry);
+
   const form = useForm<Step2Values>({
     resolver: zodResolver(step2Schema),
     defaultValues: {
       level: draft.roleDetails.level,
       skills: draft.roleDetails.skills,
-      industry: draft.roleDetails.industry,
+      industry: isCustomIndustry ? "Other" : draft.roleDetails.industry,
+      customIndustry: isCustomIndustry ? draft.roleDetails.industry : "",
       location: draft.roleDetails.location || "",
     },
   });
+
+  const watchedIndustry = form.watch("industry");
 
   const onSubmit = (data: Step2Values) => {
     updateRoleDetails({
       level: data.level,
       skills: data.skills,
-      industry: data.industry,
+      industry: data.industry === "Other" ? data.customIndustry!.trim() : data.industry,
       location: data.location ?? "",
     });
     setStep(3);
@@ -143,12 +153,37 @@ export function Step2RoleDetails() {
             )}
           />
 
+          {watchedIndustry === "Other" && (
+            <FormField
+              control={form.control}
+              name="customIndustry"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[13px]">Specify Industry</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter your industry"
+                      autoComplete="off"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="skills"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[13px]">Key Skills</FormLabel>
+                <FormLabel className="text-[13px]">
+                  Key Skills
+                  <span className="ml-1.5 font-normal text-muted-foreground">
+                    (tools, technologies, languages)
+                  </span>
+                </FormLabel>
                 <FormControl>
                   <SkillsInput
                     value={field.value}

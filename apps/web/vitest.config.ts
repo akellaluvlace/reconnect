@@ -8,6 +8,10 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
+      GOOGLE_RECORDING_CLIENT_ID: "test-google-client-id",
+      GOOGLE_RECORDING_CLIENT_SECRET: "test-google-secret",
+      GOOGLE_RECORDING_REDIRECT_URI:
+        "http://localhost:3000/api/google/callback",
     },
   },
   resolve: {

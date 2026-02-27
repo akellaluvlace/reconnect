@@ -66,10 +66,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update recording status to "transcribing"
+    // Mark that transcription is in progress (uploaded → will become transcribed on success)
     const { error: statusError } = await supabase
       .from("interviews")
-      .update({ recording_status: "transcribing" })
+      .update({ recording_status: "uploaded" })
       .eq("id", interview_id);
 
     if (statusError) {
@@ -82,10 +82,10 @@ export async function POST(req: NextRequest) {
     // Download audio from the recording URL
     const audioResponse = await fetch(recording_url);
     if (!audioResponse.ok) {
-      // Mark as failed
+      // Mark as download failed
       await supabase
         .from("interviews")
-        .update({ recording_status: "failed" })
+        .update({ recording_status: "failed_download" })
         .eq("id", interview_id);
 
       return NextResponse.json(
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       console.error("[transcription] Upsert failed:", upsertError.message);
       await supabase
         .from("interviews")
-        .update({ recording_status: "failed" })
+        .update({ recording_status: "failed_transcription" })
         .eq("id", interview_id);
 
       return NextResponse.json(
@@ -132,10 +132,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Update recording status to "completed"
+    // Update recording status to "transcribed" — synthesis is a separate manual step
     await supabase
       .from("interviews")
-      .update({ recording_status: "completed" })
+      .update({ recording_status: "transcribed" })
       .eq("id", interview_id);
 
     return NextResponse.json({

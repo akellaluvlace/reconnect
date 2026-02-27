@@ -5,7 +5,7 @@ import type { JobDescription, MarketInsights, HiringStrategy } from "@reconnect/
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { JDSectionCard } from "./jd-section-card";
-import { Sparkle, CircleNotch, Info } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, Info, Copy } from "@phosphor-icons/react";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
 
@@ -184,6 +184,50 @@ export function JDStructuredEditor({
 
       {activeItem === "full-listing" && (
         <div className="space-y-6">
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const lines: string[] = [];
+                lines.push(role);
+                if (level) lines.push(`${level} · ${industry}`);
+                if (jobDescription.summary) {
+                  lines.push("", jobDescription.summary);
+                }
+                if (jobDescription.responsibilities?.length) {
+                  lines.push("", "Responsibilities:");
+                  jobDescription.responsibilities.forEach((r) => lines.push(`- ${r}`));
+                }
+                if (jobDescription.requirements?.required?.length) {
+                  lines.push("", "Required Qualifications:");
+                  jobDescription.requirements.required.forEach((r) => lines.push(`- ${r}`));
+                }
+                if (jobDescription.requirements?.preferred?.length) {
+                  lines.push("", "Preferred Qualifications:");
+                  jobDescription.requirements.preferred.forEach((r) => lines.push(`- ${r}`));
+                }
+                if (jobDescription.benefits?.length) {
+                  lines.push("", "Benefits:");
+                  jobDescription.benefits.forEach((b) => lines.push(`- ${b}`));
+                }
+                const sr = jobDescription.salary_range;
+                if (sr && sr.min && sr.min > 0) {
+                  lines.push(
+                    "",
+                    `Salary Range: ${sr.currency} ${sr.min.toLocaleString()} – ${sr.max.toLocaleString()}`,
+                  );
+                }
+                navigator.clipboard.writeText(lines.join("\n")).then(
+                  () => toast.success("Job description copied to clipboard"),
+                  () => toast.error("Failed to copy to clipboard"),
+                );
+              }}
+            >
+              <Copy size={14} weight="duotone" className="mr-1.5" />
+              Copy
+            </Button>
+          </div>
           <div className="rounded-xl border border-border/40 bg-card p-8 shadow-sm">
             <h2 className="text-[22px] font-bold tracking-tight text-foreground">
               {role}

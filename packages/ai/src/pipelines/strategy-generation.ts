@@ -45,7 +45,7 @@ export async function generateHiringStrategy(
     salary_confidence: mi.salary.confidence,
     market_saturation: mi.competition.market_saturation,
     companies_hiring_count: mi.competition.companies_hiring.length,
-    postings_count: mi.competition.job_postings_count,
+    postings_count: mi.competition.job_postings_count ?? "n/a",
     availability_level: mi.candidate_availability.level,
     required_skills_count: mi.key_skills.required.length,
     emerging_skills_count: mi.key_skills.emerging.length,

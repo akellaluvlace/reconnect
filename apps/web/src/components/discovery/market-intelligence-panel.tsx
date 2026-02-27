@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import type { MarketInsights } from "@reconnect/database";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PhaseBadge } from "@/components/ai/phase-badge";
 import { DeepResearchProgress } from "./deep-research-progress";
-import { stripAIMetadata } from "@/lib/strip-ai-metadata";
+import { cleanAIText, parseNumberedItems } from "@/lib/strip-ai-metadata";
 import {
   UsersThree,
   Buildings,
   ArrowsClockwise,
   CircleNotch,
-  CurrencyDollar,
+  CurrencyEur,
   Clock,
   Globe,
   ArrowSquareOut,
@@ -35,9 +35,9 @@ interface MarketIntelligencePanelProps {
   marketInsights: MarketInsights | null;
   onUpdate: (data: MarketInsights) => void;
   isPolling: boolean;
-  onPollingStart: () => void;
-  onPollingStop: () => void;
   pollingStartedAt: number | null;
+  pollingTimedOut: boolean;
+  onRestartPolling: () => void;
   role: string;
   level: string;
   industry: string;
@@ -54,9 +54,9 @@ export function MarketIntelligencePanel({
   marketInsights,
   onUpdate,
   isPolling,
-  onPollingStart,
-  onPollingStop,
   pollingStartedAt,
+  pollingTimedOut,
+  onRestartPolling,
   role,
   level,
   industry,
@@ -69,56 +69,8 @@ export function MarketIntelligencePanel({
 }: MarketIntelligencePanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
-  const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingsError, setListingsError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollCountRef = useRef(0);
-  const pollingStartedRef = useRef(false);
-
-  const MAX_POLL_ATTEMPTS = 60;
-
-  // Poll for deep research completion when in quick phase
-  useEffect(() => {
-    if (marketInsights?.phase !== "quick") return;
-    if (pollingStartedRef.current) return;
-
-    pollingStartedRef.current = true;
-    onPollingStart();
-    pollCountRef.current = 0;
-    pollRef.current = setInterval(async () => {
-      pollCountRef.current += 1;
-      if (pollCountRef.current >= MAX_POLL_ATTEMPTS) {
-        onPollingStop();
-        setPollingTimedOut(true);
-        pollingStartedRef.current = false;
-        if (pollRef.current) clearInterval(pollRef.current);
-        return;
-      }
-      try {
-        const res = await fetch(`/api/playbooks/${playbookId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        const mi = data.market_insights as MarketInsights | null;
-        if (mi?.phase === "deep") {
-          onUpdate(mi);
-          onPollingStop();
-          pollingStartedRef.current = false;
-          if (pollRef.current) clearInterval(pollRef.current);
-          toast.success("Deep research complete", {
-            description: `${mi.sources?.length ?? 0} web sources analyzed`,
-          });
-        }
-      } catch {
-        // Silently retry
-      }
-    }, 5000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-      pollingStartedRef.current = false;
-    };
-  }, [marketInsights?.phase, playbookId, onUpdate, onPollingStart, onPollingStop]);
 
   if (!marketInsights) {
     return (
@@ -151,7 +103,6 @@ export function MarketIntelligencePanel({
 
   async function handleRetryDeepResearch() {
     setIsRetrying(true);
-    setPollingTimedOut(false);
     try {
       // Re-call quick insights endpoint to get the cache_key (uses cache, no AI cost)
       const res = await fetch("/api/ai/market-insights", {
@@ -174,42 +125,12 @@ export function MarketIntelligencePanel({
 
       if (!deepRes.ok) throw new Error("Failed to trigger deep research");
 
-      // Restart polling directly — can't rely on useEffect because
-      // isPolling guard would return early
-      pollCountRef.current = 0;
-      onPollingStart();
-      if (pollRef.current) clearInterval(pollRef.current);
-      pollRef.current = setInterval(async () => {
-        pollCountRef.current += 1;
-        if (pollCountRef.current >= MAX_POLL_ATTEMPTS) {
-          onPollingStop();
-          setPollingTimedOut(true);
-          if (pollRef.current) clearInterval(pollRef.current);
-          return;
-        }
-        try {
-          const pollRes = await fetch(`/api/playbooks/${playbookId}`);
-          if (!pollRes.ok) return;
-          const pollData = await pollRes.json();
-          const mi = pollData.market_insights as MarketInsights | null;
-          if (mi?.phase === "deep") {
-            onUpdate(mi);
-            onPollingStop();
-            if (pollRef.current) clearInterval(pollRef.current);
-            toast.success("Deep research complete", {
-              description: `${mi.sources?.length ?? 0} web sources analyzed`,
-            });
-          }
-        } catch {
-          // Silently retry on network errors
-        }
-      }, 5000);
-
+      // Restart polling in the parent (survives tab switches)
+      onRestartPolling();
       toast.success("Deep research restarted");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       toast.error(`Failed to retry deep research: ${message}`);
-      setPollingTimedOut(true);
     } finally {
       setIsRetrying(false);
     }
@@ -273,7 +194,7 @@ export function MarketIntelligencePanel({
     }
   }
 
-  const availabilityText = stripAIMetadata(
+  const availabilityText = cleanAIText(
     mi.candidate_availability.description ?? "",
   );
 
@@ -332,7 +253,7 @@ export function MarketIntelligencePanel({
             {/* Salary Range */}
             <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <CurrencyDollar size={16} weight="duotone" className="text-teal-600" />
+                <CurrencyEur size={16} weight="duotone" className="text-teal-600" />
                 <p className="text-[13px] font-medium text-muted-foreground">Salary Range</p>
               </div>
               <p className="text-[28px] font-bold tabular-nums tracking-tight">
@@ -359,9 +280,18 @@ export function MarketIntelligencePanel({
                   <span>{mi.salary.currency} {mi.salary.max.toLocaleString()}</span>
                 </div>
               </div>
-              {mi.salary.confidence && (
+              {mi.salary.confidence != null && (
                 <p className="mt-3 text-[12px] text-muted-foreground">
-                  Confidence: <span className="font-semibold text-foreground">{mi.salary.confidence}</span>
+                  Confidence:{" "}
+                  <span className="font-semibold text-foreground">
+                    {mi.salary.confidence >= 0.8
+                      ? "High"
+                      : mi.salary.confidence >= 0.6
+                        ? "Good"
+                        : mi.salary.confidence >= 0.4
+                          ? "Moderate"
+                          : "Low"}
+                  </span>
                 </p>
               )}
             </div>
@@ -412,9 +342,28 @@ export function MarketIntelligencePanel({
                 {mi.candidate_availability.level}
               </Badge>
             </div>
-            <p className="text-[14px] leading-relaxed text-muted-foreground">
-              {availabilityText}
-            </p>
+            {(() => {
+              const { heading, items } = parseNumberedItems(availabilityText);
+              return items.length > 1 ? (
+                <div>
+                  {heading && (
+                    <p className="mb-3 text-[14px] font-medium text-foreground/80">{heading}</p>
+                  )}
+                  <ul className="space-y-2">
+                    {items.map((s, i) => (
+                      <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-300" />
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <p className="text-[14px] leading-relaxed text-muted-foreground">
+                  {availabilityText}
+                </p>
+              );
+            })()}
           </div>
 
           {/* Competition */}
@@ -424,11 +373,14 @@ export function MarketIntelligencePanel({
               <p className="text-[13px] font-medium text-muted-foreground">Competition</p>
             </div>
             <div className="flex items-baseline gap-3">
-              <p className="text-[28px] font-bold tabular-nums tracking-tight">
-                {mi.competition.job_postings_count}
-              </p>
+              {mi.competition.job_postings_count != null && (
+                <p className="text-[28px] font-bold tabular-nums tracking-tight">
+                  {mi.competition.job_postings_count}
+                </p>
+              )}
               <p className="text-[14px] text-muted-foreground">
-                active postings &middot; {mi.competition.market_saturation} saturation
+                {mi.competition.job_postings_count != null ? "active postings · " : ""}
+                {mi.competition.market_saturation} saturation
               </p>
             </div>
             {mi.competition.companies_hiring.length > 0 && (
@@ -505,7 +457,7 @@ export function MarketIntelligencePanel({
       {/* ── Market Trends ── */}
       {activeItem === "trends" && (() => {
         const cleanTrends = mi.trends
-          .map((t) => stripAIMetadata(t))
+          .map((t) => cleanAIText(t))
           .filter((t) => t.length > 0);
         return cleanTrends.length > 0 ? (
           <div className="space-y-3">

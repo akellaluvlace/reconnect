@@ -5,7 +5,7 @@ import type { MarketInsights, HiringStrategy } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { stripAIMetadata } from "@/lib/strip-ai-metadata";
+import { cleanAIText, parseNumberedItems } from "@/lib/strip-ai-metadata";
 import {
   Sparkle,
   ShieldWarning,
@@ -181,18 +181,42 @@ export function StrategyPanel({
               <span>
                 Availability: <span className="font-semibold text-foreground">{marketInsights.candidate_availability.level}</span>
               </span>
+              {marketInsights.competition.job_postings_count != null && (
               <span>
                 Active postings: <span className="font-semibold text-foreground">{marketInsights.competition.job_postings_count}</span>
               </span>
+              )}
               <span>
                 Saturation: <span className="font-semibold text-foreground">{marketInsights.competition.market_saturation}</span>
               </span>
             </div>
           )}
 
-          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
-            {stripAIMetadata(strategy.market_classification_rationale)}
-          </p>
+          {(() => {
+            const text = cleanAIText(strategy.market_classification_rationale);
+            const { heading, items } = parseNumberedItems(text);
+            return items.length > 1 ? (
+              <div className="mt-4">
+                {heading && (
+                  <p className="mb-3 text-[14px] font-medium text-foreground/80">{heading}</p>
+                )}
+                <ol className="space-y-2 list-none">
+                  {items.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-bold text-blue-700">
+                        {i + 1}
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+                {text}
+              </p>
+            );
+          })()}
         </div>
       )}
 
@@ -236,9 +260,31 @@ export function StrategyPanel({
             </div>
           )}
 
-          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
-            {stripAIMetadata(strategy.salary_positioning.rationale)}
-          </p>
+          {(() => {
+            const text = cleanAIText(strategy.salary_positioning.rationale);
+            const { heading, items } = parseNumberedItems(text);
+            return items.length > 1 ? (
+              <div className="mt-4">
+                {heading && (
+                  <p className="mb-3 text-[14px] font-medium text-foreground/80">{heading}</p>
+                )}
+                <ol className="space-y-2 list-none">
+                  {items.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground/60">
+                        {i + 1}
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+                {text}
+              </p>
+            );
+          })()}
         </div>
         );
       })()}
@@ -264,9 +310,31 @@ export function StrategyPanel({
               )}
             </div>
           </div>
-          <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
-            {stripAIMetadata(strategy.process_speed.rationale)}
-          </p>
+          {(() => {
+            const text = cleanAIText(strategy.process_speed.rationale);
+            const { heading, items } = parseNumberedItems(text);
+            return items.length > 1 ? (
+              <div className="mt-4">
+                {heading && (
+                  <p className="mb-3 text-[14px] font-medium text-foreground/80">{heading}</p>
+                )}
+                <ol className="space-y-2 list-none">
+                  {items.map((s, i) => (
+                    <li key={i} className="flex items-start gap-3 text-[14px] leading-relaxed text-muted-foreground">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground/60">
+                        {i + 1}
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : (
+              <p className="mt-4 text-[14px] leading-relaxed text-muted-foreground">
+                {text}
+              </p>
+            );
+          })()}
         </div>
       )}
 
@@ -282,7 +350,7 @@ export function StrategyPanel({
                 {i + 1}
               </span>
               <p className="text-[14px] leading-relaxed text-muted-foreground">
-                {stripAIMetadata(d)}
+                {cleanAIText(d)}
               </p>
             </div>
           ))}
@@ -365,9 +433,9 @@ export function StrategyPanel({
                   <div className="flex items-start gap-3">
                     <ShieldWarning size={16} weight="duotone" className="mt-0.5 shrink-0 text-amber-500" />
                     <div>
-                      <p className="text-[14px] font-semibold text-foreground">{stripAIMetadata(r.risk)}</p>
+                      <p className="text-[14px] font-semibold text-foreground">{cleanAIText(r.risk)}</p>
                       <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-                        <span className="font-semibold text-teal-700">Mitigation:</span> {stripAIMetadata(r.mitigation)}
+                        <span className="font-semibold text-teal-700">Mitigation:</span> {cleanAIText(r.mitigation)}
                       </p>
                     </div>
                   </div>
@@ -394,7 +462,7 @@ export function StrategyPanel({
                     {i + 1}
                   </span>
                   <p className="text-[14px] leading-relaxed text-muted-foreground">
-                    {stripAIMetadata(r)}
+                    {cleanAIText(r)}
                   </p>
                 </div>
               ))}

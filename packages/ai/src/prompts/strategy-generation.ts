@@ -8,7 +8,7 @@ export interface StrategyGenerationInput {
   industry: string;
   market_insights: {
     salary: { min: number; max: number; median: number; currency: string; confidence: number };
-    competition: { companies_hiring: string[]; job_postings_count: number; market_saturation: string };
+    competition: { companies_hiring: string[]; job_postings_count?: number; market_saturation: string };
     time_to_hire: { average_days: number; range: { min: number; max: number } };
     candidate_availability: { level: string; description: string };
     key_skills: { required: string[]; emerging: string[]; declining: string[] };
@@ -28,6 +28,14 @@ Guidelines:
 - Market classification: Based on candidate availability, competition, and salary trends
 - Salary positioning: Consider market saturation and candidate scarcity
 - Process speed: Balance thoroughness vs. losing candidates to faster-moving competitors
+- max_stages MUST vary by role context. Use these ranges as a guide:
+  * Junior/entry roles: 2-3 stages (phone screen + technical + offer)
+  * Mid-level roles: 3-4 stages
+  * Senior/lead roles: 3-5 stages
+  * Executive roles: 4-6 stages (more stakeholder involvement)
+  * Candidate-scarce markets: reduce by 1 stage to move faster
+  * Employer markets with many candidates: can add 1 stage for selectivity
+  Do NOT default to 4 for every role. Justify the number in your rationale.
 - Skills priority: Separate must-have from nice-to-have based on market availability
 - Always include at least 2 key risks with concrete mitigations`,
 
@@ -42,7 +50,7 @@ INDUSTRY: ${sanitizeInput(input.industry)}
 
 MARKET DATA:
 - Salary: ${mi.salary.currency} ${mi.salary.min.toLocaleString()}–${mi.salary.max.toLocaleString()} (median: ${mi.salary.median.toLocaleString()}, confidence: ${mi.salary.confidence})
-- Competition: ${mi.competition.job_postings_count} postings, saturation: ${mi.competition.market_saturation}
+- Competition: ${mi.competition.job_postings_count != null ? `~${mi.competition.job_postings_count} postings, ` : ""}saturation: ${mi.competition.market_saturation}
 - Companies hiring: ${mi.competition.companies_hiring.slice(0, 8).join(", ")}
 - Time to hire: avg ${mi.time_to_hire.average_days} days (range: ${mi.time_to_hire.range.min}–${mi.time_to_hire.range.max})
 - Candidate availability: ${mi.candidate_availability.level} — ${sanitizeInput(mi.candidate_availability.description)}

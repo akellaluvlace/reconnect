@@ -124,13 +124,14 @@ export function Step3Generate() {
         console.warn("[deep-research] No cache_key returned from quick insights — skipping deep research");
       }
 
-      resetDraft();
       router.push(`/playbooks/${playbook.id}/discovery`);
+      // Reset draft after navigation starts — avoids flash of empty wizard state
+      setTimeout(resetDraft, 500);
+      return;
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred";
       setError(message);
-    } finally {
       setIsGenerating(false);
       setStatusMessage("");
     }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { MarketInsights, JobDescription, HiringStrategy } from "@reconnect/database";
 import { MarketIntelligencePanel } from "./market-intelligence-panel";
 import { StrategyPanel } from "./strategy-panel";
 import { JDStructuredEditor } from "./jd-structured-editor";
 import { Lock, Sparkle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 /** Market research items that require deep research to be complete */
 const DEEP_GATED_MARKET_ITEMS = new Set(["listings"]);
@@ -112,16 +113,73 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
   // Lifted polling state — survives section switches
   const [isDeepResearchPolling, setIsDeepResearchPolling] = useState(false);
   const [deepResearchStartedAt, setDeepResearchStartedAt] = useState<number | null>(null);
+  const [pollingTimedOut, setPollingTimedOut] = useState(false);
+  const [pollGeneration, setPollGeneration] = useState(0);
 
   const handlePollingStart = useCallback(() => {
     setDeepResearchStartedAt((prev) => prev ?? Date.now());
     setIsDeepResearchPolling(true);
+    setPollingTimedOut(false);
   }, []);
 
   const handlePollingStop = useCallback(() => {
     setIsDeepResearchPolling(false);
     setDeepResearchStartedAt(null);
   }, []);
+
+  const handleRestartPolling = useCallback(() => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollActiveRef.current = false;
+    setPollingTimedOut(false);
+    setPollGeneration((g) => g + 1);
+  }, []);
+
+  // Deep research polling — lives in parent so it survives tab switches
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollActiveRef = useRef(false);
+
+  useEffect(() => {
+    if (marketInsights?.phase !== "quick") return;
+    if (pollActiveRef.current) return;
+
+    pollActiveRef.current = true;
+    handlePollingStart();
+    let ticks = 0;
+
+    pollRef.current = setInterval(async () => {
+      ticks += 1;
+      if (ticks > 60) {
+        // 5 minutes — give up
+        handlePollingStop();
+        setPollingTimedOut(true);
+        pollActiveRef.current = false;
+        if (pollRef.current) clearInterval(pollRef.current);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/playbooks/${playbook.id}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const mi = data.market_insights as MarketInsights | null;
+        if (mi?.phase === "deep") {
+          setMarketInsights(mi);
+          handlePollingStop();
+          pollActiveRef.current = false;
+          if (pollRef.current) clearInterval(pollRef.current);
+          toast.success("Deep research complete", {
+            description: `${mi.sources?.length ?? 0} web sources analyzed`,
+          });
+        }
+      } catch {
+        // Silently retry
+      }
+    }, 5000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollActiveRef.current = false;
+    };
+  }, [marketInsights?.phase, playbook.id, pollGeneration, handlePollingStart, handlePollingStop]);
 
   // Tab gating: deep research → strategy → JD
   const isDeepResearchDone = marketInsights?.phase === "deep";
@@ -234,9 +292,9 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
               marketInsights={marketInsights}
               onUpdate={setMarketInsights}
               isPolling={isDeepResearchPolling}
-              onPollingStart={handlePollingStart}
-              onPollingStop={handlePollingStop}
               pollingStartedAt={deepResearchStartedAt}
+              pollingTimedOut={pollingTimedOut}
+              onRestartPolling={handleRestartPolling}
               role={playbook.title}
               level={playbook.level ?? ""}
               industry={playbook.industry ?? ""}

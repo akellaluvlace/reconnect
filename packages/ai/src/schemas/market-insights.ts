@@ -11,7 +11,7 @@ export const MarketInsightsSchema = z.object({
   }).refine(s => s.min <= s.max, { message: "salary.min must be <= salary.max" }),
   competition: z.object({
     companies_hiring: z.array(z.string()),
-    job_postings_count: z.number(),
+    job_postings_count: z.number().optional(),
     market_saturation: z.enum(["low", "medium", "high"]),
   }),
   time_to_hire: z.object({
