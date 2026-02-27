@@ -99,7 +99,8 @@ If a field is not present in the source, omit it.`,
 URL: ${source.url}
 Content: ${source.content.slice(0, 3000)}
 
-Extract: salary figures (with currency), companies mentioned, demand signals, skills mentioned, trends, and the date of the data.`,
+Extract: salary figures (with currency), companies mentioned, demand signals, skills mentioned, trends, and the date of the data.
+If the source explicitly states a number of job postings or open roles (e.g. "245 open positions", "over 300 postings"), set estimated_postings to that number. Do NOT estimate or infer a count — only extract when the source explicitly states one.`,
 
   /** Deep research: Step 5 — Cross-reference synthesis */
   synthesisSystem: `You are a senior recruitment market analyst performing cross-reference synthesis.
@@ -127,11 +128,13 @@ ${JSON.stringify(e.data, null, 2)}`).join("\n\n")}
 
 Provide:
 - Salary range with confidence (weighted by source quality and agreement)
-- Competition data (companies hiring, posting counts, saturation)
+- Competition data (companies hiring, market saturation)
 - Time-to-hire estimate
 - Candidate availability assessment
 - Skills analysis (required, emerging, declining)
 - Market trends
+
+For job_postings_count: ONLY include this field if 2 or more sources provided an explicit estimated_postings number. Average the corroborating values. If fewer than 2 sources have posting counts, omit job_postings_count entirely — do NOT estimate or infer a count.
 
 Set confidence scores per field based on source agreement. Include source attribution.`,
 } as const;

@@ -207,6 +207,7 @@ export async function runDeepResearch(
         salary_data_found: extractions.filter((e) => e.salary_data?.length).length,
         companies_found: extractions.filter((e) => e.companies_mentioned?.length).length,
         skills_found: extractions.filter((e) => e.skills_mentioned?.length).length,
+        postings_count_sources: extractions.filter((e) => e.estimated_postings != null).length,
       },
       extractWarnings,
     );

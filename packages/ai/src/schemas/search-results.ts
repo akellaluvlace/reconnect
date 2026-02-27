@@ -42,6 +42,8 @@ export const SourceExtractionSchema = z.object({
   skills_mentioned: z.array(z.string()).optional(),
   trends: z.array(z.string()).optional(),
   data_date: z.string().optional(),
+  /** Only set when the source explicitly states a job posting count */
+  estimated_postings: z.number().optional(),
 });
 
 export type SourceExtractionOutput = z.infer<typeof SourceExtractionSchema>;
