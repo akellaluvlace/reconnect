@@ -98,6 +98,8 @@ export interface MarketInsights {
   competition: {
     companies_hiring: string[];
     job_postings_count?: number;
+    /** Domains the posting count was sourced from */
+    job_postings_domains?: string[];
     market_saturation: "low" | "medium" | "high";
   };
   time_to_hire: {

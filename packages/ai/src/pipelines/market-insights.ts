@@ -176,6 +176,9 @@ export async function generateDeepInsights(
       job_postings_count: verifiedPostings.count > 0
         ? verifiedPostings.count
         : undefined,
+      job_postings_domains: verifiedPostings.count > 0
+        ? verifiedPostings.domains
+        : undefined,
     };
 
     const result: MarketInsightsOutput = {

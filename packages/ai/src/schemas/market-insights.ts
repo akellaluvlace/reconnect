@@ -12,6 +12,8 @@ export const MarketInsightsSchema = z.object({
   competition: z.object({
     companies_hiring: z.array(z.string()),
     job_postings_count: z.number().optional(),
+    /** Domains the posting count was sourced from (e.g. ["indeed.ie", "linkedin.com"]) */
+    job_postings_domains: z.array(z.string()).optional(),
     market_saturation: z.enum(["low", "medium", "high"]),
   }),
   time_to_hire: z.object({

@@ -378,12 +378,19 @@ export function MarketIntelligencePanel({
                   {mi.competition.job_postings_count}+
                 </p>
               )}
-              <p className="text-[14px] text-muted-foreground">
-                {mi.competition.job_postings_count != null && mi.competition.job_postings_count > 0
-                  ? "listings found · "
-                  : ""}
-                {mi.competition.market_saturation} saturation
-              </p>
+              <div>
+                <p className="text-[14px] text-muted-foreground">
+                  {mi.competition.job_postings_count != null && mi.competition.job_postings_count > 0
+                    ? "listings found · "
+                    : ""}
+                  {mi.competition.market_saturation} saturation
+                </p>
+                {mi.competition.job_postings_domains && mi.competition.job_postings_domains.length > 0 && (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/60">
+                    via {mi.competition.job_postings_domains.join(", ")}
+                  </p>
+                )}
+              </div>
             </div>
             {mi.competition.companies_hiring.length > 0 && (
               <div className="mt-4">
