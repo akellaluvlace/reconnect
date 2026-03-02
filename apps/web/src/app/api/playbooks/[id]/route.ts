@@ -45,6 +45,14 @@ const updatePlaybookSchema = z.object({
     .record(z.string(), z.unknown())
     .optional()
     .refine(jsonbSizeCheck, "Competitor listings payload too large"),
+  coverage_analysis: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .refine(jsonbSizeCheck, "Coverage analysis payload too large"),
+  stage_refinements: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .refine(jsonbSizeCheck, "Stage refinements payload too large"),
 });
 
 export async function GET(
@@ -191,7 +199,12 @@ export async function PATCH(
       updateData.hiring_strategy = parsed.data.hiring_strategy as Json;
     if (parsed.data.competitor_listings !== undefined)
       updateData.competitor_listings = parsed.data.competitor_listings as Json;
+    if (parsed.data.coverage_analysis !== undefined)
+      updateData.coverage_analysis = parsed.data.coverage_analysis as Json;
+    if (parsed.data.stage_refinements !== undefined)
+      updateData.stage_refinements = parsed.data.stage_refinements as Json;
 
+    const updateKeys = Object.keys(updateData);
     const { data, error } = await supabase
       .from("playbooks")
       .update(updateData)
@@ -213,6 +226,7 @@ export async function PATCH(
       );
     }
 
+    console.log(`[playbooks/PATCH] OK { fields=[${updateKeys.join(",")}] }`);
     return NextResponse.json(data);
   } catch (err) {
     console.error("[playbooks/PATCH] Unexpected error:", err);

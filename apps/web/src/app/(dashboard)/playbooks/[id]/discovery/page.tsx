@@ -19,6 +19,7 @@ const CompetitorListingSchema = z.object({
   snippet: z.string(),
   postedDate: z.string().optional(),
   relevanceScore: z.number(),
+  industryRelevance: z.number().optional(),
 });
 
 const CompetitorListingsWrapperSchema = z.object({

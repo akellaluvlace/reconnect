@@ -38,9 +38,11 @@ describe("Coverage Analysis prompts", () => {
     expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("EU AI Act");
   });
 
-  it("system prompt includes scoring guidelines", () => {
-    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("90-100");
-    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("Below 50");
+  it("system prompt includes calibration examples", () => {
+    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("CALIBRATION EXAMPLES");
+    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("MODERATE");
+    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("STRONG");
+    expect(COVERAGE_ANALYSIS_PROMPT.system).toContain("WEAK");
   });
 
   it("user prompt includes role and level", () => {
@@ -115,6 +117,12 @@ describe("Coverage Analysis prompts", () => {
     expect(prompt).toContain("Senior Software Engineer");
     // Should still generate a valid prompt even with no stages
     expect(prompt).toContain("INTERVIEW STAGES");
+  });
+
+  it("user prompt includes anti-duplicate instruction (EXACTLY ONCE)", () => {
+    const prompt = COVERAGE_ANALYSIS_PROMPT.user(validInput);
+    expect(prompt).toContain("EXACTLY ONCE");
+    expect(prompt).toContain("Do NOT list the same requirement multiple times");
   });
 
   it("handles empty requirements arrays", () => {

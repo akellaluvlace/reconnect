@@ -78,21 +78,32 @@ export async function refreshGoogleTokens(
     );
   }
 
-  const tokens = (await response.json()) as {
+  const rawTokens = await response.json();
+  if (!rawTokens.access_token || typeof rawTokens.expires_in !== "number") {
+    throw new Error(
+      `Unexpected Google token refresh response: ${JSON.stringify(rawTokens).slice(0, 200)}`,
+    );
+  }
+  const tokens = rawTokens as {
     access_token: string;
     expires_in: number;
+    refresh_token?: string;
   };
 
   const newExpiry = new Date(Date.now() + tokens.expires_in * 1000);
 
-  // Persist the refreshed token
+  // Persist the refreshed token (+ rotated refresh token if Google provides one)
   const supabase = createServiceRoleClient();
+  const updatePayload: Record<string, string> = {
+    access_token: tokens.access_token,
+    token_expiry: newExpiry.toISOString(),
+  };
+  if (tokens.refresh_token) {
+    updatePayload.refresh_token = tokens.refresh_token;
+  }
   const { error } = await supabase
     .from("platform_google_config")
-    .update({
-      access_token: tokens.access_token,
-      token_expiry: newExpiry.toISOString(),
-    })
+    .update(updatePayload)
     .eq("google_email", googleEmail);
 
   if (error) {
@@ -103,6 +114,9 @@ export async function refreshGoogleTokens(
 
   return tokens.access_token;
 }
+
+// Mutex: deduplicate concurrent refresh calls to avoid invalid_grant errors
+let activeRefresh: Promise<string> | null = null;
 
 /**
  * Main entry point — returns a valid Google access token.
@@ -115,8 +129,12 @@ export async function getValidGoogleToken(): Promise<string> {
     return tokenResult.accessToken;
   }
 
-  return refreshGoogleTokens(
+  if (activeRefresh) return activeRefresh;
+
+  activeRefresh = refreshGoogleTokens(
     tokenResult.refreshToken,
     tokenResult.googleEmail,
-  );
+  ).finally(() => { activeRefresh = null; });
+
+  return activeRefresh;
 }

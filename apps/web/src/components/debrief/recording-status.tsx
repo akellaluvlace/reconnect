@@ -11,9 +11,10 @@ import {
   Prohibit,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
+import type { RecordingStatus as RecordingStatusType } from "@reconnect/database";
 
 const STATUS_CONFIG: Record<
-  string,
+  RecordingStatusType,
   { label: string; color: string; Icon: Icon; spinning?: boolean }
 > = {
   scheduled: {
@@ -75,7 +76,7 @@ const STATUS_CONFIG: Record<
 };
 
 interface RecordingStatusProps {
-  status: string | null;
+  status: RecordingStatusType | null;
 }
 
 export function RecordingStatus({ status }: RecordingStatusProps) {

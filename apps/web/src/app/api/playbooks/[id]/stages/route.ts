@@ -91,6 +91,146 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+
+  if (!UUID_REGEX.test(id)) {
+    return NextResponse.json(
+      { error: "Invalid playbook ID" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError) {
+      console.error("[stages/PUT] Profile fetch failed:", profileError.message);
+      return NextResponse.json(
+        { error: "Failed to verify permissions" },
+        { status: 500 },
+      );
+    }
+
+    if (!profile || !["admin", "manager"].includes(profile.role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 },
+      );
+    }
+
+    if (!Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Body must be an array of stages" },
+        { status: 400 },
+      );
+    }
+
+    if (body.length > 20) {
+      return NextResponse.json(
+        { error: "Too many stages (max 20)" },
+        { status: 400 },
+      );
+    }
+
+    const parsedItems = [];
+    for (const item of body) {
+      const parsed = createStageSchema.safeParse(item);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Invalid input", issues: parsed.error.issues },
+          { status: 400 },
+        );
+      }
+      parsedItems.push(parsed.data);
+    }
+
+    // Delete ALL existing stages for this playbook
+    const { error: deleteError } = await supabase
+      .from("interview_stages")
+      .delete()
+      .eq("playbook_id", id);
+
+    if (deleteError) {
+      console.error("[stages/PUT] Delete failed:", deleteError.message);
+      return NextResponse.json(
+        { error: "Failed to clear existing stages" },
+        { status: 500 },
+      );
+    }
+
+    // Insert all new stages with fresh order_index
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < parsedItems.length; i++) {
+      const item = parsedItems[i];
+      const { data, error } = await supabase
+        .from("interview_stages")
+        .insert({
+          playbook_id: id,
+          name: item.name,
+          type: item.type,
+          duration_minutes: item.duration_minutes,
+          description: item.description ?? null,
+          focus_areas: (item.focus_areas ?? []) as unknown as Json,
+          suggested_questions: (item.suggested_questions ?? []) as unknown as Json,
+          order_index: i,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("[stages/PUT] Insert failed:", error.message);
+        errors.push({ name: item.name, error: "Insert failed" });
+      } else {
+        results.push(data);
+      }
+    }
+
+    if (results.length === 0 && parsedItems.length > 0) {
+      return NextResponse.json(
+        { error: "Failed to create replacement stages" },
+        { status: 500 },
+      );
+    }
+
+    console.log(`[stages/PUT] OK { deleted_all=true, created=${results.length}, errors=${errors.length} }`);
+
+    return NextResponse.json({ data: results, errors });
+  } catch (err) {
+    console.error("[stages/PUT] Unexpected error:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

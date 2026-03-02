@@ -20,12 +20,16 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { HiringStrategy, JobDescription } from "@reconnect/database";
 import { Button } from "@/components/ui/button";
-import { StageCard } from "./stage-card";
+import { StageCard, type StageEditPayload } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
-import { StageEditDialog } from "./stage-edit-dialog";
-import { Sparkle, CircleNotch, Plus } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, Plus, Warning } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import type { StageData } from "./process-page-client";
+
+export interface ApplyState {
+  step: "ai" | "saving" | "coverage";
+  error?: string | null;
+}
 
 interface StageBlueprintProps {
   playbookId: string;
@@ -36,6 +40,7 @@ interface StageBlueprintProps {
   role: string;
   level: string;
   industry: string;
+  applyState?: ApplyState | null;
 }
 
 const SPEED_LABELS: Record<string, string> = {
@@ -47,16 +52,24 @@ const SPEED_LABELS: Record<string, string> = {
 function SortableStageCard({
   stage,
   index,
+  isEditing,
+  isSaving,
   onEdit,
   onDelete,
+  onSave,
+  onCancel,
 }: {
   stage: StageData;
   index: number;
+  isEditing: boolean;
+  isSaving: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onSave: (payload: StageEditPayload) => void;
+  onCancel: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: stage.id });
+    useSortable({ id: stage.id, disabled: isEditing });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -68,13 +81,56 @@ function SortableStageCard({
       <StageCard
         stage={stage}
         index={index}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={isEditing ? undefined : { ...attributes, ...listeners }}
+        isEditing={isEditing}
+        isSaving={isSaving}
         onEdit={onEdit}
         onDelete={onDelete}
+        onSave={onSave}
+        onCancel={onCancel}
       />
     </div>
   );
 }
+
+/** Centered "+ Insert stage" button, visible on hover */
+function InsertBetweenControl({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="group flex items-center justify-center py-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 text-[12px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-teal-700 hover:bg-teal-50 border border-transparent hover:border-teal-200"
+        onClick={onClick}
+      >
+        <Plus size={12} className="mr-1" />
+        Insert stage
+      </Button>
+    </div>
+  );
+}
+
+/** Create a blank StageData placeholder for new/insert stage forms */
+function createBlankStage(id: string): StageData {
+  return {
+    id,
+    playbook_id: "",
+    name: "",
+    type: "custom",
+    duration_minutes: 45,
+    description: null,
+    order_index: 0,
+    focus_areas: [],
+    suggested_questions: [],
+    rationale: null,
+  };
+}
+
+const APPLY_STEP_LABELS: Record<string, string> = {
+  ai: "Generating refined stages...",
+  saving: "Saving updated stages...",
+  coverage: "Re-analysing coverage...",
+};
 
 export function StageBlueprint({
   playbookId,
@@ -85,6 +141,7 @@ export function StageBlueprint({
   role,
   level,
   industry,
+  applyState,
 }: StageBlueprintProps) {
   const opKey = `stages-${playbookId}`;
   const { status: genStatus, result: genResult, error: genError } = useAIGenerationStore(
@@ -106,8 +163,11 @@ export function StageBlueprint({
     }
   }, [genStatus, genResult, genError, onStagesChange, opKey]);
 
-  const [editingStage, setEditingStage] = useState<StageData | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Which stage is being edited: existing stage id, or "new-{index}" for inserts
+  const [editingStageId, setEditingStageId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  // Tracks insert position and blank stage for new inserts
+  const [insertAtIndex, setInsertAtIndex] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -117,11 +177,9 @@ export function StageBlueprint({
   );
 
   function handleGenerate() {
-    // Capture current stages for deletion inside the closure
     const currentStages = stages;
 
     useAIGenerationStore.getState().startOperation(opKey, async () => {
-      // Delete existing stages first if regenerating
       if (currentStages.length > 0) {
         const deleteResults = await Promise.allSettled(
           currentStages.map((s) =>
@@ -130,9 +188,14 @@ export function StageBlueprint({
             }),
           ),
         );
-        const failures = deleteResults.filter((r) => r.status === "rejected");
-        if (failures.length > 0) {
-          console.warn("[blueprint] Some stage deletions failed:", failures.length);
+        const rejected = deleteResults.filter((r) => r.status === "rejected");
+        const httpFailed = deleteResults.filter(
+          (r) => r.status === "fulfilled" && !r.value.ok,
+        );
+        const totalFailed = rejected.length + httpFailed.length;
+        if (totalFailed > 0) {
+          console.warn("[blueprint] Stage deletions failed:", totalFailed, "(rejected:", rejected.length, "http:", httpFailed.length, ")");
+          toast.warning(`${totalFailed} old stage(s) failed to delete — regenerating anyway`);
         }
       }
 
@@ -174,9 +237,14 @@ export function StageBlueprint({
       }
 
       const { data } = await aiRes.json();
-      const generatedStages = data.stages;
 
-      // Bulk create via API
+      // Coerce AI stage types to valid DB enum values
+      const VALID_TYPES = new Set(["screening", "technical", "behavioral", "cultural", "final", "custom"]);
+      const generatedStages = (data.stages as Record<string, unknown>[]).map((s) => ({
+        ...s,
+        type: VALID_TYPES.has(s.type as string) ? s.type : "custom",
+      }));
+
       const createRes = await fetch(
         `/api/playbooks/${playbookId}/stages`,
         {
@@ -210,7 +278,6 @@ export function StageBlueprint({
     const newIndex = stages.findIndex((s) => s.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    // Optimistic reorder
     const updated = [...stages];
     const [moved] = updated.splice(oldIndex, 1);
     updated.splice(newIndex, 0, moved);
@@ -218,7 +285,6 @@ export function StageBlueprint({
     const reindexed = updated.map((s, i) => ({ ...s, order_index: i }));
     onStagesChange(reindexed);
 
-    // Persist
     try {
       const res = await fetch(`/api/playbooks/${playbookId}/stages/reorder`, {
         method: "POST",
@@ -235,7 +301,6 @@ export function StageBlueprint({
         throw new Error("Reorder failed");
       }
     } catch {
-      // Revert on failure
       onStagesChange(stages);
       toast.error("Failed to reorder stages");
     }
@@ -244,6 +309,8 @@ export function StageBlueprint({
   async function handleDelete(stageId: string) {
     const prev = [...stages];
     onStagesChange(stages.filter((s) => s.id !== stageId));
+    setEditingStageId(null);
+    setInsertAtIndex(null);
 
     try {
       const res = await fetch(
@@ -258,18 +325,148 @@ export function StageBlueprint({
     }
   }
 
-  function handleStageSaved(saved: StageData) {
-    if (stages.some((s) => s.id === saved.id)) {
-      onStagesChange(stages.map((s) => (s.id === saved.id ? saved : s)));
-    } else {
-      onStagesChange([...stages, saved]);
+  async function handleSaveExisting(stageId: string, payload: StageEditPayload) {
+    setIsSaving(true);
+    try {
+      const res = await fetch(
+        `/api/playbooks/${playbookId}/stages/${stageId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save stage");
+      }
+
+      const saved = await res.json();
+      onStagesChange(stages.map((s) => (s.id === stageId ? saved : s)));
+      setEditingStageId(null);
+    } catch (err) {
+      console.error("[blueprint] Save failed:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to save stage");
+    } finally {
+      setIsSaving(false);
     }
-    setIsDialogOpen(false);
-    setEditingStage(null);
+  }
+
+  async function handleSaveNew(payload: StageEditPayload, targetIndex: number) {
+    setIsSaving(true);
+    try {
+      // Create the new stage
+      const res = await fetch(`/api/playbooks/${playbookId}/stages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          order_index: targetIndex,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to add stage");
+      }
+
+      const saved = await res.json();
+      // If the API returns an array wrapper, unwrap
+      const newStage: StageData = saved.data ? saved.data[0] || saved.data : saved;
+
+      // Insert at position and reindex
+      const updated = [...stages];
+      updated.splice(targetIndex, 0, newStage);
+      const reindexed = updated.map((s, i) => ({ ...s, order_index: i }));
+      onStagesChange(reindexed);
+
+      // Persist reorder
+      const reorderRes = await fetch(`/api/playbooks/${playbookId}/stages/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stages: reindexed.map((s) => ({
+            id: s.id,
+            order_index: s.order_index,
+          })),
+        }),
+      });
+      if (!reorderRes.ok) {
+        console.warn("[blueprint] Reorder after insert failed:", reorderRes.status);
+        toast.warning("Stage added but ordering may not have saved");
+      }
+
+      setEditingStageId(null);
+      setInsertAtIndex(null);
+    } catch (err) {
+      console.error("[blueprint] Add stage failed:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to add stage");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function startInsert(atIndex: number) {
+    setEditingStageId(`new-${atIndex}`);
+    setInsertAtIndex(atIndex);
+  }
+
+  function handleCancelEdit() {
+    setEditingStageId(null);
+    setInsertAtIndex(null);
+  }
+
+  // Build the list of items to render, inserting the blank card at the right position
+  const renderItems: Array<{ type: "stage"; stage: StageData; displayIndex: number } | { type: "new"; displayIndex: number }> = [];
+  let displayIdx = 0;
+
+  for (let i = 0; i < stages.length; i++) {
+    // Insert blank card before this position if needed
+    if (insertAtIndex !== null && insertAtIndex === i) {
+      renderItems.push({ type: "new", displayIndex: displayIdx });
+      displayIdx++;
+    }
+    renderItems.push({ type: "stage", stage: stages[i], displayIndex: displayIdx });
+    displayIdx++;
+  }
+  // Insert at end
+  if (insertAtIndex !== null && insertAtIndex >= stages.length) {
+    renderItems.push({ type: "new", displayIndex: displayIdx });
+  }
+
+  // ── Apply overlay: show instead of normal content while apply is in progress ──
+  if (applyState) {
+    if (applyState.error) {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50/50 py-16">
+          <Warning size={24} weight="duotone" className="text-red-500" />
+          <p className="mt-3 text-[14px] font-medium text-red-800">
+            Failed to apply recommendations
+          </p>
+          <p className="mt-1 text-[13px] text-red-600">{applyState.error}</p>
+          <p className="mt-3 text-[12px] text-muted-foreground">
+            Return to Recommendations to try again.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <CircleNotch size={24} weight="bold" className="animate-spin text-teal-600" />
+        <p className="mt-3 text-[14px] font-medium text-foreground">
+          Applying recommendations...
+        </p>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          {APPLY_STEP_LABELS[applyState.step] ?? "Processing..."}
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Header */}
       {stages.length > 0 && (
         <div className="flex items-center justify-between">
@@ -286,10 +483,8 @@ export function StageBlueprint({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setEditingStage(null);
-                setIsDialogOpen(true);
-              }}
+              onClick={() => startInsert(stages.length)}
+              disabled={editingStageId !== null}
             >
               <Plus size={12} className="mr-1" />
               Add Stage
@@ -311,7 +506,7 @@ export function StageBlueprint({
         </div>
       )}
 
-      {stages.length === 0 ? (
+      {stages.length === 0 && insertAtIndex === null ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
           <Sparkle size={24} weight="duotone" className="text-muted-foreground/40" />
           <p className="mt-3 text-[14px] text-muted-foreground">
@@ -329,10 +524,7 @@ export function StageBlueprint({
             </Button>
             <Button
               variant="outline"
-              onClick={() => {
-                setEditingStage(null);
-                setIsDialogOpen(true);
-              }}
+              onClick={() => startInsert(0)}
             >
               <Plus size={16} className="mr-2" />
               Add Stage
@@ -341,6 +533,7 @@ export function StageBlueprint({
         </div>
       ) : (
         <DndContext
+          id="stage-blueprint-dnd"
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -349,31 +542,65 @@ export function StageBlueprint({
             items={stages.map((s) => s.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-3">
-              {stages.map((stage, i) => (
-                <SortableStageCard
-                  key={stage.id}
-                  stage={stage}
-                  index={i}
-                  onEdit={() => {
-                    setEditingStage(stage);
-                    setIsDialogOpen(true);
-                  }}
-                  onDelete={() => handleDelete(stage.id)}
+            <div className="space-y-1">
+              {renderItems.map((item, ri) => {
+                if (item.type === "new") {
+                  const blankStage = createBlankStage(`new-${insertAtIndex}`);
+                  return (
+                    <div key={`new-${insertAtIndex}`} className="py-1">
+                      <StageCard
+                        stage={blankStage}
+                        index={item.displayIndex}
+                        isEditing
+                        isSaving={isSaving}
+                        onEdit={() => {}}
+                        onDelete={() => handleCancelEdit()}
+                        onSave={(payload) => handleSaveNew(payload, insertAtIndex!)}
+                        onCancel={handleCancelEdit}
+                      />
+                    </div>
+                  );
+                }
+
+                const stage = item.stage;
+                const isEditingThis = editingStageId === stage.id;
+
+                return (
+                  <div key={stage.id}>
+                    {/* Insert-between control BEFORE this card (except before first) */}
+                    {ri > 0 && renderItems[ri - 1]?.type !== "new" && editingStageId === null && (
+                      <InsertBetweenControl
+                        onClick={() => {
+                          // Find the actual stage index
+                          const stageIdx = stages.findIndex((s) => s.id === stage.id);
+                          startInsert(stageIdx);
+                        }}
+                      />
+                    )}
+                    <SortableStageCard
+                      stage={stage}
+                      index={item.displayIndex}
+                      isEditing={isEditingThis}
+                      isSaving={isSaving && isEditingThis}
+                      onEdit={() => setEditingStageId(stage.id)}
+                      onDelete={() => handleDelete(stage.id)}
+                      onSave={(payload) => handleSaveExisting(stage.id, payload)}
+                      onCancel={handleCancelEdit}
+                    />
+                  </div>
+                );
+              })}
+
+              {/* Insert-between control AFTER last card */}
+              {insertAtIndex === null && editingStageId === null && stages.length > 0 && (
+                <InsertBetweenControl
+                  onClick={() => startInsert(stages.length)}
                 />
-              ))}
+              )}
             </div>
           </SortableContext>
         </DndContext>
       )}
-
-      <StageEditDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        playbookId={playbookId}
-        stage={editingStage}
-        onSave={handleStageSaved}
-      />
     </div>
   );
 }

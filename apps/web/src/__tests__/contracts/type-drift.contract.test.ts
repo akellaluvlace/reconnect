@@ -317,6 +317,11 @@ describe("Type Drift Detection", () => {
         rationale: "Candidate market — move quickly",
         max_stages: 3,
         target_days: 14,
+        trade_off: {
+          gains: ["Fast process reduces candidate drop-off"],
+          risks: ["Limited technical depth in compressed stages"],
+          suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+        },
       };
       expect(speedSchema.safeParse(valid).success).toBe(true);
 
@@ -325,6 +330,11 @@ describe("Type Drift Detection", () => {
         rationale: "No rush",
         max_stages: 3,
         target_days: 14,
+        trade_off: {
+          gains: ["Fast process reduces candidate drop-off"],
+          risks: ["Limited technical depth in compressed stages"],
+          suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+        },
       };
       expect(speedSchema.safeParse(invalidRec).success).toBe(false);
     });
@@ -354,6 +364,11 @@ describe("Type Drift Detection", () => {
           rationale: "Normal timeline",
           max_stages: 4,
           target_days: 30,
+          trade_off: {
+            gains: ["Fast process reduces candidate drop-off"],
+            risks: ["Limited technical depth in compressed stages"],
+            suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+          },
         },
         competitive_differentiators: ["Remote-first"],
         skills_priority: {

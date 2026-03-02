@@ -19,6 +19,11 @@ const mockStrategy: HiringStrategyOutput = {
     rationale: "Competitive market",
     max_stages: 4,
     target_days: 14,
+    trade_off: {
+      gains: ["Fast process reduces candidate drop-off"],
+      risks: ["Limited technical depth in compressed stages"],
+      suggestion: "Phone screen → Combined technical + culture → Hiring manager → Offer",
+    },
   },
   competitive_differentiators: [
     "Remote work",

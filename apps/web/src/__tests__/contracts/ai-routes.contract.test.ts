@@ -70,16 +70,20 @@ vi.mock("@/lib/supabase/service-role", () => ({
   }),
 }));
 
-vi.mock("@reconnect/ai", () => ({
-  generateHiringStrategy: mockGenerateHiringStrategy,
-  generateJobDescription: mockGenerateJobDescription,
-  generateStages: mockGenerateStages,
-  generateQuestions: mockGenerateQuestions,
-  generateCandidateProfile: mockGenerateCandidateProfile,
-  synthesizeFeedback: mockSynthesizeFeedback,
-  analyzeCoverage: mockAnalyzeCoverage,
-  AIError: MockAIError,
-}));
+vi.mock("@reconnect/ai", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@reconnect/ai")>();
+  return {
+    generateHiringStrategy: mockGenerateHiringStrategy,
+    generateJobDescription: mockGenerateJobDescription,
+    generateStages: mockGenerateStages,
+    generateQuestions: mockGenerateQuestions,
+    generateCandidateProfile: mockGenerateCandidateProfile,
+    synthesizeFeedback: mockSynthesizeFeedback,
+    analyzeCoverage: mockAnalyzeCoverage,
+    AIError: MockAIError,
+    CoverageAnalysisSchema: actual.CoverageAnalysisSchema,
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Route handler imports (AFTER mocks)

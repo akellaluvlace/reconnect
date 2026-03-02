@@ -21,6 +21,11 @@ export const HiringStrategySchema = z.object({
     rationale: z.string(),
     max_stages: z.number().int().min(2).max(8),
     target_days: z.number().int().min(5).max(90),
+    trade_off: z.object({
+      gains: z.array(z.string()).min(1).max(3),
+      risks: z.array(z.string()).min(1).max(3),
+      suggestion: z.string(),
+    }).optional(),
   }),
   competitive_differentiators: z.array(z.string()).min(1).max(8),
   skills_priority: z.object({
@@ -42,3 +47,18 @@ export const HiringStrategySchema = z.object({
 });
 
 export type HiringStrategyOutput = z.infer<typeof HiringStrategySchema>;
+
+/** Lightweight schema for stage-count adjustments only */
+export const ProcessSpeedAdjustmentSchema = z.object({
+  recommendation: z.enum(["fast_track", "standard", "thorough"]),
+  rationale: z.string(),
+  max_stages: z.number().int().min(2).max(8),
+  target_days: z.number().int().min(5).max(90),
+  trade_off: z.object({
+    gains: z.array(z.string()).min(1).max(3),
+    risks: z.array(z.string()).min(1).max(3),
+    suggestion: z.string(),
+  }),
+});
+
+export type ProcessSpeedAdjustmentOutput = z.infer<typeof ProcessSpeedAdjustmentSchema>;

@@ -5,6 +5,7 @@ import {
   searchWebParallel,
   generateCacheKey,
   AISearchError,
+  scoreIndustryRelevance,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
 
@@ -24,6 +25,7 @@ interface CompetitorListing {
   snippet: string;
   postedDate?: string;
   relevanceScore: number;
+  industryRelevance: number;
 }
 
 /**
@@ -128,7 +130,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { role, level, industry, location } = parsed.data;
+  // Strip quotes from user input to prevent Tavily query structure breakage
+  const stripQuotes = (s: string) => s.replace(/["']/g, "");
+  const role = stripQuotes(parsed.data.role);
+  const level = stripQuotes(parsed.data.level);
+  const industry = stripQuotes(parsed.data.industry);
+  const location = stripQuotes(parsed.data.location);
 
   // Get user's org
   const { data: userData, error: userError } = await supabase
@@ -181,10 +188,13 @@ export async function POST(req: NextRequest) {
 
   // Run Tavily searches
   const currentYear = new Date().getFullYear();
+  // Core role term for industry-focused query (e.g., "Sales Rep" from "Senior Sales Rep")
+  const coreRoleTerm = role.split(/\s+/).slice(-2).join(" ");
   const queries = [
-    `"${role}" "${level}" job ${location} site:indeed.com OR site:linkedin.com/jobs OR site:glassdoor.com OR site:irishjobs.ie`,
-    `"${role}" ${industry} hiring ${location}`,
-    `"${role}" vacancy ${location} ${currentYear}`,
+    `"${role}" ${industry} jobs ${location} site:indeed.com OR site:linkedin.com/jobs OR site:glassdoor.com OR site:irishjobs.ie`,
+    `"${role}" "${industry}" industry hiring ${location}`,
+    `"${role}" ${industry} vacancy ${location} ${currentYear}`,
+    `${industry} "${coreRoleTerm}" hiring ${location}`,
   ];
 
   try {
@@ -192,15 +202,23 @@ export async function POST(req: NextRequest) {
 
     // Map to listing format (strip markdown from Tavily content)
     const allListings: CompetitorListing[] = results
-      .map((r) => ({
-        url: r.url,
-        title: stripMarkdown(r.title),
-        company: extractCompany(r.title, r.content),
-        source: extractSource(r.url),
-        snippet: stripMarkdown(r.content).slice(0, 300),
-        postedDate: r.publishedDate,
-        relevanceScore: r.score,
-      }))
+      .map((r) => {
+        const title = stripMarkdown(r.title);
+        const snippet = stripMarkdown(r.content).slice(0, 300);
+        const industryRel = scoreIndustryRelevance(title, snippet, industry);
+        // Combined score: industry relevance weighted higher (60%) than search relevance (40%)
+        const combinedScore = r.score * 0.4 + industryRel * 0.6;
+        return {
+          url: r.url,
+          title,
+          company: extractCompany(r.title, r.content),
+          source: extractSource(r.url),
+          snippet,
+          postedDate: r.publishedDate,
+          relevanceScore: combinedScore,
+          industryRelevance: industryRel,
+        };
+      })
       .sort((a, b) => b.relevanceScore - a.relevanceScore)
       .slice(0, 20);
 
@@ -215,6 +233,9 @@ export async function POST(req: NextRequest) {
     const liveListings = liveChecks
       .filter((c) => c.live)
       .map((c) => c.listing);
+    if (liveListings.length === 0 && allListings.length > 0) {
+      console.warn(`[competitor-listings] All ${allListings.length} URL liveness checks failed — possible network restriction`);
+    }
     const listings = liveListings.length > 0 ? liveListings : allListings;
 
     // Cache with 7-day TTL

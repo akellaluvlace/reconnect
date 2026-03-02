@@ -6,10 +6,12 @@ import { parseJsonb } from "@/lib/utils/parse-jsonb";
 import {
   JobDescriptionSchema,
   HiringStrategySchema,
+  CoverageAnalysisSchema,
+  StageRefinementsPersistedSchema,
   FocusAreaSchema,
   SuggestedQuestionSchema,
 } from "@reconnect/ai";
-import type { FocusArea, SuggestedQuestion } from "@reconnect/database";
+import type { FocusArea, SuggestedQuestion, StageRefinements } from "@reconnect/database";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -60,6 +62,8 @@ export default async function ProcessPage({
         job_description: parseJsonb(playbook.job_description, JobDescriptionSchema, "job_description"),
         hiring_strategy: parseJsonb(playbook.hiring_strategy, HiringStrategySchema, "hiring_strategy"),
         market_insights: playbook.market_insights as Record<string, unknown> | null,
+        coverage_analysis: parseJsonb((playbook as Record<string, unknown>).coverage_analysis, CoverageAnalysisSchema, "coverage_analysis"),
+        stage_refinements: parseJsonb((playbook as Record<string, unknown>).stage_refinements, StageRefinementsPersistedSchema, "stage_refinements") as StageRefinements | null,
       }}
       initialStages={(stages ?? []).map((s) => ({
         ...s,

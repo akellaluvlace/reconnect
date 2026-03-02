@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 // vi.hoisted ensures these are available when vi.mock factory runs (mock is
 // hoisted to the top of the file before const declarations are initialised).
-const { mockGetUser, mockAnalyzeCoverage, MockAIError } = vi.hoisted(() => {
+const { mockGetUser, mockAnalyzeCoverage, mockAnalyzeCoverageAnchored, MockAIError } = vi.hoisted(() => {
   class MockAIError extends Error {
     name = "AIError";
     constructor(m: string) {
@@ -14,6 +14,7 @@ const { mockGetUser, mockAnalyzeCoverage, MockAIError } = vi.hoisted(() => {
   return {
     mockGetUser: vi.fn(),
     mockAnalyzeCoverage: vi.fn(),
+    mockAnalyzeCoverageAnchored: vi.fn(),
     MockAIError,
   };
 });
@@ -24,10 +25,15 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-vi.mock("@reconnect/ai", () => ({
-  analyzeCoverage: mockAnalyzeCoverage,
-  AIError: MockAIError,
-}));
+vi.mock("@reconnect/ai", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@reconnect/ai")>();
+  return {
+    analyzeCoverage: mockAnalyzeCoverage,
+    analyzeCoverageAnchored: mockAnalyzeCoverageAnchored,
+    AIError: MockAIError,
+    CoverageAnalysisSchema: actual.CoverageAnalysisSchema,
+  };
+});
 
 // Import route handler AFTER mocks are set up
 import { POST } from "@/app/api/ai/analyze-coverage/route";
@@ -179,5 +185,49 @@ describe("POST /api/ai/analyze-coverage", () => {
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe("Failed to analyze coverage");
+  });
+
+  // ── Anchored coverage mode ──
+
+  describe("anchored mode", () => {
+    const ANCHORED_BODY = {
+      ...VALID_BODY,
+      previous_coverage: {
+        requirements_covered: [
+          { requirement: "TypeScript", covered_by_stage: "Technical Screen", covered_by_focus_area: "Coding", coverage_strength: "strong" },
+        ],
+        gaps: [
+          { requirement: "GraphQL", severity: "minor", suggestion: "Add GraphQL FA" },
+        ],
+        redundancies: [],
+        recommendations: ["Add GraphQL"],
+        overall_coverage_score: 50,
+        disclaimer: "AI-generated",
+      },
+      changed_fa_names: ["Coding"],
+      has_additions: false,
+    };
+
+    it("calls analyzeCoverageAnchored when previous_coverage is provided", async () => {
+      setupAuth();
+      mockAnalyzeCoverageAnchored.mockResolvedValue(MOCK_PIPELINE_RESULT);
+
+      const res = await POST(makePost(ANCHORED_BODY));
+
+      expect(res.status).toBe(200);
+      expect(mockAnalyzeCoverageAnchored).toHaveBeenCalledOnce();
+      expect(mockAnalyzeCoverage).not.toHaveBeenCalled();
+    });
+
+    it("falls back to full analyzeCoverage when previous_coverage is absent", async () => {
+      setupAuth();
+      mockAnalyzeCoverage.mockResolvedValue(MOCK_PIPELINE_RESULT);
+
+      const res = await POST(makePost(VALID_BODY));
+
+      expect(res.status).toBe(200);
+      expect(mockAnalyzeCoverage).toHaveBeenCalledOnce();
+      expect(mockAnalyzeCoverageAnchored).not.toHaveBeenCalled();
+    });
   });
 });

@@ -77,5 +77,10 @@ export type {
   OrgSettings,
   PlaybookSettings,
   HiringStrategy,
+  RefinementItem,
+  StageRefinements,
+  StageSnapshot,
+  VersionSnapshot,
+  ProcessIteration,
   CoverageAnalysis,
 } from "./domain-types";

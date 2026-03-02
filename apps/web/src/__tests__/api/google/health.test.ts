@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 const { mockGetGoogleTokens } = vi.hoisted(() => ({
   mockGetGoogleTokens: vi.fn(),
@@ -8,7 +9,21 @@ vi.mock("@/lib/google/client", () => ({
   getGoogleTokens: mockGetGoogleTokens,
 }));
 
+// Mock Supabase — not needed when using CRON_SECRET auth
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(),
+}));
+
 import { GET } from "@/app/api/google/health/route";
+
+// Helper: create a request with CRON_SECRET auth
+const TEST_CRON_SECRET = "test-cron-secret-123";
+
+function makeRequest(): NextRequest {
+  return new NextRequest("http://localhost:3000/api/google/health", {
+    headers: { authorization: `Bearer ${TEST_CRON_SECRET}` },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -17,6 +32,7 @@ import { GET } from "@/app/api/google/health/route";
 describe("GET /api/google/health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.CRON_SECRET = TEST_CRON_SECRET;
   });
 
   it("returns 200 + healthy when tokens are valid", async () => {
@@ -29,12 +45,11 @@ describe("GET /api/google/health", () => {
       needsRefresh: false,
     });
 
-    const res = await GET();
+    const res = await GET(makeRequest());
 
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("healthy");
-    expect(body.email).toBe("workspace@axil.ie");
     expect(body.needsRefresh).toBe(false);
     expect(body.tokenExpiresAt).toBe(futureExpiry.toISOString());
   });
@@ -49,12 +64,11 @@ describe("GET /api/google/health", () => {
       needsRefresh: true,
     });
 
-    const res = await GET();
+    const res = await GET(makeRequest());
 
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("degraded");
-    expect(body.email).toBe("workspace@axil.ie");
     expect(body.needsRefresh).toBe(true);
   });
 
@@ -65,11 +79,28 @@ describe("GET /api/google/health", () => {
       ),
     );
 
-    const res = await GET();
+    const res = await GET(makeRequest());
 
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.status).toBe("error");
     expect(body.detail).toContain("not configured");
+  });
+
+  it("returns 401 when no auth provided and no CRON_SECRET", async () => {
+    delete process.env.CRON_SECRET;
+
+    // Mock Supabase to return no user
+    const { createClient } = await import("@/lib/supabase/server");
+    vi.mocked(createClient).mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: { message: "No session" } }),
+      },
+    } as never);
+
+    const req = new NextRequest("http://localhost:3000/api/google/health");
+    const res = await GET(req);
+
+    expect(res.status).toBe(401);
   });
 });

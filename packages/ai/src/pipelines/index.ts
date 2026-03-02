@@ -22,6 +22,7 @@ export {
 
 export {
   generateHiringStrategy,
+  adjustProcessSpeed,
   buildStrategyContextForJD,
   buildStrategyContextForStages,
   type StrategyPipelineInput,
@@ -33,6 +34,17 @@ export {
   type CoveragePipelineInput,
   type CoveragePipelineResult,
 } from "./coverage-analysis";
+
+export {
+  analyzeCoverageAnchored,
+  partitionCoverage,
+  fixStageNames,
+  type AnchoredCoverageInput,
+  type PartitionInput,
+  type PartitionResult,
+  type ReevalRequirement,
+  type ReevalGap,
+} from "./anchored-coverage";
 
 export {
   synthesizeFeedback,
@@ -51,3 +63,14 @@ export {
   type CandidateProfilePipelineInput,
   type CandidateProfilePipelineResult,
 } from "./candidate-profile";
+
+export {
+  generateRefinements,
+  applyRefinements,
+  applyRefinementsDiff,
+  type RefinementPipelineInput,
+  type RefinementPipelineResult,
+  type ApplyRefinementsPipelineInput,
+  type ApplyRefinementsPipelineResult,
+  type ApplyRefinementsDiffResult,
+} from "./stage-refinements";

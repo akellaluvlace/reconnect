@@ -20,6 +20,7 @@ interface CompetitorListing {
   snippet: string;
   postedDate?: string;
   relevanceScore: number;
+  industryRelevance?: number;
 }
 
 interface PlaybookData {
@@ -145,11 +146,12 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
     pollActiveRef.current = true;
     handlePollingStart();
     let ticks = 0;
+    let consecutiveFailures = 0;
 
     pollRef.current = setInterval(async () => {
       ticks += 1;
-      if (ticks > 60) {
-        // 5 minutes — give up
+      if (ticks > 96) {
+        // 8 minutes — give up
         handlePollingStop();
         setPollingTimedOut(true);
         pollActiveRef.current = false;
@@ -158,7 +160,18 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
       }
       try {
         const res = await fetch(`/api/playbooks/${playbook.id}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          consecutiveFailures += 1;
+          if (res.status === 401) {
+            // Session expired — stop polling, user needs to re-auth
+            handlePollingStop();
+            setPollingTimedOut(true);
+            pollActiveRef.current = false;
+            if (pollRef.current) clearInterval(pollRef.current);
+          }
+          return;
+        }
+        consecutiveFailures = 0;
         const data = await res.json();
         const mi = data.market_insights as MarketInsights | null;
         if (mi?.phase === "deep") {
@@ -170,8 +183,15 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
             description: `${mi.sources?.length ?? 0} web sources analyzed`,
           });
         }
-      } catch {
-        // Silently retry
+      } catch (err) {
+        console.warn("[discovery] Poll failed:", err);
+        consecutiveFailures += 1;
+        if (consecutiveFailures >= 3) {
+          handlePollingStop();
+          setPollingTimedOut(true);
+          pollActiveRef.current = false;
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
       }
     }, 5000);
 
@@ -317,6 +337,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
               industry={playbook.industry ?? ""}
               onUpdate={setStrategy}
               activeItem={currentActiveItem}
+              wizardSkills={playbook.skills ?? []}
             />
           )}
 

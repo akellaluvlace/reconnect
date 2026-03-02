@@ -105,9 +105,8 @@ export function Step3Generate() {
         throw new Error("Playbook was created but returned no ID.");
       }
 
-      // Trigger deep research in background
+      // Trigger deep research in background (fire-and-forget with failure flag)
       if (insightsData.cache_key) {
-        console.log("[deep-research] Triggering with cache_key:", insightsData.cache_key, "playbook:", playbook.id);
         fetch(`/api/ai/market-insights/${insightsData.cache_key}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -115,18 +114,16 @@ export function Step3Generate() {
           keepalive: true,
         })
           .then((res) => {
-            console.log("[deep-research] Response status:", res.status);
-            return res.json().catch(() => ({}));
+            if (!res.ok) {
+              console.error("[deep-research] Trigger returned:", res.status);
+            }
           })
-          .then((data) => console.log("[deep-research] Response:", JSON.stringify(data).slice(0, 200)))
           .catch((err) => console.warn("[deep-research] Trigger failed:", err));
-      } else {
-        console.warn("[deep-research] No cache_key returned from quick insights — skipping deep research");
       }
 
+      // Navigate first — resetDraft on next page mount, not here.
+      // Resetting here causes flash if navigation takes longer than the timeout.
       router.push(`/playbooks/${playbook.id}/discovery`);
-      // Reset draft after navigation starts — avoids flash of empty wizard state
-      setTimeout(resetDraft, 500);
       return;
     } catch (err) {
       const message =

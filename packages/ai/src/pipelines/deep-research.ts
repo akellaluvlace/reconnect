@@ -166,19 +166,26 @@ export async function runDeepResearch(
   });
 
   try {
+    const EXTRACTION_TIMEOUT_MS = 30_000; // 30s per source — skip slow ones
+
     const results = await Promise.allSettled(
       topSources.map((source) =>
-        withRetry(() =>
-          callClaude({
-            endpoint: "sourceExtraction",
-            schema: SourceExtractionSchema,
-            prompt: MARKET_INSIGHTS_PROMPTS.extraction(source, {
-              role: input.role,
-              level: input.level,
+        Promise.race([
+          withRetry(() =>
+            callClaude({
+              endpoint: "sourceExtraction",
+              schema: SourceExtractionSchema,
+              prompt: MARKET_INSIGHTS_PROMPTS.extraction(source, {
+                role: input.role,
+                level: input.level,
+              }),
+              systemPrompt: MARKET_INSIGHTS_PROMPTS.extractionSystem,
             }),
-            systemPrompt: MARKET_INSIGHTS_PROMPTS.extractionSystem,
-          }),
-        ),
+          ),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Extraction timed out after ${EXTRACTION_TIMEOUT_MS / 1000}s: ${source.url}`)), EXTRACTION_TIMEOUT_MS),
+          ),
+        ]),
       ),
     );
 

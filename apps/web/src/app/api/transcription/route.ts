@@ -133,10 +133,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Update recording status to "transcribed" — synthesis is a separate manual step
-    await supabase
+    const { error: finalStatusError } = await supabase
       .from("interviews")
       .update({ recording_status: "transcribed" })
       .eq("id", interview_id);
+
+    if (finalStatusError) {
+      console.error("[transcription] Final status update failed:", finalStatusError.message);
+    }
 
     return NextResponse.json({
       success: true,

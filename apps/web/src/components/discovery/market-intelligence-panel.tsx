@@ -28,6 +28,7 @@ interface CompetitorListing {
   snippet: string;
   postedDate?: string;
   relevanceScore: number;
+  industryRelevance?: number;
 }
 
 interface MarketIntelligencePanelProps {
@@ -94,7 +95,8 @@ export function MarketIntelligencePanel({
       if (data.market_insights) {
         onUpdate(data.market_insights as MarketInsights);
       }
-    } catch {
+    } catch (err) {
+      console.error("[market-panel] Refresh failed:", err);
       toast.error("Failed to refresh market data");
     } finally {
       setIsRefreshing(false);
@@ -175,9 +177,10 @@ export function MarketIntelligencePanel({
             console.error("[competitor-listings] Save failed:", saveRes.status);
             toast.error("Listings fetched but failed to save. They may not persist on reload.");
           }
-        }).catch((err) =>
-          console.error("[competitor-listings] Failed to save to playbook:", err),
-        );
+        }).catch((err) => {
+          console.error("[competitor-listings] Failed to save to playbook:", err);
+          toast.error("Listings fetched but may not persist. Check your connection.");
+        });
       }
 
       if (data.cached) {
@@ -613,6 +616,21 @@ export function MarketIntelligencePanel({
                             <span className="text-[11px] text-muted-foreground">
                               {listing.postedDate}
                             </span>
+                          )}
+                          {listing.industryRelevance != null && (
+                            listing.industryRelevance > 0.5 ? (
+                              <span className="rounded-md bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">
+                                Industry match
+                              </span>
+                            ) : listing.industryRelevance > 0.2 ? (
+                              <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                                Partial match
+                              </span>
+                            ) : (
+                              <span className="rounded-md bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                General
+                              </span>
+                            )
                           )}
                         </div>
                       </div>

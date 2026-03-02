@@ -96,6 +96,11 @@ describe("Schema Tolerance Audit", () => {
         rationale: "Test",
         max_stages: 4,
         target_days: 21,
+        trade_off: {
+          gains: ["Fast process reduces candidate drop-off"],
+          risks: ["Limited technical depth in compressed stages"],
+          suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+        },
       },
       competitive_differentiators: ["A", "B"],
       skills_priority: {
@@ -128,6 +133,11 @@ describe("Schema Tolerance Audit", () => {
             rationale: "Test",
             max_stages: 10,
             target_days: 30,
+            trade_off: {
+              gains: ["Fast process reduces candidate drop-off"],
+              risks: ["Limited technical depth in compressed stages"],
+              suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+            },
           },
         }),
         HiringStrategySchema,
@@ -144,6 +154,11 @@ describe("Schema Tolerance Audit", () => {
             rationale: "Test",
             max_stages: 5,
             target_days: 120,
+            trade_off: {
+              gains: ["Fast process reduces candidate drop-off"],
+              risks: ["Limited technical depth in compressed stages"],
+              suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+            },
           },
         }),
         HiringStrategySchema,

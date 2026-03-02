@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeCoverage, AIError } from "@reconnect/ai";
+import { analyzeCoverage, analyzeCoverageAnchored, AIError, CoverageAnalysisSchema } from "@reconnect/ai";
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
   level: z.string().min(1).max(100),
   jd_requirements: z.object({
-    required: z.array(z.string()),
-    preferred: z.array(z.string()),
-    responsibilities: z.array(z.string()),
+    required: z.array(z.string().max(500)).max(50),
+    preferred: z.array(z.string().max(500)).max(50),
+    responsibilities: z.array(z.string().max(500)).max(50),
   }),
   stages: z.array(
     z.object({
-      name: z.string(),
-      type: z.string(),
+      name: z.string().max(200),
+      type: z.string().max(100),
       focus_areas: z.array(
         z.object({
-          name: z.string(),
-          description: z.string(),
+          name: z.string().max(200),
+          description: z.string().max(1000),
         }),
-      ),
+      ).max(10),
     }),
-  ),
+  ).max(20),
 });
+
+const AnchoredRequestSchema = RequestSchema.extend({
+  previous_coverage: CoverageAnalysisSchema,
+  changed_fa_names: z.array(z.string().max(200)).max(50),
+  has_additions: z.boolean(),
+});
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
@@ -44,6 +52,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
+    // Explicit dispatch: anchored mode if previous_coverage present
+    const rawBody = body as Record<string, unknown>;
+    const isAnchored = "previous_coverage" in rawBody && rawBody.previous_coverage != null;
+
+    if (isAnchored) {
+      const anchoredParsed = AnchoredRequestSchema.safeParse(body);
+      if (!anchoredParsed.success) {
+        return NextResponse.json(
+          { error: "Invalid anchored coverage input", issues: anchoredParsed.error.issues },
+          { status: 400 },
+        );
+      }
+      const result = await analyzeCoverageAnchored(anchoredParsed.data);
+      return NextResponse.json({
+        data: result.data,
+        metadata: result.metadata,
+      });
+    }
+
+    // Full analysis mode
     const parsed = RequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(

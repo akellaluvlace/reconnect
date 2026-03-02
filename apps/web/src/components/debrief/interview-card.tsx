@@ -1,6 +1,6 @@
 "use client";
 
-import type { Json } from "@reconnect/database";
+import type { Json, RecordingStatus as RecordingStatusType } from "@reconnect/database";
 import { RecordingStatus } from "./recording-status";
 import { VideoCamera, ShieldCheck } from "@phosphor-icons/react";
 
@@ -75,7 +75,7 @@ export function InterviewCard({
         )}
 
         {/* Recording status */}
-        <RecordingStatus status={interview.recording_status} />
+        <RecordingStatus status={interview.recording_status as RecordingStatusType | null} />
 
         {/* Meet link */}
         {interview.meet_link && (

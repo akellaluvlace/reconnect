@@ -286,10 +286,10 @@ describe("InterviewStageSchema", () => {
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
   });
 
-  it("rejects fewer than 3 questions", () => {
+  it("rejects zero questions", () => {
     const invalid = {
       ...validStage,
-      suggested_questions: validStage.suggested_questions.slice(0, 2),
+      suggested_questions: [],
     };
     expect(InterviewStageSchema.safeParse(invalid).success).toBe(false);
   });

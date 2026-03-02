@@ -84,6 +84,8 @@ export interface JobDescription {
   confidence: number;
   /** @deprecated Use raw_text only for manually-entered JDs, not AI-generated ones */
   raw_text?: string;
+  /** Sections hidden by the user from the full listing view */
+  hidden_jd_sections?: string[];
 }
 
 export interface MarketInsights {
@@ -168,6 +170,11 @@ export interface HiringStrategy {
     rationale: string;
     max_stages: number;
     target_days: number;
+    trade_off?: {
+      gains: string[];
+      risks: string[];
+      suggestion: string;
+    };
   };
   competitive_differentiators: string[];
   skills_priority: {
@@ -178,6 +185,60 @@ export interface HiringStrategy {
   key_risks: Array<{ risk: string; mitigation: string }>;
   recommendations: string[];
   disclaimer: string;
+}
+
+export interface RefinementItem {
+  id: string;
+  title: string;
+  rationale: string;
+  type: "gap_fix" | "redundancy_fix" | "improvement";
+  priority: "critical" | "important" | "suggested";
+  source_detail?: string;
+  change_summary: string;
+  selected: boolean;
+}
+
+export interface StageSnapshot {
+  name: string;
+  type: string;
+  duration_minutes: number;
+  description: string;
+  focus_areas: FocusArea[];
+  suggested_questions: SuggestedQuestion[];
+}
+
+export interface VersionSnapshot {
+  stages: StageSnapshot[];
+  coverage: CoverageAnalysis;
+  refinements?: {
+    items: RefinementItem[];
+    user_prompt: string;
+    source_coverage_score: number;
+    disclaimer: string;
+  };
+}
+
+export interface ProcessIteration {
+  version: number;
+  score_before: number;
+  score_after: number | null;
+  gaps_before: number;
+  gaps_after: number | null;
+  stages_count: number;
+  items_applied: string[];
+  applied_at: string;
+  change_summary?: string;
+  snapshot?: VersionSnapshot;
+}
+
+export interface StageRefinements {
+  items: RefinementItem[];
+  user_prompt: string;
+  generated_at: string;
+  applied_at?: string;
+  source_coverage_score: number;
+  disclaimer: string;
+  history?: ProcessIteration[];
 }
 
 export interface CoverageAnalysis {

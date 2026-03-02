@@ -20,6 +20,8 @@ export const JobDescriptionSchema = z.object({
   remote_policy: z.string().optional(),
   seniority_signals: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(1),
+  /** Sections hidden by the user — persisted but not AI-generated */
+  hidden_jd_sections: z.array(z.string()).optional(),
 });
 
 export type JobDescriptionOutput = z.infer<typeof JobDescriptionSchema>;

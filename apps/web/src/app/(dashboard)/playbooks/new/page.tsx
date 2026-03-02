@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePlaybookStore } from "@/stores/playbook-store";
 import { WizardProgress } from "@/components/playbooks/wizard/wizard-progress";
 import { Step1BasicInfo } from "@/components/playbooks/wizard/step-1-basic-info";
@@ -7,7 +8,17 @@ import { Step2RoleDetails } from "@/components/playbooks/wizard/step-2-role-deta
 import { Step3Generate } from "@/components/playbooks/wizard/step-3-generate";
 
 export default function NewPlaybookPage() {
-  const { draft, setStep } = usePlaybookStore();
+  const { draft, setStep, resetDraft } = usePlaybookStore();
+
+  // Reset draft on fresh mount — clears stale data from previous playbook creation
+  const didReset = useRef(false);
+  useEffect(() => {
+    if (!didReset.current && draft.step === 3 && draft.generatedContent) {
+      // User returned to /new after a successful generation — reset
+      resetDraft();
+      didReset.current = true;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">

@@ -68,6 +68,41 @@ const JOB_BOARD_DOMAINS = [
   "irishtechnews.ie",
 ];
 
+/** Industry keyword map for relevance scoring */
+export const INDUSTRY_KEYWORDS: Record<string, string[]> = {
+  technology: ["technology", "software", "tech", "it", "digital", "saas", "cloud", "data", "cyber", "ai"],
+  finance: ["finance", "banking", "financial", "insurance", "fintech", "investment", "wealth", "capital", "fund"],
+  healthcare: ["healthcare", "medical", "pharma", "pharmaceutical", "hospital", "clinical", "biotech", "health"],
+  retail: ["retail", "ecommerce", "e-commerce", "store", "consumer", "fmcg", "merchandise", "wholesale"],
+  manufacturing: ["manufacturing", "production", "factory", "industrial", "plant", "engineering", "assembly", "supply chain"],
+  "professional services": ["consulting", "advisory", "professional services", "legal", "accounting", "audit", "law"],
+};
+
+/**
+ * Score how relevant a search result is to a given industry.
+ * Returns 0-1 based on keyword matches in title + snippet.
+ */
+export function scoreIndustryRelevance(
+  title: string,
+  snippet: string,
+  industry: string,
+): number {
+  const combined = `${title} ${snippet}`.toLowerCase();
+
+  // Look up keywords from map, or extract words from custom industry
+  const keywords = INDUSTRY_KEYWORDS[industry.toLowerCase()]
+    ?? industry.toLowerCase().split(/[\s,]+/).filter((w) => w.length > 2);
+
+  if (keywords.length === 0) return 0.5; // neutral if no keywords
+
+  let matches = 0;
+  for (const kw of keywords) {
+    if (combined.includes(kw)) matches++;
+  }
+
+  return Math.min(matches / Math.max(keywords.length * 0.3, 1), 1);
+}
+
 /**
  * Count verified job postings by searching actual job boards.
  * Returns the deduplicated count + which domains had results.
@@ -76,7 +111,7 @@ const JOB_BOARD_DOMAINS = [
 export async function countJobPostings(
   role: string,
   location: string,
-): Promise<{ count: number; domains: string[] }> {
+): Promise<{ count: number; domains: string[]; failed: boolean }> {
   const client = getSearchClient();
 
   try {
@@ -98,13 +133,13 @@ export async function countJobPostings(
       }
     }
 
-    return { count: results.length, domains: [...domains] };
+    return { count: results.length, domains: [...domains], failed: false };
   } catch (error) {
     console.warn(
       "[AI Search] Job posting count failed:",
       error instanceof Error ? error.message : error,
     );
-    return { count: 0, domains: [] };
+    return { count: 0, domains: [], failed: true };
   }
 }
 

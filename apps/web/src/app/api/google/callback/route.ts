@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
@@ -6,6 +7,7 @@ import {
   googleClientSecret,
   googleRedirectUri,
   GOOGLE_SCOPES,
+  requireGoogleEnv,
 } from "@/lib/google/env";
 
 /**
@@ -33,6 +35,8 @@ export function getGoogleOAuthUrl(): string {
  */
 export async function GET(req: NextRequest) {
   try {
+    requireGoogleEnv();
+
     // 1. Auth check
     const supabase = await createClient();
     const {
@@ -69,7 +73,22 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 3. Get authorization code from query params
+    // 3. CSRF state verification
+    const cookieStore = await cookies();
+    const savedState = cookieStore.get("google_oauth_state")?.value;
+    const returnedState = req.nextUrl.searchParams.get("state");
+    // Clear the state cookie regardless of outcome
+    cookieStore.delete("google_oauth_state");
+
+    if (!savedState || !returnedState || savedState !== returnedState) {
+      console.error("[google/callback] State mismatch — possible CSRF");
+      return NextResponse.json(
+        { error: "Invalid OAuth state — please try again" },
+        { status: 403 },
+      );
+    }
+
+    // 4. Get authorization code from query params
     const code = req.nextUrl.searchParams.get("code");
     if (!code) {
       return NextResponse.json(
@@ -107,7 +126,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const tokens = (await tokenResponse.json()) as {
+    const rawTokens = await tokenResponse.json();
+    if (!rawTokens.access_token || typeof rawTokens.expires_in !== "number") {
+      console.error("[google/callback] Unexpected token response:", JSON.stringify(rawTokens).slice(0, 300));
+      return NextResponse.json(
+        { error: "Unexpected Google token response format" },
+        { status: 502 },
+      );
+    }
+    const tokens = rawTokens as {
       access_token: string;
       refresh_token?: string;
       expires_in: number;
@@ -132,7 +159,15 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userInfo = (await userInfoResponse.json()) as {
+    const rawUserInfo = await userInfoResponse.json();
+    if (!rawUserInfo.email || typeof rawUserInfo.email !== "string") {
+      console.error("[google/callback] Unexpected userinfo response:", JSON.stringify(rawUserInfo).slice(0, 300));
+      return NextResponse.json(
+        { error: "Google account did not return an email address" },
+        { status: 502 },
+      );
+    }
+    const userInfo = rawUserInfo as {
       email: string;
       hd?: string; // Workspace domain
     };
@@ -144,25 +179,41 @@ export async function GET(req: NextRequest) {
 
     const serviceClient = createServiceRoleClient();
 
-    // Singleton table — delete existing row then insert fresh
-    await serviceClient.from("platform_google_config").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    // Singleton table — update existing row or insert if none exists (no delete gap)
+    const configPayload = {
+      google_email: userInfo.email,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token ?? "",
+      token_expiry: tokenExpiry,
+      scopes: [...GOOGLE_SCOPES],
+      auto_record_enabled: true,
+      workspace_domain: userInfo.hd ?? null,
+    };
 
-    const { error: upsertError } = await serviceClient
+    const { data: existingRow } = await serviceClient
       .from("platform_google_config")
-      .insert({
-        google_email: userInfo.email,
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token ?? "",
-        token_expiry: tokenExpiry,
-        scopes: [...GOOGLE_SCOPES],
-        auto_record_enabled: true,
-        workspace_domain: userInfo.hd ?? null,
-      });
+      .select("id")
+      .limit(1)
+      .maybeSingle();
 
-    if (upsertError) {
+    let configError: { message: string } | null = null;
+    if (existingRow) {
+      const { error } = await serviceClient
+        .from("platform_google_config")
+        .update(configPayload)
+        .eq("id", existingRow.id);
+      configError = error;
+    } else {
+      const { error } = await serviceClient
+        .from("platform_google_config")
+        .insert(configPayload);
+      configError = error;
+    }
+
+    if (configError) {
       console.error(
-        "[google/callback] DB upsert failed:",
-        upsertError.message,
+        "[google/callback] DB write failed:",
+        configError.message,
       );
       return NextResponse.json(
         { error: "Failed to store Google configuration" },

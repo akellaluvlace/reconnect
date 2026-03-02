@@ -20,7 +20,7 @@ export const InterviewStageSchema = z.object({
   duration_minutes: z.number(),
   description: z.string(),
   focus_areas: z.array(FocusAreaSchema).min(1).max(5),
-  suggested_questions: z.array(SuggestedQuestionSchema).min(3).max(20),
+  suggested_questions: z.array(SuggestedQuestionSchema).min(1).max(20),
   rationale: z.string().optional(),
 });
 

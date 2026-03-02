@@ -39,7 +39,7 @@ Guidelines:
 - Skills priority: Separate must-have from nice-to-have based on market availability
 - Always include at least 2 key risks with concrete mitigations`,
 
-  user: (input: StrategyGenerationInput) => {
+  user: (input: StrategyGenerationInput, maxStagesOverride?: number) => {
     const mi = input.market_insights;
 
     return `Analyze the following market data and generate a comprehensive hiring strategy:
@@ -58,11 +58,19 @@ MARKET DATA:
 - Emerging skills: ${mi.key_skills.emerging.slice(0, 5).join(", ")}
 - Declining skills: ${mi.key_skills.declining.slice(0, 3).join(", ")}
 - Trends: ${mi.trends.slice(0, 5).join("; ")}
+${maxStagesOverride != null ? `
+USER OVERRIDE: The user has specifically requested exactly ${maxStagesOverride} interview stages. You MUST set max_stages to ${maxStagesOverride} and design the process around exactly ${maxStagesOverride} stages. Adjust your rationale to explain why ${maxStagesOverride} stages is appropriate for this role.` : ""}
 
 Produce:
 1. market_classification (employer_market/balanced/candidate_market) + rationale
 2. salary_positioning (lead/match/lag) + rationale + recommended range
-3. process_speed (fast_track/standard/thorough) + rationale + max_stages + target_days
+3. process_speed:
+   - recommendation (fast_track/standard/thorough) + rationale (2-3 sentences)
+   - max_stages + target_days
+   - trade_off: REQUIRED even on initial recommendation. Explain your choice:
+     * gains (1-3 bullets, max 15 words each): what this stage count specifically enables for this role — e.g. "Dedicated technical deep-dive on ${mi.key_skills.required.slice(0, 2).join(" and ")}" not generic "thorough evaluation"
+     * risks (1-3 bullets, max 15 words each): what remains uncovered or challenging at this count — e.g. "Limited stakeholder exposure before offer stage" not generic "some risk"
+     * suggestion: one specific sentence on how to structure these stages — name the stages, e.g. "Phone screen → Technical assessment → Hiring manager → Final panel with VP"
 4. competitive_differentiators (what can make this role stand out)
 5. skills_priority (must_have, nice_to_have, emerging_premium)
 6. key_risks with mitigations

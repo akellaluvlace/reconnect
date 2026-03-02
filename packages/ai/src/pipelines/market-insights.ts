@@ -111,7 +111,7 @@ export async function generateDeepInsights(
   // --- Deep research (steps 1-4) + verified job posting count (parallel) ---
   const s2 = trace.step("deep-research", { sub_pipeline: "deepResearch" });
   let research: DeepResearchResult;
-  let verifiedPostings: { count: number; domains: string[] } = { count: 0, domains: [] };
+  let verifiedPostings: { count: number; domains: string[]; failed: boolean } = { count: 0, domains: [], failed: false };
   try {
     const researchInput: DeepResearchInput = {
       ...input,
@@ -130,6 +130,7 @@ export async function generateDeepInsights(
       source_count: research.source_count,
       verified_postings: verifiedPostings.count,
       verified_postings_domains: verifiedPostings.domains,
+      verified_postings_failed: verifiedPostings.failed,
     });
   } catch (err) {
     s2.fail(err instanceof Error ? err.message : String(err));
@@ -171,15 +172,18 @@ export async function generateDeepInsights(
     // Only set if Tavily actually found listings (count > 0).
     const synthesisData = { ...synthesisResult.data };
     const aiCount = synthesisData.competition.job_postings_count;
-    synthesisData.competition = {
-      ...synthesisData.competition,
-      job_postings_count: verifiedPostings.count > 0
-        ? verifiedPostings.count
-        : undefined,
-      job_postings_domains: verifiedPostings.count > 0
-        ? verifiedPostings.domains
-        : undefined,
-    };
+    // Only override AI count with verified data when Tavily search succeeded
+    if (!verifiedPostings.failed) {
+      synthesisData.competition = {
+        ...synthesisData.competition,
+        job_postings_count: verifiedPostings.count > 0
+          ? verifiedPostings.count
+          : undefined,
+        job_postings_domains: verifiedPostings.count > 0
+          ? verifiedPostings.domains
+          : undefined,
+      };
+    }
 
     const result: MarketInsightsOutput = {
       ...synthesisData,
@@ -209,7 +213,9 @@ export async function generateDeepInsights(
     const outWarnings: string[] = [];
     if (research.extractions.length === 0) outWarnings.push("No extractions — synthesis based on model knowledge only despite deep research");
     if (result.salary.confidence < 0.5) outWarnings.push(`Low salary confidence even after deep research: ${result.salary.confidence}`);
-    if (aiCount != null && aiCount !== verifiedPostings.count) {
+    if (verifiedPostings.failed) {
+      outWarnings.push("Job board search failed — AI count NOT overridden (may be inaccurate)");
+    } else if (aiCount != null && aiCount !== verifiedPostings.count) {
       outWarnings.push(`Replaced AI-hallucinated postings count (${aiCount}) with verified Tavily count (${verifiedPostings.count}) from ${verifiedPostings.domains.join(", ")}`);
     }
     s4.ok({}, outWarnings);

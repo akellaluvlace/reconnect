@@ -8,7 +8,8 @@
     ".": "./src/index.ts",
     "./schemas": "./src/schemas/index.ts",
     "./prompts": "./src/prompts/index.ts",
-    "./pipelines": "./src/pipelines/index.ts"
+    "./pipelines": "./src/pipelines/index.ts",
+    "./merge": "./src/merge-refinement-diff.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

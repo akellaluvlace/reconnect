@@ -22,6 +22,8 @@ interface CoverageAnalysisPanelProps {
   level: string;
   jd: JobDescription;
   stages: StageData[];
+  initialAnalysis: CoverageAnalysis | null;
+  onAnalysisChange?: (analysis: CoverageAnalysis) => void;
 }
 
 const SEVERITY_CONFIG = {
@@ -42,8 +44,10 @@ export function CoverageAnalysisPanel({
   level,
   jd,
   stages,
+  initialAnalysis,
+  onAnalysisChange,
 }: CoverageAnalysisPanelProps) {
-  const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(initialAnalysis);
 
   const opKey = `coverage-${playbookId}`;
   const { status } = useAIGenerationStore(
@@ -51,17 +55,24 @@ export function CoverageAnalysisPanel({
   );
   const isAnalyzing = status === "loading";
 
-  // Subscribe to store changes to apply results (avoids setState in useEffect body)
+  // Sync analysis with parent state (apply flow updates coverage externally)
+  useEffect(() => {
+    setAnalysis(initialAnalysis);
+  }, [initialAnalysis]);
+
+  // Subscribe to store changes to apply results
   const handleStoreChange = useCallback((op: { status: string; result: unknown; error: string | null }) => {
     if (op.status === "success" && op.result) {
-      setAnalysis(op.result as CoverageAnalysis);
+      const data = op.result as CoverageAnalysis;
+      setAnalysis(data);
+      onAnalysisChange?.(data);
       useAIGenerationStore.getState().clearOperation(opKey);
     }
     if (op.status === "error" && op.error) {
       toast.error(op.error);
       useAIGenerationStore.getState().clearOperation(opKey);
     }
-  }, [opKey]);
+  }, [opKey, onAnalysisChange]);
 
   useEffect(() => {
     return useAIGenerationStore.subscribe((state, prevState) => {
@@ -103,6 +114,17 @@ export function CoverageAnalysisPanel({
       }
 
       const { data } = await res.json();
+
+      // Persist to DB immediately (runs even if component unmounts during AI call)
+      const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coverage_analysis: data }),
+      });
+      if (!saveRes.ok) {
+        console.error("[coverage] Auto-save failed:", await saveRes.text().catch(() => ""));
+      }
+
       return data;
     });
   }

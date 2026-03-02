@@ -206,4 +206,37 @@ describe("POST /api/ai/generate-strategy", () => {
     const body = await res.json();
     expect(body.error).toBe("Failed to generate hiring strategy");
   });
+
+  it("passes max_stages_override to pipeline when provided", async () => {
+    setupAuth();
+    mockGenerateHiringStrategy.mockResolvedValue(MOCK_PIPELINE_RESULT);
+
+    const res = await POST(
+      makePost({ ...VALID_BODY, max_stages_override: 5 }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockGenerateHiringStrategy).toHaveBeenCalledWith(
+      expect.objectContaining({ max_stages_override: 5 }),
+    );
+  });
+
+  it("accepts request without max_stages_override (backward compatible)", async () => {
+    setupAuth();
+    mockGenerateHiringStrategy.mockResolvedValue(MOCK_PIPELINE_RESULT);
+
+    const res = await POST(makePost(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    expect(mockGenerateHiringStrategy).toHaveBeenCalledOnce();
+  });
+
+  it("rejects max_stages_override outside valid range", async () => {
+    setupAuth();
+
+    const res = await POST(makePost({ ...VALID_BODY, max_stages_override: 10 }));
+
+    expect(res.status).toBe(400);
+    expect(mockGenerateHiringStrategy).not.toHaveBeenCalled();
+  });
 });

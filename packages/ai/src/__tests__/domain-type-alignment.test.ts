@@ -56,6 +56,11 @@ describe("HiringStrategy — schema vs domain type", () => {
         rationale: "Test",
         max_stages: 4,
         target_days: 21,
+        trade_off: {
+          gains: ["Fast process reduces candidate drop-off"],
+          risks: ["Limited technical depth in compressed stages"],
+          suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+        },
       },
       competitive_differentiators: ["A"],
       skills_priority: {
@@ -159,6 +164,11 @@ describe("AI output types — disclaimer requirement", () => {
         rationale: "Test",
         max_stages: 4,
         target_days: 21,
+        trade_off: {
+          gains: ["Fast process reduces candidate drop-off"],
+          risks: ["Limited technical depth in compressed stages"],
+          suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+        },
       },
       competitive_differentiators: ["A"],
       skills_priority: { must_have: ["TS"], nice_to_have: [], emerging_premium: [] },

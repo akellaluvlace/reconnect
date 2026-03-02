@@ -197,11 +197,9 @@ async function triggerDeepResearch(
   }
 
   if (!quickCached) {
-    console.log("[deep-research] Quick cache not found for key:", cacheKey.slice(0, 16) + "...", "org:", orgId);
+    console.warn("[deep-research] Quick cache not found for key:", cacheKey.slice(0, 16) + "...", "— deep research aborted");
     return;
   }
-
-  console.log("[deep-research] Found quick cache, search_params:", JSON.stringify(quickCached.search_params).slice(0, 100));
 
   // Validate the cached search_params before using
   const SearchParamsSchema = z.object({
@@ -214,17 +212,15 @@ async function triggerDeepResearch(
 
   const paramsParsed = SearchParamsSchema.safeParse(quickCached.search_params);
   if (!paramsParsed.success) {
-    console.error("[deep-research] Corrupted search_params in cache:", quickCached.search_params);
+    console.error("[deep-research] Corrupted search_params in cache — deep research aborted:", quickCached.search_params);
     return;
   }
 
   const input = paramsParsed.data;
 
   try {
-    console.log("[deep-research] Starting generateDeepInsights for:", input.role, input.level, input.industry);
     const startTime = Date.now();
     const deepInsights = await generateDeepInsights(input);
-    console.log("[deep-research] Deep insights generated in", ((Date.now() - startTime) / 1000).toFixed(1) + "s, sources:", deepInsights.sources?.length ?? 0);
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -252,7 +248,6 @@ async function triggerDeepResearch(
 
     // Write deep results back to the playbook so the UI polling picks it up
     if (playbookId) {
-      console.log("[deep-research] Writing deep results back to playbook:", playbookId);
       const { error: playbookError } = await db
         .from("playbooks")
         .update({ market_insights: deepInsights as unknown as Json })
@@ -260,12 +255,8 @@ async function triggerDeepResearch(
 
       if (playbookError) {
         console.error("[deep-research] Failed to update playbook:", playbookError);
-      } else {
-        console.log("[deep-research] Playbook updated successfully");
       }
     }
-
-    console.log("[deep-research] DONE — success");
   } catch (error) {
     console.error("[deep-research] FAILED:", error instanceof Error ? error.message : error);
   }

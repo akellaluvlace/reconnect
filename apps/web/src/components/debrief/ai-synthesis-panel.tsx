@@ -5,6 +5,7 @@ import type { Json } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkle, CircleNotch, FileText } from "@phosphor-icons/react";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import { toast } from "sonner";
 
 interface StageInfo {
@@ -372,12 +373,8 @@ export function AISynthesisPanel({
           </div>
         )}
 
-      {/* AI Disclaimer from synthesis output */}
-      {synthesis.disclaimer && (
-        <p className="text-[12px] text-muted-foreground italic border-l-2 border-border/60 pl-3">
-          {synthesis.disclaimer}
-        </p>
-      )}
+      {/* AI Disclaimer */}
+      <AIDisclaimer />
     </div>
   );
 }

@@ -3,7 +3,7 @@ export { AI_CONFIG, SEARCH_CONFIG, PROMPT_VERSIONS, type AIEndpoint } from "./co
 
 // Clients
 export { callClaude, callClaudeText } from "./client";
-export { searchWeb, searchWebParallel, type SearchResult } from "./search-client";
+export { searchWeb, searchWebParallel, countJobPostings, scoreIndustryRelevance, INDUSTRY_KEYWORDS, type SearchResult } from "./search-client";
 
 // Errors
 export {
@@ -27,6 +27,9 @@ export { pipelineLogger, type PipelineLogEntry } from "./logger";
 
 // Coercion
 export { coerceAIResponse } from "./coerce";
+
+// Merge
+export { mergeRefinementDiff, type MergeResult } from "./merge-refinement-diff";
 
 // Tracer
 export { PipelineTrace, checkParams } from "./tracer";

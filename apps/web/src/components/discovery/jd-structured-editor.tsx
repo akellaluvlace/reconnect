@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { JobDescription, MarketInsights, HiringStrategy } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { JDSectionCard } from "./jd-section-card";
-import { Sparkle, CircleNotch, Info, Copy } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, Info, Copy, Eye, EyeSlash } from "@phosphor-icons/react";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
 
@@ -68,6 +68,48 @@ export function JDStructuredEditor({
   );
 
   const { save } = useAutoSave({ onSave: saveToServer });
+
+  const [hiddenSections, setHiddenSections] = useState<Set<string>>(() => {
+    const hidden = (jobDescription as Record<string, unknown> | null)?.hidden_jd_sections;
+    return new Set(Array.isArray(hidden) ? (hidden as string[]) : []);
+  });
+
+  // Keep a ref to the latest jobDescription so the toggle handler never reads stale data
+  const jdRef = useRef(jobDescription);
+  jdRef.current = jobDescription;
+
+  // Sync hiddenSections when jobDescription changes externally (e.g. after AI regeneration)
+  useEffect(() => {
+    const hidden = (jobDescription as Record<string, unknown> | null)?.hidden_jd_sections;
+    const arr = Array.isArray(hidden) ? (hidden as string[]) : [];
+    setHiddenSections(new Set(arr));
+  }, [jobDescription]);
+
+  function handleToggleSection(section: string) {
+    setHiddenSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+
+    // Side effects outside the state updater — use ref for fresh jobDescription
+    const nextHidden = new Set(hiddenSections);
+    if (nextHidden.has(section)) {
+      nextHidden.delete(section);
+    } else {
+      nextHidden.add(section);
+    }
+    const updated = {
+      ...jdRef.current,
+      hidden_jd_sections: [...nextHidden],
+    };
+    onUpdate(updated as JobDescription);
+    save(updated);
+  }
 
   function handleSectionChange(
     section: keyof JobDescription,
@@ -182,9 +224,39 @@ export function JDStructuredEditor({
         </Button>
       </div>
 
-      {activeItem === "full-listing" && (
+      {activeItem === "full-listing" && (() => {
+        const sectionToggles = [
+          { key: "summary", label: "Summary" },
+          { key: "responsibilities", label: "Responsibilities" },
+          { key: "required", label: "Required Qualifications" },
+          { key: "preferred", label: "Preferred Qualifications" },
+          { key: "benefits", label: "Benefits" },
+          { key: "salary_range", label: "Salary Range" },
+        ];
+
+        return (
         <div className="space-y-6">
-          <div className="flex justify-end">
+          {/* Toggle panel + Copy */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              {sectionToggles.map(({ key, label }) => {
+                const isVisible = !hiddenSections.has(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => handleToggleSection(key)}
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                      isVisible
+                        ? "border-teal-200 bg-teal-50/60 text-teal-800 hover:bg-teal-50"
+                        : "border-border/40 bg-muted/30 text-muted-foreground line-through hover:bg-muted/50"
+                    }`}
+                  >
+                    {isVisible ? <Eye size={13} weight="duotone" /> : <EyeSlash size={13} weight="duotone" />}
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -192,31 +264,33 @@ export function JDStructuredEditor({
                 const lines: string[] = [];
                 lines.push(role);
                 if (level) lines.push(`${level} · ${industry}`);
-                if (jobDescription.summary) {
+                if (!hiddenSections.has("summary") && jobDescription.summary) {
                   lines.push("", jobDescription.summary);
                 }
-                if (jobDescription.responsibilities?.length) {
+                if (!hiddenSections.has("responsibilities") && jobDescription.responsibilities?.length) {
                   lines.push("", "Responsibilities:");
                   jobDescription.responsibilities.forEach((r) => lines.push(`- ${r}`));
                 }
-                if (jobDescription.requirements?.required?.length) {
+                if (!hiddenSections.has("required") && jobDescription.requirements?.required?.length) {
                   lines.push("", "Required Qualifications:");
                   jobDescription.requirements.required.forEach((r) => lines.push(`- ${r}`));
                 }
-                if (jobDescription.requirements?.preferred?.length) {
+                if (!hiddenSections.has("preferred") && jobDescription.requirements?.preferred?.length) {
                   lines.push("", "Preferred Qualifications:");
                   jobDescription.requirements.preferred.forEach((r) => lines.push(`- ${r}`));
                 }
-                if (jobDescription.benefits?.length) {
+                if (!hiddenSections.has("benefits") && jobDescription.benefits?.length) {
                   lines.push("", "Benefits:");
                   jobDescription.benefits.forEach((b) => lines.push(`- ${b}`));
                 }
-                const sr = jobDescription.salary_range;
-                if (sr && sr.min && sr.min > 0) {
-                  lines.push(
-                    "",
-                    `Salary Range: ${sr.currency} ${sr.min.toLocaleString()} – ${sr.max.toLocaleString()}`,
-                  );
+                if (!hiddenSections.has("salary_range")) {
+                  const sr = jobDescription.salary_range;
+                  if (sr && sr.min && sr.min > 0) {
+                    lines.push(
+                      "",
+                      `Salary Range: ${sr.currency} ${sr.min.toLocaleString()} – ${sr.max.toLocaleString()}`,
+                    );
+                  }
                 }
                 navigator.clipboard.writeText(lines.join("\n")).then(
                   () => toast.success("Job description copied to clipboard"),
@@ -236,7 +310,7 @@ export function JDStructuredEditor({
               <p className="mt-1 text-[14px] text-muted-foreground">{level} · {industry}</p>
             )}
 
-            {jobDescription.summary && (
+            {!hiddenSections.has("summary") && jobDescription.summary && (
               <div className="mt-6">
                 <p className="text-[14px] leading-relaxed text-foreground/80 whitespace-pre-wrap">
                   {jobDescription.summary}
@@ -244,7 +318,7 @@ export function JDStructuredEditor({
               </div>
             )}
 
-            {jobDescription.responsibilities && jobDescription.responsibilities.length > 0 && (
+            {!hiddenSections.has("responsibilities") && jobDescription.responsibilities && jobDescription.responsibilities.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Responsibilities</h3>
                 <ul className="space-y-2">
@@ -258,7 +332,7 @@ export function JDStructuredEditor({
               </div>
             )}
 
-            {jobDescription.requirements?.required && jobDescription.requirements.required.length > 0 && (
+            {!hiddenSections.has("required") && jobDescription.requirements?.required && jobDescription.requirements.required.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Required Qualifications</h3>
                 <ul className="space-y-2">
@@ -272,7 +346,7 @@ export function JDStructuredEditor({
               </div>
             )}
 
-            {jobDescription.requirements?.preferred && jobDescription.requirements.preferred.length > 0 && (
+            {!hiddenSections.has("preferred") && jobDescription.requirements?.preferred && jobDescription.requirements.preferred.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Preferred Qualifications</h3>
                 <ul className="space-y-2">
@@ -286,7 +360,7 @@ export function JDStructuredEditor({
               </div>
             )}
 
-            {jobDescription.benefits && jobDescription.benefits.length > 0 && (
+            {!hiddenSections.has("benefits") && jobDescription.benefits && jobDescription.benefits.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-3">Benefits</h3>
                 <ul className="space-y-2">
@@ -300,7 +374,7 @@ export function JDStructuredEditor({
               </div>
             )}
 
-            {jobDescription.salary_range && jobDescription.salary_range.min > 0 && (
+            {!hiddenSections.has("salary_range") && jobDescription.salary_range && jobDescription.salary_range.min > 0 && (
               <div className="mt-6">
                 <h3 className="text-[15px] font-semibold tracking-tight text-foreground mb-2">Salary Range</h3>
                 <p className="text-[18px] font-bold tabular-nums tracking-tight">
@@ -310,7 +384,8 @@ export function JDStructuredEditor({
             )}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {activeItem === "summary" && (
         <JDSectionCard

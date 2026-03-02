@@ -45,6 +45,11 @@ vi.mock("crypto", () => ({
   randomBytes: mockRandomBytes,
 }));
 
+vi.mock("@reconnect/ai", () => ({
+  synthesizeFeedback: vi.fn(),
+  AIError: class AIError extends Error { name = "AIError"; },
+}));
+
 vi.mock("@/lib/email/resend-client", () => ({
   sendCollaboratorInvite: vi.fn().mockResolvedValue(undefined),
 }));

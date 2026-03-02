@@ -15,6 +15,11 @@ const validStrategy = {
     rationale: "Competitive market — slow processes lose candidates",
     max_stages: 4,
     target_days: 14,
+    trade_off: {
+      gains: ["Fast process reduces candidate drop-off"],
+      risks: ["Limited technical depth in compressed stages"],
+      suggestion: "Phone screen → Technical assessment → Hiring manager → Offer",
+    },
   },
   competitive_differentiators: [
     "Flexible remote work policy",
