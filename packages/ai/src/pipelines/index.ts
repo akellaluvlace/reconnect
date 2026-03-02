@@ -44,6 +44,7 @@ export {
   type PartitionResult,
   type ReevalRequirement,
   type ReevalGap,
+  type GapTarget,
 } from "./anchored-coverage";
 
 export {

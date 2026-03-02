@@ -45,6 +45,16 @@ export interface PartitionResult {
   };
 }
 
+/** Maps a gap requirement to the FA that was added to fix it */
+export interface GapTarget {
+  /** The gap requirement text (from coverage analysis) */
+  gap_requirement: string;
+  /** The name of the FA that was added to address this gap */
+  fa_name: string;
+  /** The description of the added FA */
+  fa_description: string;
+}
+
 // ── Pure logic ──
 
 /**
@@ -144,6 +154,8 @@ export interface AnchoredCoverageInput {
   previous_coverage: CoverageAnalysisOutput;
   changed_fa_names: string[];
   has_additions: boolean;
+  /** Maps gap requirements to the FAs specifically added to fix them */
+  gap_targets?: GapTarget[];
 }
 
 /**
@@ -209,6 +221,14 @@ export async function analyzeCoverageAnchored(
       input.jd_requirements.required.length +
       input.jd_requirements.preferred.length;
 
+    // Build gap target lookup for targeted_fix prompt context
+    const gapTargetMap = new Map<string, GapTarget>();
+    if (input.gap_targets) {
+      for (const gt of input.gap_targets) {
+        gapTargetMap.set(gt.gap_requirement.toLowerCase().trim(), gt);
+      }
+    }
+
     const promptInput: AnchoredCoveragePromptInput = {
       role: input.role,
       level: input.level,
@@ -219,11 +239,23 @@ export async function analyzeCoverageAnchored(
           previous_fa: r.previous_fa,
           reason: r.reason satisfies "fa_changed" | "fa_missing",
         })),
-        ...needsReeval.gaps.map((g) => ({
-          requirement: g.requirement,
-          previous_severity: g.previous_severity,
-          reason: "new_fas_added" as const,
-        })),
+        ...needsReeval.gaps.map((g) => {
+          const target = gapTargetMap.get(g.requirement.toLowerCase().trim());
+          if (target) {
+            return {
+              requirement: g.requirement,
+              previous_severity: g.previous_severity,
+              reason: "targeted_fix" as const,
+              target_fa_name: target.fa_name,
+              target_fa_description: target.fa_description,
+            };
+          }
+          return {
+            requirement: g.requirement,
+            previous_severity: g.previous_severity,
+            reason: "new_fas_added" as const,
+          };
+        }),
       ],
       anchored_count: anchored.covered.length + anchored.gaps.length,
       total_requirements: totalRequirements,
@@ -288,6 +320,44 @@ export async function analyzeCoverageAnchored(
       }
     }
 
+    // Step 6b: Deterministic fallback — if a gap has a targeted FA that exists in stages,
+    // force it to covered (weak). This guarantees score progression for targeted fixes.
+    let fallbackCount = 0;
+    if (gapTargetMap.size > 0) {
+      const currentFALookup = new Map<string, { stage: string; fa: string }>();
+      for (const stage of input.stages) {
+        for (const fa of stage.focus_areas) {
+          currentFALookup.set(fa.name.toLowerCase().trim(), {
+            stage: stage.name,
+            fa: fa.name,
+          });
+        }
+      }
+
+      const remainingGaps: typeof mergedGaps[number][] = [];
+      for (const gap of mergedGaps) {
+        const target = gapTargetMap.get(gap.requirement.toLowerCase().trim());
+        if (target) {
+          const faInStages = currentFALookup.get(target.fa_name.toLowerCase().trim());
+          if (faInStages) {
+            // Force to covered (weak) — the FA exists and was designed for this gap
+            mergedCovered.push({
+              requirement: gap.requirement,
+              covered_by_stage: faInStages.stage,
+              covered_by_focus_area: faInStages.fa,
+              coverage_strength: "weak",
+            });
+            fallbackCount++;
+            continue;
+          }
+        }
+        remainingGaps.push(gap);
+      }
+      // Replace mergedGaps contents with filtered version
+      mergedGaps.length = 0;
+      mergedGaps.push(...remainingGaps);
+    }
+
     // Step 7: Compute score deterministically
     const { score, breakdown } = computeCoverageScore(mergedCovered, mergedGaps);
 
@@ -300,6 +370,7 @@ export async function analyzeCoverageAnchored(
       ai_gaps_pre_dedup: result.data.gaps.length,
       ai_internal_dups_removed: aiInternalDupsRemoved,
       auto_added_gaps: autoAddedGaps,
+      fallback_count: fallbackCount,
       total_covered: mergedCovered.length,
       total_gaps: mergedGaps.length,
       gaps_critical: breakdown.gaps_critical,

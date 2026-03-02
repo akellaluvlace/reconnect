@@ -29,6 +29,11 @@ const AnchoredRequestSchema = RequestSchema.extend({
   previous_coverage: CoverageAnalysisSchema,
   changed_fa_names: z.array(z.string().max(200)).max(50),
   has_additions: z.boolean(),
+  gap_targets: z.array(z.object({
+    gap_requirement: z.string().max(500),
+    fa_name: z.string().max(200),
+    fa_description: z.string().max(1000),
+  })).max(50).optional(),
 });
 
 export const maxDuration = 60;

@@ -304,6 +304,27 @@ export function ProcessPageClient({
         type: VALID_STAGE_TYPES.has(s.type) ? s.type : "custom",
       }));
 
+      // Build gap_targets: map gap_fix items to their added FAs
+      const gapTargets: Array<{ gap_requirement: string; fa_name: string; fa_description: string }> = [];
+      if (mergeResult.hasAdditions) {
+        for (const item of selectedItems) {
+          if (item.type === "gap_fix" && item.source_detail) {
+            // Find added FAs from the diff patches
+            for (const patch of data.patches) {
+              if (patch.add_focus_areas) {
+                for (const addition of patch.add_focus_areas) {
+                  gapTargets.push({
+                    gap_requirement: item.source_detail,
+                    fa_name: addition.focus_area.name,
+                    fa_description: addition.focus_area.description,
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Step 2: Atomic replace stages
       setApplyStep("saving");
 
@@ -364,6 +385,9 @@ export function ProcessPageClient({
             coverageBody.previous_coverage = prevCoverage;
             coverageBody.changed_fa_names = mergeResult.changedFANames;
             coverageBody.has_additions = mergeResult.hasAdditions;
+            if (gapTargets.length > 0) {
+              coverageBody.gap_targets = gapTargets;
+            }
           }
 
           const covRes = await fetch("/api/ai/analyze-coverage", {

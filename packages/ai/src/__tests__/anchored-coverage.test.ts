@@ -253,7 +253,7 @@ describe("analyzeCoverageAnchored", () => {
 
     const result = await analyzeCoverageAnchored(input);
 
-    expect(result.metadata.prompt_version).toBe("1.0.0");
+    expect(result.metadata.prompt_version).toBe("2.0.0");
     expect(result.metadata.generated_at).toBeTruthy();
   });
 
@@ -306,5 +306,160 @@ describe("analyzeCoverageAnchored", () => {
     const nodeEntries = result.data.requirements_covered.filter((r) => r.requirement === "Node.js experience");
     expect(nodeEntries).toHaveLength(1);
     expect(nodeEntries[0].coverage_strength).toBe("moderate"); // anchored value, not AI's "weak"
+  });
+
+  it("passes gap_targets as targeted_fix reason to prompt", async () => {
+    const input = makeInput({
+      stages: [
+        {
+          name: "Technical Round",
+          type: "technical",
+          focus_areas: [
+            { name: "Frontend Skills", description: "Frontend dev skills" },
+            { name: "Backend Skills", description: "Backend dev skills" },
+            { name: "Cloud Infrastructure", description: "AWS cloud services" },
+          ],
+        },
+        {
+          name: "Behavioral Round",
+          type: "behavioral",
+          focus_areas: [
+            { name: "Leadership Assessment", description: "Leadership eval" },
+          ],
+        },
+      ],
+      changed_fa_names: ["Cloud Infrastructure"],
+      has_additions: true,
+      gap_targets: [
+        {
+          gap_requirement: "AWS certification",
+          fa_name: "Cloud Infrastructure",
+          fa_description: "AWS cloud services",
+        },
+      ],
+    });
+
+    mockCallClaude.mockResolvedValueOnce(makeMockAIResponse(
+      [
+        { requirement: "AWS certification", covered_by_stage: "Technical Round", covered_by_focus_area: "Cloud Infrastructure", coverage_strength: "moderate" },
+      ],
+      [
+        { requirement: "GraphQL experience", severity: "minor", suggestion: "Not covered" },
+      ],
+    ));
+
+    const result = await analyzeCoverageAnchored(input);
+
+    const awsEntry = result.data.requirements_covered.find((r) => r.requirement === "AWS certification");
+    expect(awsEntry).toBeTruthy();
+    expect(awsEntry?.covered_by_focus_area).toBe("Cloud Infrastructure");
+
+    // Verify the prompt included targeted_fix context
+    const promptArg = mockCallClaude.mock.calls[0][0].prompt;
+    expect(promptArg).toContain("SPECIFICALLY ADDED");
+    expect(promptArg).toContain("Cloud Infrastructure");
+  });
+
+  it("deterministic fallback: gap with targeted FA forced to weak if AI still marks as gap", async () => {
+    const input = makeInput({
+      stages: [
+        {
+          name: "Technical Round",
+          type: "technical",
+          focus_areas: [
+            { name: "Frontend Skills", description: "Frontend dev skills" },
+            { name: "Backend Skills", description: "Backend dev skills" },
+            { name: "Cloud Infrastructure", description: "AWS cloud services" },
+          ],
+        },
+        {
+          name: "Behavioral Round",
+          type: "behavioral",
+          focus_areas: [
+            { name: "Leadership Assessment", description: "Leadership eval" },
+          ],
+        },
+      ],
+      changed_fa_names: ["Cloud Infrastructure"],
+      has_additions: true,
+      gap_targets: [
+        {
+          gap_requirement: "AWS certification",
+          fa_name: "Cloud Infrastructure",
+          fa_description: "AWS cloud services",
+        },
+      ],
+    });
+
+    // AI STILL marks AWS as a gap despite the targeted FA existing
+    mockCallClaude.mockResolvedValueOnce(makeMockAIResponse(
+      [],
+      [
+        { requirement: "AWS certification", severity: "important", suggestion: "Still not covered" },
+        { requirement: "GraphQL experience", severity: "minor", suggestion: "Not covered" },
+      ],
+    ));
+
+    const result = await analyzeCoverageAnchored(input);
+
+    // Fallback should force AWS to covered (weak) since "Cloud Infrastructure" FA exists
+    const awsEntry = result.data.requirements_covered.find((r) => r.requirement === "AWS certification");
+    expect(awsEntry).toBeTruthy();
+    expect(awsEntry?.coverage_strength).toBe("weak");
+    expect(awsEntry?.covered_by_focus_area).toBe("Cloud Infrastructure");
+
+    // AWS should NOT appear in gaps anymore
+    const awsGap = result.data.gaps.find((g) => g.requirement === "AWS certification");
+    expect(awsGap).toBeUndefined();
+
+    // Non-targeted gap (GraphQL) stays as gap
+    const gqlGap = result.data.gaps.find((g) => g.requirement === "GraphQL experience");
+    expect(gqlGap).toBeTruthy();
+  });
+
+  it("fallback does NOT fire when targeted FA was removed from stages", async () => {
+    const input = makeInput({
+      stages: [
+        {
+          name: "Technical Round",
+          type: "technical",
+          focus_areas: [
+            { name: "Frontend Skills", description: "Frontend dev skills" },
+            { name: "Backend Skills", description: "Backend dev skills" },
+          ],
+        },
+        {
+          name: "Behavioral Round",
+          type: "behavioral",
+          focus_areas: [
+            { name: "Leadership Assessment", description: "Leadership eval" },
+          ],
+        },
+      ],
+      changed_fa_names: [],
+      has_additions: true,
+      gap_targets: [
+        {
+          gap_requirement: "AWS certification",
+          fa_name: "Cloud Infrastructure",
+          fa_description: "AWS cloud services",
+        },
+      ],
+    });
+
+    mockCallClaude.mockResolvedValueOnce(makeMockAIResponse(
+      [],
+      [
+        { requirement: "AWS certification", severity: "critical", suggestion: "Not covered" },
+        { requirement: "GraphQL experience", severity: "minor", suggestion: "Not covered" },
+      ],
+    ));
+
+    const result = await analyzeCoverageAnchored(input);
+
+    // Fallback should NOT fire — Cloud Infrastructure FA doesn't exist in stages
+    const awsGap = result.data.gaps.find((g) => g.requirement === "AWS certification");
+    expect(awsGap).toBeTruthy();
+    expect(awsGap?.severity).toBe("critical");
   });
 });

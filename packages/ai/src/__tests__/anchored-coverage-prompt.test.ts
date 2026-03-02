@@ -119,4 +119,47 @@ describe("Anchored Coverage prompt", () => {
     const prompt = ANCHORED_COVERAGE_PROMPT.user(input);
     expect(prompt).toContain("0 of 7");
   });
+
+  it("user prompt includes targeted fix context with FA name and description", () => {
+    const input: AnchoredCoveragePromptInput = {
+      ...validInput,
+      requirements_to_evaluate: [
+        {
+          requirement: "AWS certification",
+          previous_severity: "critical",
+          reason: "targeted_fix",
+          target_fa_name: "Cloud Infrastructure",
+          target_fa_description: "Design and manage AWS services including EC2, S3, Lambda",
+        },
+      ],
+    };
+    const prompt = ANCHORED_COVERAGE_PROMPT.user(input);
+    expect(prompt).toContain("AWS certification");
+    expect(prompt).toContain("Cloud Infrastructure");
+    expect(prompt).toContain("SPECIFICALLY ADDED");
+    expect(prompt).toContain("Design and manage AWS services");
+  });
+
+  it("user prompt handles mix of targeted_fix and new_fas_added reasons", () => {
+    const input: AnchoredCoveragePromptInput = {
+      ...validInput,
+      requirements_to_evaluate: [
+        {
+          requirement: "AWS certification",
+          previous_severity: "critical",
+          reason: "targeted_fix",
+          target_fa_name: "Cloud Infrastructure",
+          target_fa_description: "AWS cloud architecture and services",
+        },
+        {
+          requirement: "GraphQL experience",
+          previous_severity: "minor",
+          reason: "new_fas_added",
+        },
+      ],
+    };
+    const prompt = ANCHORED_COVERAGE_PROMPT.user(input);
+    expect(prompt).toContain("SPECIFICALLY ADDED");
+    expect(prompt).toContain("new FA was ADDED that may cover this");
+  });
 });

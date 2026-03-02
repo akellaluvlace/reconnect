@@ -13,6 +13,13 @@ type ReevalRequirementPrompt =
       requirement: string;
       previous_severity: "critical" | "important" | "minor";
       reason: "new_fas_added";
+    }
+  | {
+      requirement: string;
+      previous_severity: "critical" | "important" | "minor";
+      reason: "targeted_fix";
+      target_fa_name: string;
+      target_fa_description: string;
     };
 
 export interface AnchoredCoveragePromptInput {
@@ -45,6 +52,7 @@ CRITICAL RULES:
   - If no FA targets it → gap
 - If a requirement's original FA was removed, check if ANY remaining FA covers it before marking as gap
 - Be strict: adding a "Testing" FA does NOT provide "moderate" coverage for "Cloud architecture"
+- When a requirement says "SPECIFICALLY ADDED to address this gap", the named FA was designed for it — it should provide at least weak coverage unless the FA description is completely unrelated
 - Also provide redundancies and recommendations based on the FULL set of stages`,
 
   user: (input: AnchoredCoveragePromptInput) => {
@@ -53,7 +61,9 @@ CRITICAL RULES:
     const requirementsList = input.requirements_to_evaluate
       .map((r, i) => {
         let reasonText: string;
-        if (r.reason === "new_fas_added") {
+        if (r.reason === "targeted_fix") {
+          reasonText = `Previously a gap (${r.previous_severity}). FA "${r.target_fa_name}: ${r.target_fa_description}" was SPECIFICALLY ADDED to address this gap — evaluate coverage strength`;
+        } else if (r.reason === "new_fas_added") {
           reasonText = `Previously a gap (${r.previous_severity}), new FA was ADDED that may cover this`;
         } else if (r.reason === "fa_changed") {
           reasonText = `Previously covered by "${r.previous_fa}" (${r.previous_strength}), but that FA was REMOVED/CHANGED`;

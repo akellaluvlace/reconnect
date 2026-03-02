@@ -65,6 +65,7 @@ You analyze coverage analysis results and generate specific, actionable refineme
 
 Rules:
 - gap_fix items MUST reference an actual gap from the coverage analysis — generate EXACTLY one gap_fix per gap, no more
+- gap_fix items MUST include source_detail with the EXACT gap requirement text they address (copy it verbatim from the GAPS list)
 - redundancy_fix items MUST reference an actual redundancy — generate at most one per redundancy
 - improvement items are general process improvements — only if score is below 70%, otherwise skip
 - Do NOT generate more refinement items than there are actual issues (gaps + redundancies + weak items)

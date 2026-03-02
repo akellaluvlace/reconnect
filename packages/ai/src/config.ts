@@ -106,5 +106,5 @@ export const PROMPT_VERSIONS = {
   candidateProfile: "1.0.0",
   refinementGeneration: "1.0.0",
   refinementApply: "2.0.0",
-  anchoredCoverage: "1.0.0",
+  anchoredCoverage: "2.0.0",
 } as const;
