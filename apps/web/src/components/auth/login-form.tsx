@@ -26,7 +26,7 @@ const loginSchema = z.object({
 
 type LoginData = z.infer<typeof loginSchema>;
 
-export function LoginForm({ authError }: { authError?: string }) {
+export function LoginForm({ authError, sessionExpired }: { authError?: string; sessionExpired?: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(authError ?? null);
   const {
@@ -81,6 +81,11 @@ export function LoginForm({ authError }: { authError?: string }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {sessionExpired && !error && (
+            <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+              Your session has expired. Please sign in again.
+            </div>
+          )}
           {error && (
             <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
               {error}

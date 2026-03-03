@@ -20,6 +20,7 @@ import { RecommendationsPanel } from "./recommendations-panel";
 import { Sparkle, CircleNotch, ArrowRight, ClockCounterClockwise } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 export interface StageData {
   id: string;
@@ -95,6 +96,7 @@ export function ProcessPageClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage_refinements: data }),
     });
+    if (handleSessionExpired(saveRes)) return;
     if (!saveRes.ok) {
       console.error("[process] Refinements save failed:", await saveRes.text().catch(() => ""));
       toast.warning("Auto-save failed — your changes may not persist");
@@ -123,6 +125,7 @@ export function ProcessPageClient({
         body: JSON.stringify(coercedStages),
       });
 
+      if (handleSessionExpired(replaceRes)) return;
       if (!replaceRes.ok) throw new Error("Failed to restore stages");
       const result = await replaceRes.json();
       const created: StageData[] = result.data ?? [];
@@ -133,6 +136,7 @@ export function ProcessPageClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ coverage_analysis: snapshot.coverage }),
       });
+      if (handleSessionExpired(covPatchRes)) return;
       if (!covPatchRes.ok) {
         console.error("[process] Coverage restore save failed:", await covPatchRes.text().catch(() => ""));
         toast.warning("Stages restored but coverage may not have saved");
@@ -172,6 +176,7 @@ export function ProcessPageClient({
   function buildApplyRequestBody(selectedItems: RefinementItem[], userPrompt: string) {
     const body: Record<string, unknown> = {
       mode: "apply_diff",
+      playbook_id: playbook.id,
       role: playbook.title,
       level: playbook.level ?? "",
       industry: playbook.industry ?? "",
@@ -268,6 +273,7 @@ export function ProcessPageClient({
         throw err;
       });
 
+      if (handleSessionExpired(aiRes)) return;
       if (!aiRes.ok) {
         const err = await aiRes.json().catch(() => ({}));
         throw new Error(err.error || "Failed to apply recommendations");
@@ -340,6 +346,7 @@ export function ProcessPageClient({
         body: JSON.stringify(coercedStages),
       });
 
+      if (handleSessionExpired(replaceRes)) return;
       if (!replaceRes.ok) {
         throw new Error("Failed to save updated stages");
       }
@@ -408,6 +415,7 @@ export function ProcessPageClient({
             throw err;
           });
 
+          if (handleSessionExpired(covRes)) return;
           if (covRes.ok) {
             const covData = await covRes.json();
             newCoverage = covData.data;
@@ -469,6 +477,7 @@ export function ProcessPageClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(combinedPayload),
       });
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[process] Combined save failed:", await saveRes.text().catch(() => ""));
         toast.warning("Apply completed but save may have failed — check Coverage tab");

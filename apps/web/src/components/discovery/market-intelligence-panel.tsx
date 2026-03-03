@@ -19,6 +19,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface CompetitorListing {
   url: string;
@@ -88,6 +89,7 @@ export function MarketIntelligencePanel({
             setIsRefreshing(true);
             try {
               const res = await fetch(`/api/playbooks/${playbookId}`);
+              if (handleSessionExpired(res)) return;
               if (!res.ok) throw new Error("Failed to refresh");
               const data = await res.json();
               if (data.market_insights) {
@@ -120,6 +122,7 @@ export function MarketIntelligencePanel({
     setIsRefreshing(true);
     try {
       const res = await fetch(`/api/playbooks/${playbookId}`);
+      if (handleSessionExpired(res)) return;
       if (!res.ok) throw new Error("Failed to refresh");
       const data = await res.json();
       if (data.market_insights) {
@@ -149,6 +152,7 @@ export function MarketIntelligencePanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) throw new Error("Failed to get cache key");
       const data = await res.json();
 
@@ -161,6 +165,7 @@ export function MarketIntelligencePanel({
         body: JSON.stringify({ playbook_id: playbookId }),
       });
 
+      if (handleSessionExpired(deepRes)) return;
       if (!deepRes.ok) throw new Error("Failed to trigger deep research");
 
       // Restart polling in the parent (survives tab switches)
@@ -196,6 +201,7 @@ export function MarketIntelligencePanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? `Request failed (${res.status})`);
@@ -215,6 +221,7 @@ export function MarketIntelligencePanel({
             competitor_listings: { listings: fetchedListings, generated_at: data.generated_at },
           }),
         }).then((saveRes) => {
+          if (handleSessionExpired(saveRes)) return;
           if (!saveRes.ok) {
             console.error("[competitor-listings] Save failed:", saveRes.status);
             toast.error("Listings fetched but failed to save. They may not persist on reload.");

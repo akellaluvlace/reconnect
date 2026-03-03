@@ -24,6 +24,7 @@ import { StageCard, type StageEditPayload } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
 import { Sparkle, CircleNotch, Plus, Warning } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { StageData } from "./process-page-client";
 
 export interface ApplyState {
@@ -188,6 +189,10 @@ export function StageBlueprint({
             }),
           ),
         );
+        // Check if any delete returned 401 (session expired)
+        for (const r of deleteResults) {
+          if (r.status === "fulfilled" && handleSessionExpired(r.value)) return;
+        }
         const rejected = deleteResults.filter((r) => r.status === "rejected");
         const httpFailed = deleteResults.filter(
           (r) => r.status === "fulfilled" && !r.value.ok,
@@ -237,6 +242,7 @@ export function StageBlueprint({
         throw err;
       });
 
+      if (handleSessionExpired(aiRes)) return;
       if (!aiRes.ok) {
         const err = await aiRes.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate stages");
@@ -260,6 +266,7 @@ export function StageBlueprint({
         },
       );
 
+      if (handleSessionExpired(createRes)) return;
       if (!createRes.ok) {
         throw new Error("Failed to save generated stages");
       }
@@ -303,6 +310,7 @@ export function StageBlueprint({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok || res.status === 207) {
         throw new Error("Reorder failed");
       }
@@ -324,6 +332,7 @@ export function StageBlueprint({
         { method: "DELETE" },
       );
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) throw new Error("Delete failed");
     } catch {
       onStagesChange(prev);
@@ -343,6 +352,7 @@ export function StageBlueprint({
         },
       );
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to save stage");
@@ -372,6 +382,7 @@ export function StageBlueprint({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to add stage");
@@ -398,6 +409,7 @@ export function StageBlueprint({
           })),
         }),
       });
+      if (handleSessionExpired(reorderRes)) return;
       if (!reorderRes.ok) {
         console.warn("[blueprint] Reorder after insert failed:", reorderRes.status);
         toast.warning("Stage added but ordering may not have saved");

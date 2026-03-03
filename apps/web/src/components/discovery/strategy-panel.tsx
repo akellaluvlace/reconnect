@@ -19,6 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface StrategyPanelProps {
   playbookId: string;
@@ -133,6 +134,7 @@ export function StrategyPanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to adjust stages");
@@ -146,6 +148,7 @@ export function StrategyPanel({
         body: JSON.stringify({ hiring_strategy: data }),
       });
 
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[strategy] Auto-save after stage adjustment failed");
         toast.error("Strategy updated but failed to save. Try refreshing.");
@@ -204,6 +207,7 @@ export function StrategyPanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate strategy");
@@ -217,6 +221,7 @@ export function StrategyPanel({
         body: JSON.stringify({ hiring_strategy: data }),
       });
 
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[strategy] Auto-save failed");
         toast.error("Strategy generated but failed to save. Try refreshing the page.");

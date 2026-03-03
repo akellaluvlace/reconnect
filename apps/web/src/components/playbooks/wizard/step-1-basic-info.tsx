@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RoleSuggestInput } from "./role-suggest-input";
 import { ArrowRight } from "@phosphor-icons/react";
 
 const step1Schema = z.object({
@@ -59,10 +60,10 @@ export function Step1BasicInfo() {
               <FormItem>
                 <FormLabel className="text-[13px]">Role Title</FormLabel>
                 <FormControl>
-                  <Input
+                  <RoleSuggestInput
+                    value={field.value}
+                    onChange={field.onChange}
                     placeholder="e.g., Senior Software Engineer"
-                    autoComplete="off"
-                    {...field}
                   />
                 </FormControl>
                 <FormMessage />

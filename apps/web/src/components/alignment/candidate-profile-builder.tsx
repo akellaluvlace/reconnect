@@ -6,6 +6,7 @@ import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Sparkle, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface CandidateProfileBuilderProps {
   playbookId: string;
@@ -74,6 +75,7 @@ export function CandidateProfileBuilder({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate candidate profile");
@@ -88,6 +90,7 @@ export function CandidateProfileBuilder({
         body: JSON.stringify({ candidate_profile: data }),
       });
 
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[candidate-profile] Auto-save failed");
         toast.error("Profile generated but failed to save. Try refreshing the page.");

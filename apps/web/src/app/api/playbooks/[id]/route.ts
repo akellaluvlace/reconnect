@@ -6,7 +6,7 @@ import type { Json } from "@reconnect/database";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const MAX_JSONB_SIZE = 100_000; // ~100KB
+const MAX_JSONB_SIZE = 250_000; // ~250KB — snapshots with 5 iterations can reach ~120KB
 
 function jsonbSizeCheck(val: Record<string, unknown> | undefined) {
   if (!val) return true;

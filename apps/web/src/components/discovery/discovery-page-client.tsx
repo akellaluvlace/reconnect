@@ -8,6 +8,7 @@ import { JDStructuredEditor } from "./jd-structured-editor";
 import { Lock, Sparkle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 /** Market research items that require deep research to be complete */
 const DEEP_GATED_MARKET_ITEMS = new Set(["listings"]);
@@ -161,14 +162,14 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
       try {
         const res = await fetch(`/api/playbooks/${playbook.id}`);
         if (!res.ok) {
-          consecutiveFailures += 1;
-          if (res.status === 401) {
-            // Session expired — stop polling, user needs to re-auth
+          if (handleSessionExpired(res)) {
+            // Session expired — stop polling and redirect
             handlePollingStop();
-            setPollingTimedOut(true);
             pollActiveRef.current = false;
             if (pollRef.current) clearInterval(pollRef.current);
+            return;
           }
+          consecutiveFailures += 1;
           return;
         }
         consecutiveFailures = 0;

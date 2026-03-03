@@ -11,6 +11,7 @@ import {
   Eye,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface ShareLinkData {
   id: string;
@@ -43,6 +44,7 @@ export function ShareableLink({
         body: JSON.stringify({ playbook_id: playbookId }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to create share link");
@@ -67,6 +69,7 @@ export function ShareableLink({
         method: "DELETE",
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to revoke link");

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Sparkle, Plus, Trash, CircleNotch } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { SuggestedQuestion } from "@reconnect/database";
 
 interface QuestionBankProps {
@@ -52,6 +53,7 @@ export function QuestionBank({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) throw new Error("Failed to regenerate questions");
 
       const { data } = await res.json();
@@ -75,6 +77,7 @@ export function QuestionBank({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ suggested_questions: updated }),
       });
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[questions] Post-regeneration save failed:", saveRes.status);
         toast.error("Questions regenerated but failed to save");
@@ -106,6 +109,8 @@ export function QuestionBank({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ suggested_questions: updated }),
+    }).then((res) => {
+      handleSessionExpired(res);
     }).catch((err) => {
       console.error("[questions] Save failed:", err);
       toast.error("Failed to save question");
@@ -124,6 +129,8 @@ export function QuestionBank({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ suggested_questions: updated }),
+    }).then((res) => {
+      handleSessionExpired(res);
     }).catch((err) => {
       console.error("[questions] Delete save failed:", err);
       toast.error("Failed to save changes");

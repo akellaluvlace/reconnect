@@ -22,6 +22,7 @@ import {
   ClockCounterClockwise,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import type { StageData } from "./process-page-client";
 
@@ -181,6 +182,7 @@ export function RecommendationsPanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate recommendations");
@@ -213,6 +215,7 @@ export function RecommendationsPanel({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ stage_refinements: payload }),
     });
+    if (handleSessionExpired(saveRes)) return;
     if (!saveRes.ok) {
       console.error("[recommendations] Auto-save failed:", await saveRes.text().catch(() => ""));
       toast.warning("Auto-save failed — your changes may not persist");

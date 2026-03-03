@@ -12,6 +12,7 @@ import {
   CircleNotch,
   Sparkle,
 } from "@phosphor-icons/react";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 const levelLabels: Record<string, string> = {
   junior: "Junior",
@@ -58,6 +59,7 @@ export function Step3Generate() {
         }),
       });
 
+      if (handleSessionExpired(insightsResponse)) return;
       if (!insightsResponse.ok) {
         const insightsError = await insightsResponse.json().catch(() => ({}));
         throw new Error(
@@ -92,6 +94,7 @@ export function Step3Generate() {
         }),
       });
 
+      if (handleSessionExpired(saveResponse)) return;
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json().catch(() => ({}));
         throw new Error(
@@ -114,6 +117,7 @@ export function Step3Generate() {
           keepalive: true,
         })
           .then((res) => {
+            if (handleSessionExpired(res)) return;
             if (!res.ok) {
               console.error("[deep-research] Trigger returned:", res.status);
             }

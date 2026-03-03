@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Brain, Sparkle, CircleNotch, FileText } from "@phosphor-icons/react";
 import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface StageInfo {
   id: string;
@@ -195,6 +196,7 @@ export function AISynthesisPanel({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to generate synthesis");

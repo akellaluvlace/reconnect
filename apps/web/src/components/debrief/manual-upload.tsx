@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { UploadSimple, CircleNotch, FileAudio } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 const ACCEPTED_TYPES = ["audio/mp4", "audio/mpeg", "audio/webm", "video/mp4", "video/webm"];
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
@@ -73,6 +74,7 @@ export function ManualUpload({
 
       setProgress(90);
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Upload failed");

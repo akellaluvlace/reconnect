@@ -14,6 +14,7 @@ import {
   Sparkle,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { StageData } from "./process-page-client";
 
 interface CoverageAnalysisPanelProps {
@@ -114,6 +115,7 @@ export function CoverageAnalysisPanel({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to analyze coverage");
@@ -127,6 +129,7 @@ export function CoverageAnalysisPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ coverage_analysis: data }),
       });
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[coverage] Auto-save failed:", await saveRes.text().catch(() => ""));
         toast.warning("Coverage analysis generated but failed to save — try re-analyzing");

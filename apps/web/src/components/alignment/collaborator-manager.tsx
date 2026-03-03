@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { UsersThree, Trash, CircleNotch, EnvelopeSimple, CheckCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface StageInfo {
   id: string;
@@ -71,6 +72,7 @@ export function CollaboratorManager({
         }),
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to send invite");
@@ -97,6 +99,7 @@ export function CollaboratorManager({
         method: "DELETE",
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed to revoke invite");

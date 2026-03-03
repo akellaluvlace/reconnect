@@ -38,8 +38,11 @@ const GenerateSchema = z.object({
   user_prompt: z.string().max(500).optional(),
 });
 
+const MAX_REFINEMENT_ITERATIONS = 2;
+
 const ApplyDiffSchema = z.object({
   mode: z.literal("apply_diff"),
+  playbook_id: z.string().uuid().optional(),
   role: z.string().min(1).max(200),
   level: z.string().max(100),
   industry: z.string().max(200),
@@ -161,6 +164,25 @@ export async function POST(req: NextRequest) {
           { error: "Invalid input", issues: parsed.error.issues },
           { status: 400 },
         );
+      }
+
+      // Server-side iteration cap — prevents stale clients from exceeding limit
+      if (parsed.data.playbook_id) {
+        const { data: pb } = await supabase
+          .from("playbooks")
+          .select("*")
+          .eq("id", parsed.data.playbook_id)
+          .single();
+        const refinements = (pb as Record<string, unknown> | null)?.stage_refinements as Record<string, unknown> | null;
+        const history = refinements?.history;
+        const iterationCount = Array.isArray(history) ? history.length : 0;
+        if (iterationCount >= MAX_REFINEMENT_ITERATIONS) {
+          console.log(`[generate-refinements] Blocked: ${iterationCount} iterations already (max ${MAX_REFINEMENT_ITERATIONS})`);
+          return NextResponse.json(
+            { error: `AI refinement limit reached (${MAX_REFINEMENT_ITERATIONS} iterations). Please make manual adjustments.` },
+            { status: 429 },
+          );
+        }
       }
 
       console.log(`[TRACE:applyRefinementsDiff:start] OK { items=${parsed.data.selected_items.length}, stages=${parsed.data.current_stages.length}, role="${parsed.data.role}" }`);

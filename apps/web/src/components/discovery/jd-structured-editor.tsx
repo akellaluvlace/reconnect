@@ -8,6 +8,7 @@ import { JDSectionCard } from "./jd-section-card";
 import { Sparkle, CircleNotch, Info, Copy, Eye, EyeSlash } from "@phosphor-icons/react";
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
+import { handleSessionExpired } from "@/lib/fetch-utils";
 
 const SALARY_LABELS: Record<string, string> = {
   lead: "Lead Market",
@@ -62,6 +63,7 @@ export function JDStructuredEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: data }),
       });
+      if (handleSessionExpired(res)) return;
       if (!res.ok) throw new Error("Failed to save");
     },
     [playbookId],
@@ -163,6 +165,7 @@ export function JDStructuredEditor({
         throw err;
       });
 
+      if (handleSessionExpired(res)) return;
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         if (err.issues) console.error("[jd-editor] Validation issues:", JSON.stringify(err.issues, null, 2));
@@ -176,6 +179,7 @@ export function JDStructuredEditor({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ job_description: data }),
       });
+      if (handleSessionExpired(saveRes)) return;
       if (!saveRes.ok) {
         console.error("[jd-editor] Auto-save after regeneration failed");
         toast.error("JD regenerated but failed to save. Try refreshing the page.");
