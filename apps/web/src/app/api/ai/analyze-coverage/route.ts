@@ -36,7 +36,8 @@ const AnchoredRequestSchema = RequestSchema.extend({
   })).max(50).optional(),
 });
 
-export const maxDuration = 60;
+// Coverage analysis observed at 31s but can spike under load. Vercel Pro supports up to 300s.
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {

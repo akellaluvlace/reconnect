@@ -10,7 +10,7 @@ import {
 import { PROMPT_VERSIONS } from "../config";
 import { withRetry } from "../retry";
 import { PipelineTrace, checkParams } from "../tracer";
-import { computeCoverageScore, deduplicateCovered, deduplicateGaps } from "../coverage-score";
+import { computeCoverageScore, deduplicateCovered, deduplicateGaps, SEVERITY_RANK } from "../coverage-score";
 import type { CoveragePipelineResult } from "./coverage-analysis";
 
 // ── Types ──
@@ -299,6 +299,25 @@ export async function analyzeCoverageAnchored(
     const mergedCovered = [...anchored.covered, ...dedupedAICovered];
     const mergedGaps = [...anchored.gaps, ...dedupedAIGaps];
 
+    // Step 5b: Gap severity floor — a gap that existed before can get LESS severe or
+    // become covered, but NEVER more severe after applying improvements.
+    // This prevents non-deterministic AI reclassification from minor→critical.
+    const prevGapSeverity = new Map<string, "critical" | "important" | "minor">();
+    for (const g of input.previous_coverage.gaps) {
+      prevGapSeverity.set(g.requirement.toLowerCase().trim(), g.severity);
+    }
+    for (const gap of mergedGaps) {
+      const prevSev = prevGapSeverity.get(gap.requirement.toLowerCase().trim());
+      if (prevSev) {
+        // Gap existed before — severity can only stay same or decrease (minor is lowest)
+        const prevRank = SEVERITY_RANK[prevSev] ?? 0;
+        const newRank = SEVERITY_RANK[gap.severity] ?? 0;
+        if (newRank > prevRank) {
+          gap.severity = prevSev; // Cap at previous severity
+        }
+      }
+    }
+
     // Step 6: Completeness guard — auto-add missing re-eval reqs as gaps
     const allOutputReqs = new Set([
       ...mergedCovered.map((r) => r.requirement.toLowerCase().trim()),
@@ -359,7 +378,12 @@ export async function analyzeCoverageAnchored(
     }
 
     // Step 7: Compute score deterministically
-    const { score, breakdown } = computeCoverageScore(mergedCovered, mergedGaps);
+    const { score: rawScore, breakdown } = computeCoverageScore(mergedCovered, mergedGaps);
+
+    // Step 7b: Monotonic score clamp — after applying improvements, score must never decrease.
+    // AI non-determinism (e.g. severity reclassification, strength downgrade) can cause spurious drops.
+    const previousScore = input.previous_coverage.overall_coverage_score;
+    const score = Math.max(rawScore, previousScore);
 
     const s4 = trace.step("merge-result", {
       anchored_covered: anchored.covered.length,
@@ -376,6 +400,9 @@ export async function analyzeCoverageAnchored(
       gaps_critical: breakdown.gaps_critical,
       gaps_important: breakdown.gaps_important,
       gaps_minor: breakdown.gaps_minor,
+      raw_score: rawScore,
+      previous_score: previousScore,
+      clamped: rawScore < previousScore,
       computed_score: score,
       ai_estimated_score: result.data.overall_coverage_score,
     });

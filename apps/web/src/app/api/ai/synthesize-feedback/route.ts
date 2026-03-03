@@ -5,8 +5,8 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { synthesizeFeedback, safeErrorMessage } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
 
-// Opus 4.6 with 16K token budget + optional transcript fetch — routinely 60-120s
-export const maxDuration = 120;
+// Opus 4.6 with 16K token budget + optional transcript fetch — routinely 60-120s. Vercel Pro supports up to 300s.
+export const maxDuration = 300;
 
 const RatingSchema = z.object({
   category: z.string().min(1).max(200),

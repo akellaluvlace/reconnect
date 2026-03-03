@@ -3,8 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateCandidateProfile, safeErrorMessage } from "@reconnect/ai";
 
-// Sonnet with 8K tokens, typically 15-30s
-export const maxDuration = 60;
+// Candidate profile typically 15-30s but can spike under load. Vercel Pro supports up to 300s.
+export const maxDuration = 300;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),

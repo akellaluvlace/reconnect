@@ -13,7 +13,7 @@ export const GAP_SEVERITY_WEIGHTS: Record<string, number> = {
 };
 
 const STRENGTH_RANK: Record<string, number> = { strong: 3, moderate: 2, weak: 1 };
-const SEVERITY_RANK: Record<string, number> = { critical: 3, important: 2, minor: 1 };
+export const SEVERITY_RANK: Record<string, number> = { critical: 3, important: 2, minor: 1 };
 
 /**
  * Deduplicate covered requirements — keep the strongest coverage for each requirement.

@@ -7,13 +7,13 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 10.1 COMPLETE + client feedback polish + Process Speed redesign + Process UX redesign + Surgical Diff Apply + Version Snapshots + Anchored Coverage + Gap Severity Weights + Process Hardening + Coverage Progression Fix + Production Hardening Round 2
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Production hardening round 2 COMPLETE (2026-03-03): 4 production issues fixed (529 backoff, maxDuration on 7 routes, cache constraint deployed, quadruple PATCH eliminated). Deep 5-agent audit found 30+ issues — critical tier fixed (error message leaks, prompt injection, silent failures, cross-tenant write, middleware auth bypass, broken consent route). 28 migrations. Typecheck clean. 389 AI + 523 web tests green. NOT YET COMMITTED — needs commit + push + deploy.
-**Next task:** Live test hardening fixes on app.axil.ie → then continue hardening (HIGH tier backlog) → Step 10.2 (cron + state machine + UI).
+**Step:** Step 10.1 COMPLETE + client feedback polish + Process Speed redesign + Process UX redesign + Surgical Diff Apply + Version Snapshots + Anchored Coverage + Gap Severity Weights + Process Hardening + Coverage Progression Fix + Production Hardening Round 2 + Production Resilience
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Production resilience round (2026-03-03): All AI routes maxDuration=300, SDK+client timeouts, cache HIT/MISS logging, middleware noise reduction, auto-save debounce 2s, monotonic score clamp, gap severity floor, AI refinement cap (2 iterations). Previous: production hardening r2, deep 5-agent audit critical tier fixed. 28 migrations. Typecheck clean. 389 AI + 523 web tests green. NOT YET COMMITTED.
+**Next task:** Commit + push + deploy → live test all resilience fixes → HIGH tier backlog → Step 10.2 (cron + state machine + UI).
 **Blockers:** Waiting on client for: Google Workspace upgrade to Business Plus (auto-recording). Does not block code work.
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified (Google user, Google recording, Microsoft — all production-ready). Vercel linked (`npx vercel logs` works).
 
-**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → ~~process hardening~~ → ~~coverage progression fix~~ → ~~production hardening r2~~ → live test + HIGH fixes → 10.2 (cron + state machine + UI) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → ~~process hardening~~ → ~~coverage progression fix~~ → ~~production hardening r2~~ → ~~production resilience~~ → commit + deploy + live test → HIGH fixes → 10.2 (cron + state machine + UI) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -214,7 +214,7 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 
 ### Pipeline Flow Issues (updated 2026-03-03)
 - **Deep research fire-and-forget — no recovery.** Wizard fires `keepalive` fetch and navigates away. If the request dies (network, browser kill), deep research never runs. User is stuck on Market Research tab with Strategy locked forever. **Fix:** Add "Retry deep research" button that shows after polling times out (~120s with no phase change).
-- **~~Vercel function timeout on deep research.~~** FIXED (2026-03-03): `maxDuration` added to 7 long-running route handlers (deep research, strategy, stages, JD, coverage, refinements, candidate profile). Vercel Pro (300s timeout).
+- **~~Vercel function timeout on deep research.~~** FIXED (2026-03-03): `maxDuration=300` on ALL AI route handlers (11 routes). Vercel Pro supports up to 300s. Strategy route was timing out at 120s — bumped in resilience round.
 - **Candidate profile — no gating on Alignment page.** User can navigate to Alignment and generate candidate profile with zero context (no strategy, no market skills, no JD). Tracer confirmed: "No context data provided — profile will be based on model knowledge only". **Fix:** Disable Generate button until `hiringStrategy` exists, or show warning explaining profile quality depends on completing Discovery + Process first.
 - **Stage generation latency: 81-90s consistently.** Confirmed across 2 runs (81s and 90s). Near timeout boundary. **Fix:** Monitor in production, consider splitting into smaller calls if timeouts occur.
 - **`parseJsonb` transient failure on page load.** Quick-phase market data can fail validation when Discovery page loads during deep research. Causes brief `null` marketInsights state. Self-resolves when polling updates. **Fix (low priority):** Use a looser schema for quick-phase data, or handle null gracefully in tab gating (already does — tabs stay locked).
@@ -223,8 +223,9 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **~~Competitor listings cache write error.~~** FIXED (2026-03-02): Migration adds `'listings'` to cache phase CHECK constraint.
 - **~~Triple refinement generation on same input.~~** FIXED (2026-03-02): Input hash guard skips identical regeneration. Regenerate button disabled during generation.
 - **~~Merge `replaces` miss.~~** FIXED (2026-03-02): Better warning message includes existing FA names. Merge warnings surfaced to user via toast.
-- **Anchored coverage fallback to full re-eval.** When recommendations are sweeping (10+ of 12 FAs changed), anchoring provides 0 benefit — all entries go to re-eval. Run 2 hit this both times. Not a bug — just means broad recommendations bypass the optimization.
+- **~~Anchored coverage fallback to full re-eval + score regression.~~** FIXED (2026-03-03): When most FAs change, anchoring provides 0 benefit (all entries re-eval). AI was also reclassifying gap severity non-deterministically (minor→critical), causing 81%→78% regression. Fixed with: (1) gap severity floor — existing gaps can only decrease in severity, never increase, (2) monotonic score clamp — `Math.max(rawScore, previousScore)`. Trace now logs `raw_score`, `previous_score`, `clamped`.
 - **~~P0 — Coverage score STUCK at 81-82%.~~** FIXED (2026-03-02): Gap-targeted re-evaluation + deterministic fallback. Prompt now tells AI which FA was SPECIFICALLY ADDED for which gap. If AI still misses, fallback forces gap to covered(weak). Guarantees monotonic score improvement. Prompt version bumped to 2.0.0. 5 new tests.
+- **AI refinement cap: 2 iterations max.** After 2 apply cycles, recommendations panel shows banner: "AI refinements have diminishing returns — manual adjustments recommended." Generate/apply buttons hidden, iteration history with restore stays visible. Auto-generation suppressed when maxed out.
 
 ---
 
@@ -241,9 +242,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-03:** Production hardening round 2. 4 Vercel log fixes (529 backoff, maxDuration ×7, cache constraint deploy, quadruple PATCH). Deep 5-agent audit → 30+ issues. Critical tier fixed: safeErrorMessage on 11 routes (no more API detail leaks), prompt injection sanitization, silent failure toasts, cross-tenant write guard, middleware auth bypass fix, broken consent route join. 13 test files updated for new mock pattern. 389 AI + 523 web tests green. NOT YET COMMITTED.
-- **2026-03-02 (d):** Coverage score progression fix (P0). Gap-targeted re-evaluation + deterministic fallback guarantees monotonic improvement. 3-layer fix: gap→FA mapping, enhanced prompt with "SPECIFICALLY ADDED" context, fallback forces targeted gaps to covered(weak). 5 new tests. 389 AI + 523 web tests green. Typecheck clean.
-- **2026-03-02 (c):** Process hardening: 5 planned fixes (kill hallucinated disclaimers, cache phase constraint, merge warning toasts, regenerate hash guard, better replaces-miss warnings) + 16 review fixes (Google OAuth CSRF + admin auth, silent failure .ok checks + toasts, type safety improvements). First live test on app.axil.ie — all 200s, zero errors. 384 AI + 523 web tests green. Pushed to master.
-- **2026-03-02 (b):** Gap severity weights + dedup + anti-dup prompt. Minor gaps=60%, important=30%, critical=0%. Initial score 55%→70% for same data. Pipeline dedup safety net. 384 AI + 521 web tests green.
-- **2026-03-02:** Anchored coverage re-scoring. Fixes coverage regression bug (62%→58% after apply). Unchanged FAs carry forward assessments byte-for-byte; only changed FAs trigger AI re-eval. 7 new files, 40 new tests. 365 AI + 521 web tests green.
+- **2026-03-03 (b):** Production resilience round. All AI routes maxDuration=300 (strategy was timing out at 120s in production). SDK+client-side timeouts on all AI fetches. Cache HIT/MISS logging. Middleware noise reduction. Auto-save debounce 500ms→2s. Monotonic score clamp + gap severity floor (fixes 81→78 regression). AI refinement cap at 2 iterations with banner. 389 AI + 523 web tests green.
+- **2026-03-03:** Production hardening round 2. 4 Vercel log fixes (529 backoff, maxDuration ×7, cache constraint deploy, quadruple PATCH). Deep 5-agent audit → 30+ issues. Critical tier fixed: safeErrorMessage on 11 routes, prompt injection sanitization, silent failure toasts, cross-tenant write guard, middleware auth bypass fix, broken consent route join. 389 AI + 523 web tests green.
+- **2026-03-02 (d):** Coverage score progression fix (P0). Gap-targeted re-evaluation + deterministic fallback guarantees monotonic improvement. 3-layer fix: gap→FA mapping, enhanced prompt with "SPECIFICALLY ADDED" context, fallback forces targeted gaps to covered(weak). 5 new tests. 389 AI + 523 web tests green.
+- **2026-03-02 (c):** Process hardening: 5 planned fixes + 16 review fixes. First live test on app.axil.ie — all 200s, zero errors. 384 AI + 523 web tests green. Pushed to master.
+- **2026-03-02 (b):** Gap severity weights + dedup + anti-dup prompt. Minor gaps=60%, important=30%, critical=0%. Initial score 55%→70% for same data. 384 AI + 521 web tests green.
 > Keep max 5 entries. Remove oldest when adding new.
