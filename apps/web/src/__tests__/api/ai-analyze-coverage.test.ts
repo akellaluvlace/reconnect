@@ -30,7 +30,7 @@ vi.mock("@reconnect/ai", async (importOriginal) => {
   return {
     analyzeCoverage: mockAnalyzeCoverage,
     analyzeCoverageAnchored: mockAnalyzeCoverageAnchored,
-    AIError: MockAIError,
+    safeErrorMessage: (_e: unknown, fallback: string) => fallback,
     CoverageAnalysisSchema: actual.CoverageAnalysisSchema,
   };
 });
@@ -164,7 +164,7 @@ describe("POST /api/ai/analyze-coverage", () => {
     expect(mockAnalyzeCoverage).toHaveBeenCalledOnce();
   });
 
-  it("returns 500 with AIError message when pipeline throws AIError", async () => {
+  it("returns 500 with safe fallback message when pipeline throws AIError", async () => {
     setupAuth();
     const aiErr = new MockAIError("Token limit reached");
     mockAnalyzeCoverage.mockRejectedValue(aiErr);
@@ -173,7 +173,8 @@ describe("POST /api/ai/analyze-coverage", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Token limit reached");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(body.error).toBe("Failed to analyze coverage");
   });
 
   it("returns 500 with generic message when pipeline throws an unexpected error", async () => {

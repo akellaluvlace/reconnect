@@ -399,17 +399,7 @@ export function ProcessPageClient({
           if (covRes.ok) {
             const covData = await covRes.json();
             newCoverage = covData.data;
-
-            // Persist coverage
-            const covSaveRes = await fetch(`/api/playbooks/${playbook.id}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ coverage_analysis: newCoverage }),
-            });
-            if (!covSaveRes.ok) {
-              console.error("[process] Coverage save failed:", await covSaveRes.text().catch(() => ""));
-              toast.warning("Coverage analysed but failed to save — re-run from Coverage tab");
-            }
+            // Coverage persisted in single combined PATCH below (with refinements history)
           } else {
             const errBody = await covRes.text().catch(() => "");
             console.error("[process] Coverage re-analysis failed:", covRes.status, errBody);
@@ -456,7 +446,21 @@ export function ProcessPageClient({
         disclaimer: allRefinements.disclaimer,
         history: updatedHistory,
       };
-      await persistRefinements(historyOnly);
+      // Single combined PATCH — coverage + refinements history in one request
+      // Eliminates the race condition of separate PATCHes landing out of order
+      const combinedPayload: Record<string, unknown> = { stage_refinements: historyOnly };
+      if (newCoverage) {
+        combinedPayload.coverage_analysis = newCoverage;
+      }
+      const saveRes = await fetch(`/api/playbooks/${playbook.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(combinedPayload),
+      });
+      if (!saveRes.ok) {
+        console.error("[process] Combined save failed:", await saveRes.text().catch(() => ""));
+        toast.warning("Apply completed but save may have failed — check Coverage tab");
+      }
       setCoverageAnalysis(newCoverage);
       setIterationHistory(updatedHistory);
       // Null out recommendations — panel will auto-generate from fresh coverage

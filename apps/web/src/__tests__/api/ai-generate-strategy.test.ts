@@ -28,7 +28,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   generateHiringStrategy: mockGenerateHiringStrategy,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 // Import route handler AFTER mocks are set up
@@ -184,7 +184,7 @@ describe("POST /api/ai/generate-strategy", () => {
     expect(mockGenerateHiringStrategy).toHaveBeenCalledOnce();
   });
 
-  it("returns 500 with AIError message when pipeline throws AIError", async () => {
+  it("returns 500 with safe fallback message when pipeline throws AIError", async () => {
     setupAuth();
     const aiErr = new MockAIError("Rate limit exceeded");
     mockGenerateHiringStrategy.mockRejectedValue(aiErr);
@@ -193,7 +193,8 @@ describe("POST /api/ai/generate-strategy", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Rate limit exceeded");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(body.error).toBe("Failed to generate hiring strategy");
   });
 
   it("returns 500 with generic message when pipeline throws an unexpected error", async () => {

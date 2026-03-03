@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateStages, AIError } from "@reconnect/ai";
+import { generateStages, safeErrorMessage } from "@reconnect/ai";
+
+// Benchmarked at 81-90s in production (single Sonnet call, 8K token output)
+export const maxDuration = 120;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -71,10 +74,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Stage generation error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate interview stages";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to generate interview stages") },
+      { status: 500 },
+    );
   }
 }

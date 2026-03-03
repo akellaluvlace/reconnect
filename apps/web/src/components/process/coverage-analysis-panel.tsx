@@ -123,6 +123,7 @@ export function CoverageAnalysisPanel({
       });
       if (!saveRes.ok) {
         console.error("[coverage] Auto-save failed:", await saveRes.text().catch(() => ""));
+        toast.warning("Coverage analysis generated but failed to save — try re-analyzing");
       }
 
       return data;

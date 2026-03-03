@@ -80,7 +80,7 @@ vi.mock("@reconnect/ai", async (importOriginal) => {
     generateCandidateProfile: mockGenerateCandidateProfile,
     synthesizeFeedback: mockSynthesizeFeedback,
     analyzeCoverage: mockAnalyzeCoverage,
-    AIError: MockAIError,
+    safeErrorMessage: (_e: unknown, fallback: string) => fallback,
     CoverageAnalysisSchema: actual.CoverageAnalysisSchema,
   };
 });

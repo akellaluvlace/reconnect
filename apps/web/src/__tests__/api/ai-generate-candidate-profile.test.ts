@@ -26,7 +26,7 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   generateCandidateProfile: mockGenerateCandidateProfile,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 import { POST } from "@/app/api/ai/generate-candidate-profile/route";
@@ -186,7 +186,7 @@ describe("POST /api/ai/generate-candidate-profile", () => {
     );
   });
 
-  it("returns 500 with AIError message when pipeline throws AIError", async () => {
+  it("returns 500 with safe fallback message when pipeline throws AIError", async () => {
     setupAuth();
     mockGenerateCandidateProfile.mockRejectedValue(
       new MockAIError("Rate limit exceeded"),
@@ -196,7 +196,8 @@ describe("POST /api/ai/generate-candidate-profile", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Rate limit exceeded");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(body.error).toBe("Failed to generate candidate profile");
   });
 
   it("returns 500 with generic message for unexpected errors", async () => {

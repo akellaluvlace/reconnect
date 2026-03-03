@@ -13,6 +13,7 @@ export {
   AIRateLimitError,
   AISearchError,
   AITimeoutError,
+  safeErrorMessage,
   type AIErrorCode,
 } from "./errors";
 

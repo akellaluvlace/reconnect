@@ -37,7 +37,7 @@ vi.mock("crypto", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   generateCandidateProfile: mockGenerateCandidateProfile,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 // Import route handlers AFTER mocks

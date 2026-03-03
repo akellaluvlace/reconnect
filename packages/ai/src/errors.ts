@@ -66,3 +66,19 @@ export class AITimeoutError extends AIError {
 
   readonly transient = true;
 }
+
+/**
+ * Return a user-safe error message that never leaks internal details
+ * (e.g. Anthropic API errors, model names, token counts).
+ */
+export function safeErrorMessage(error: unknown, fallback: string): string {
+  if (!(error instanceof AIError)) return fallback;
+  switch (error.code) {
+    case "RATE_LIMIT":
+      return "AI service is temporarily busy — please try again";
+    case "TIMEOUT":
+      return "Request timed out — please try again";
+    default:
+      return fallback;
+  }
+}

@@ -48,11 +48,19 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // On auth SERVICE failure (5xx, network), don't redirect — let through
-  // But "no session" / "invalid token" errors (4xx) should still redirect to login
+  // On auth SERVICE failure (5xx, network), handle gracefully:
+  // - API routes: return 503 (don't let unauthenticated requests through)
+  // - Page routes: let through (show degraded page rather than redirect loop)
   const isServiceError = authError && authError.status !== undefined && authError.status >= 500;
   if (!user && isServiceError && !isPublicPath) {
-    console.error("[middleware] Auth service error, allowing request through:", authError.message);
+    console.error("[middleware] Auth service error:", authError.message);
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "Authentication service temporarily unavailable" },
+        { status: 503 },
+      );
+    }
+    // Page routes: allow through to avoid redirect loops when Supabase is down
     return response;
   }
 

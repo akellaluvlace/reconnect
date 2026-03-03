@@ -35,6 +35,10 @@ function handleApiError(error: unknown): never {
         retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined,
       );
     }
+    // Anthropic 529 = overloaded — needs much longer backoff than network errors
+    if (error.status === 529) {
+      throw new AIRateLimitError(30_000);
+    }
     throw new AIError(error.message, "API_ERROR", { cause: error });
   }
 

@@ -201,6 +201,7 @@ describe("POST /api/transcription", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toContain("Whisper");
+    // safeErrorMessage: never leak internal error details like "Whisper API error"
+    expect(body.error).toBe("Transcription failed");
   });
 });

@@ -4,10 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import {
   searchWebParallel,
   generateCacheKey,
-  AISearchError,
+  safeErrorMessage,
   scoreIndustryRelevance,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+
+// Tavily searches + parallel URL liveness checks (up to 4s each, 20 max)
+export const maxDuration = 60;
 
 const InputSchema = z.object({
   role: z.string().min(1).max(200),
@@ -269,11 +272,10 @@ export async function POST(req: NextRequest) {
       generated_at: new Date().toISOString(),
     });
   } catch (error) {
-    const message =
-      error instanceof AISearchError
-        ? error.message
-        : "Failed to search for competitor listings";
     console.error("[competitor-listings] Search error:", error);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to search for competitor listings") },
+      { status: 500 },
+    );
   }
 }

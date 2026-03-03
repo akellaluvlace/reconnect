@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateRefinements, applyRefinements, applyRefinementsDiff, AIError } from "@reconnect/ai";
+import { generateRefinements, applyRefinements, applyRefinementsDiff, safeErrorMessage } from "@reconnect/ai";
 
 export const maxDuration = 120;
 
@@ -211,10 +211,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[generate-refinements] Error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate refinements";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to generate refinements") },
+      { status: 500 },
+    );
   }
 }

@@ -65,7 +65,7 @@ vi.mock("@reconnect/ai", () => ({
   generateQuestions: mockGenerateQuestions,
   generateQuickInsights: mockGenerateQuickInsights,
   generateCacheKey: mockGenerateCacheKey,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
   PROMPT_VERSIONS: {
     marketInsights: "1.0.0",
     questionGeneration: "1.0.0",
@@ -332,7 +332,7 @@ describe("POST /api/ai/generate-questions", () => {
     expect(body.metadata).toBeDefined();
   });
 
-  it("returns 500 on AIError", async () => {
+  it("returns 500 with safe fallback on AIError", async () => {
     setupAuth();
     mockGenerateQuestions.mockRejectedValue(
       new MockAIError("Model rate limited"),
@@ -348,7 +348,8 @@ describe("POST /api/ai/generate-questions", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Model rate limited");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(body.error).toBe("Failed to generate questions");
   });
 });
 

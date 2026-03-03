@@ -7,13 +7,13 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 10.1 COMPLETE + client feedback polish + Process Speed redesign + Process UX redesign + Surgical Diff Apply + Version Snapshots + Anchored Coverage + Gap Severity Weights
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Gap severity weights IMPLEMENTED (2026-03-02): minor gaps=60% credit, important=30%, critical=0%. Dedup safety net in both pipelines. Anti-duplicate prompt instructions. Initial score now ~70% for well-designed process (was 55%). 25 migrations. Typecheck clean. 384 AI + 521 web tests green.
-**Next task:** Step 10.2 (cron + state machine + UI for recording pipeline).
+**Step:** Step 10.1 COMPLETE + client feedback polish + Process Speed redesign + Process UX redesign + Surgical Diff Apply + Version Snapshots + Anchored Coverage + Gap Severity Weights + Process Hardening + Coverage Progression Fix + Production Hardening Round 2
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Production hardening round 2 COMPLETE (2026-03-03): 4 production issues fixed (529 backoff, maxDuration on 7 routes, cache constraint deployed, quadruple PATCH eliminated). Deep 5-agent audit found 30+ issues — critical tier fixed (error message leaks, prompt injection, silent failures, cross-tenant write, middleware auth bypass, broken consent route). 28 migrations. Typecheck clean. 389 AI + 523 web tests green. NOT YET COMMITTED — needs commit + push + deploy.
+**Next task:** Live test hardening fixes on app.axil.ie → then continue hardening (HIGH tier backlog) → Step 10.2 (cron + state machine + UI).
 **Blockers:** Waiting on client for: Google Workspace upgrade to Business Plus (auto-recording). Does not block code work.
-**Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified (Google user, Google recording, Microsoft — all production-ready).
+**Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified (Google user, Google recording, Microsoft — all production-ready). Vercel linked (`npx vercel logs` works).
 
-**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → 10.2 (cron + state machine + UI) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → ~~process hardening~~ → ~~coverage progression fix~~ → ~~production hardening r2~~ → live test + HIGH fixes → 10.2 (cron + state machine + UI) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -180,7 +180,7 @@ Every Anthropic API call logged (`packages/ai/src/logger.ts`). Format: `[AI:endp
 Everything below MUST pass before any beta tester gets access. Not optional.
 
 ### Infrastructure
-- [ ] All migrations deployed to production (currently 22, including FK cascade fix)
+- [ ] All migrations deployed to production (currently 28, including FK cascade fix + cache phase + stage refinements + coverage analysis)
 - [ ] Env vars set in Vercel (Supabase, Anthropic, Tavily, OpenAI, Resend, Google)
 - [ ] Rate limiting on AI endpoints (not implemented yet — add in 10.3 or 10.4)
 - [ ] Error monitoring (Sentry or equivalent) configured
@@ -212,18 +212,19 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **Rate limiting:** No AI endpoint rate limiting. Could allow credit burn during beta if abused.
 - **16 lint errors:** All `no-explicit-any` in test files. Zero production impact.
 
-### Pipeline Flow Issues (updated 2026-03-02 via tracer logs)
+### Pipeline Flow Issues (updated 2026-03-03)
 - **Deep research fire-and-forget — no recovery.** Wizard fires `keepalive` fetch and navigates away. If the request dies (network, browser kill), deep research never runs. User is stuck on Market Research tab with Strategy locked forever. **Fix:** Add "Retry deep research" button that shows after polling times out (~120s with no phase change).
-- **Vercel function timeout on deep research.** Deep research takes 60-80s of server work after returning 202. **Decision:** Use Vercel Pro (300s timeout). Verify `maxDuration` is set on the deep research route handler. If hobby tier ever used, deep research will silently die.
+- **~~Vercel function timeout on deep research.~~** FIXED (2026-03-03): `maxDuration` added to 7 long-running route handlers (deep research, strategy, stages, JD, coverage, refinements, candidate profile). Vercel Pro (300s timeout).
 - **Candidate profile — no gating on Alignment page.** User can navigate to Alignment and generate candidate profile with zero context (no strategy, no market skills, no JD). Tracer confirmed: "No context data provided — profile will be based on model knowledge only". **Fix:** Disable Generate button until `hiringStrategy` exists, or show warning explaining profile quality depends on completing Discovery + Process first.
 - **Stage generation latency: 81-90s consistently.** Confirmed across 2 runs (81s and 90s). Near timeout boundary. **Fix:** Monitor in production, consider splitting into smaller calls if timeouts occur.
 - **`parseJsonb` transient failure on page load.** Quick-phase market data can fail validation when Discovery page loads during deep research. Causes brief `null` marketInsights state. Self-resolves when polling updates. **Fix (low priority):** Use a looser schema for quick-phase data, or handle null gracefully in tab gating (already does — tabs stay locked).
 - **Stage question count under target.** AI consistently generates 4-5 questions when prompt asks for 6+. Confirmed across 8 stages in 2 runs. Not random — AI self-limits. **Fix (low priority):** Strengthen prompt constraints or add retry on under-count.
 - **AI score optimism bias: +6.5 points average.** Across 6 measurements, AI overestimates coverage by 5-14 points. One anomaly of -12. Programmatic score override is essential and working. No action needed — just awareness.
-- **Competitor listings cache write error.** `[competitor-listings] Cache write error: {}` on every run. Empty error object. Non-blocking (PATCH succeeds). **Fix (low priority):** Investigate RLS/schema on cache table.
-- **Triple refinement generation on same input.** UI fires `generateRefinements` 2-3 times with identical params (user clicking multiple times?). Token waste ~2K per duplicate. **Fix:** Debounce or disable button during generation.
-- **Merge `replaces` miss.** AI diff referenced "Strategic Vision & Data Maturity" but FA didn't exist. Fallback (add anyway) worked. Indicates AI's model of current state can drift. **Fix (low priority):** Validate `replaces` targets before merge, log warning louder.
+- **~~Competitor listings cache write error.~~** FIXED (2026-03-02): Migration adds `'listings'` to cache phase CHECK constraint.
+- **~~Triple refinement generation on same input.~~** FIXED (2026-03-02): Input hash guard skips identical regeneration. Regenerate button disabled during generation.
+- **~~Merge `replaces` miss.~~** FIXED (2026-03-02): Better warning message includes existing FA names. Merge warnings surfaced to user via toast.
 - **Anchored coverage fallback to full re-eval.** When recommendations are sweeping (10+ of 12 FAs changed), anchoring provides 0 benefit — all entries go to re-eval. Run 2 hit this both times. Not a bug — just means broad recommendations bypass the optimization.
+- **~~P0 — Coverage score STUCK at 81-82%.~~** FIXED (2026-03-02): Gap-targeted re-evaluation + deterministic fallback. Prompt now tells AI which FA was SPECIFICALLY ADDED for which gap. If AI still misses, fallback forces gap to covered(weak). Guarantees monotonic score improvement. Prompt version bumped to 2.0.0. 5 new tests.
 
 ---
 
@@ -240,9 +241,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-02 (b):** Gap severity weights + dedup + anti-dup prompt. Minor gaps=60%, important=30%, critical=0%. Initial score 55%→70% for same data. Pipeline dedup safety net. Full log analysis (2 playbook runs): AI score optimism +6.5pts avg, question undercount persistent, triple-click refinement waste, merge replaces miss. 384 AI + 521 web tests green.
-- **2026-03-02:** Anchored coverage re-scoring. Fixes coverage regression bug (62%→58% after apply). Unchanged FAs carry forward assessments byte-for-byte; only changed FAs trigger AI re-eval; score computed deterministically from merged data. 7 new files, 40 new tests. TDD throughout. 365 AI + 521 web tests green. Typecheck clean.
-- **2026-03-01 (d):** Surgical Diff Apply + Version Snapshots. AI outputs patches (not full stages), client-side merge preserves untouched content. Snapshots for undo/restore. Bundle fix: `@reconnect/ai/merge` sub-path export for client components. **Problem found:** coverage regresses after apply (62%→58%) because AI re-evaluates unchanged FAs non-deterministically. Plan written for anchored re-scoring fix. 327 AI + 519 web tests green.
-- **2026-03-01 (c):** Process chapter UX redesign: inline editing replaces modal dialog (stage-edit-dialog.tsx deleted), insert-between stage controls, stage card restyling (larger fonts/spacing), duration input fix (string state, amber hint). Typecheck clean.
-- **2026-03-01 (b):** Process Speed redesign: lightweight `adjustProcessSpeed` pipeline (5-10s vs 77s), trade-off analysis, skeleton pulse loading, extraction timeout (30s), polling timeout (8 min). Wizard flash fix. JD toggle needs moving to Full Listing. 513 web + 300 AI tests green.
+- **2026-03-03:** Production hardening round 2. 4 Vercel log fixes (529 backoff, maxDuration ×7, cache constraint deploy, quadruple PATCH). Deep 5-agent audit → 30+ issues. Critical tier fixed: safeErrorMessage on 11 routes (no more API detail leaks), prompt injection sanitization, silent failure toasts, cross-tenant write guard, middleware auth bypass fix, broken consent route join. 13 test files updated for new mock pattern. 389 AI + 523 web tests green. NOT YET COMMITTED.
+- **2026-03-02 (d):** Coverage score progression fix (P0). Gap-targeted re-evaluation + deterministic fallback guarantees monotonic improvement. 3-layer fix: gap→FA mapping, enhanced prompt with "SPECIFICALLY ADDED" context, fallback forces targeted gaps to covered(weak). 5 new tests. 389 AI + 523 web tests green. Typecheck clean.
+- **2026-03-02 (c):** Process hardening: 5 planned fixes (kill hallucinated disclaimers, cache phase constraint, merge warning toasts, regenerate hash guard, better replaces-miss warnings) + 16 review fixes (Google OAuth CSRF + admin auth, silent failure .ok checks + toasts, type safety improvements). First live test on app.axil.ie — all 200s, zero errors. 384 AI + 523 web tests green. Pushed to master.
+- **2026-03-02 (b):** Gap severity weights + dedup + anti-dup prompt. Minor gaps=60%, important=30%, critical=0%. Initial score 55%→70% for same data. Pipeline dedup safety net. 384 AI + 521 web tests green.
+- **2026-03-02:** Anchored coverage re-scoring. Fixes coverage regression bug (62%→58% after apply). Unchanged FAs carry forward assessments byte-for-byte; only changed FAs trigger AI re-eval. 7 new files, 40 new tests. 365 AI + 521 web tests green.
 > Keep max 5 entries. Remove oldest when adding new.

@@ -28,7 +28,7 @@ vi.mock("@reconnect/ai", () => ({
   generateRefinements: vi.fn(),
   applyRefinements: vi.fn(),
   applyRefinementsDiff: mockApplyRefinementsDiff,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 import { POST } from "@/app/api/ai/generate-refinements/route";
@@ -164,13 +164,14 @@ describe("POST /api/ai/generate-refinements (apply_diff mode)", () => {
     );
   });
 
-  it("returns 500 on pipeline error", async () => {
+  it("returns 500 with safe fallback on pipeline error", async () => {
     mockApplyRefinementsDiff.mockRejectedValue(new MockAIError("Model rate limited"));
 
     const res = await POST(makeReq(VALID_APPLY_DIFF_BODY));
     expect(res.status).toBe(500);
 
     const json = await res.json();
-    expect(json.error).toBe("Model rate limited");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(json.error).toBe("Failed to generate refinements");
   });
 });

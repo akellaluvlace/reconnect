@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateQuestions, AIError } from "@reconnect/ai";
+import { generateQuestions, safeErrorMessage } from "@reconnect/ai";
+
+// Single Sonnet call, typically 5-10s
+export const maxDuration = 30;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -47,10 +50,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Question generation error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate questions";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to generate questions") },
+      { status: 500 },
+    );
   }
 }

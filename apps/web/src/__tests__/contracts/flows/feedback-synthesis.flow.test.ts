@@ -63,7 +63,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   synthesizeFeedback: mockSynthesizeFeedback,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 // ---------------------------------------------------------------------------

@@ -7,9 +7,12 @@ import {
   type MarketInsightsInput,
   PROMPT_VERSIONS,
   AI_CONFIG,
-  AIError,
+  safeErrorMessage,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+
+// Quick-phase Sonnet call, typically 10-15s
+export const maxDuration = 30;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -143,10 +146,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Market insights quick phase error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate market insights";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to generate market insights") },
+      { status: 500 },
+    );
   }
 }

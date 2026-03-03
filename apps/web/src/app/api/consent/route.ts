@@ -50,12 +50,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find the interview linked to this collaborator's playbook
-    // and update recording_consent_at
+    // Find interviews linked to this playbook via interview_stages
+    // (interviews table has no playbook_id — join through stages)
+    const { data: stages, error: stagesError } = await serviceClient
+      .from("interview_stages")
+      .select("id")
+      .eq("playbook_id", collaborator.playbook_id);
+
+    if (stagesError) {
+      console.error("[consent] Stage lookup failed:", stagesError.message);
+      return NextResponse.json(
+        { error: "Failed to record consent" },
+        { status: 500 },
+      );
+    }
+
+    if (!stages || stages.length === 0) {
+      // No stages yet — consent recorded but no interviews to update
+      return NextResponse.json({ success: true });
+    }
+
+    const stageIds = stages.map((s) => s.id);
     const { error: updateError } = await serviceClient
       .from("interviews")
       .update({ recording_consent_at: new Date().toISOString() })
-      .eq("playbook_id", collaborator.playbook_id)
+      .in("stage_id", stageIds)
       .is("recording_consent_at", null);
 
     if (updateError) {

@@ -39,7 +39,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   synthesizeFeedback: mockSynthesizeFeedback,
-  AIError: MockAIError,
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 import { POST } from "@/app/api/ai/synthesize-feedback/route";
@@ -211,7 +211,7 @@ describe("POST /api/ai/synthesize-feedback", () => {
     expect(mockFrom).toHaveBeenCalledWith("ai_synthesis");
   });
 
-  it("returns 500 with AIError message when pipeline fails", async () => {
+  it("returns 500 with safe fallback message when pipeline fails", async () => {
     setupAuth();
     setupDBs();
     mockSynthesizeFeedback.mockRejectedValue(
@@ -222,7 +222,8 @@ describe("POST /api/ai/synthesize-feedback", () => {
 
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error).toBe("Context window exceeded");
+    // safeErrorMessage returns generic fallback — never leaks internal error details
+    expect(body.error).toBe("Failed to synthesize feedback");
   });
 
   it("returns 500 with generic message for unexpected errors", async () => {

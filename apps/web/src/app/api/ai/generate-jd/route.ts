@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateJobDescription, AIError } from "@reconnect/ai";
+import { generateJobDescription, safeErrorMessage } from "@reconnect/ai";
+
+// Sonnet with 8K tokens, typically 20-40s
+export const maxDuration = 90;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -81,10 +84,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("JD generation error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to generate job description";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to generate job description") },
+      { status: 500 },
+    );
   }
 }

@@ -47,7 +47,7 @@ vi.mock("crypto", () => ({
 
 vi.mock("@reconnect/ai", () => ({
   synthesizeFeedback: vi.fn(),
-  AIError: class AIError extends Error { name = "AIError"; },
+  safeErrorMessage: (_e: unknown, fallback: string) => fallback,
 }));
 
 vi.mock("@/lib/email/resend-client", () => ({
@@ -327,7 +327,7 @@ describe("M10: Synthesis score range validation (1-4)", () => {
     });
     vi.doMock("@reconnect/ai", () => ({
       synthesizeFeedback: mockSynthesize,
-      AIError: class AIError extends Error {},
+      safeErrorMessage: (_e: unknown, fallback: string) => fallback,
     }));
 
     const { POST } = await import("@/app/api/ai/synthesize-feedback/route");

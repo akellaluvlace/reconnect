@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-02-23
-**Current Macro Step:** Step 9 COMPLETE + HARDENED + Discovery UX enhancements
-**Active Micro Steps:** None — ready for Step 10
+**Last Updated:** 2026-03-02
+**Current Macro Step:** Step 10.1 COMPLETE + Coverage Progression Fix
+**Active Micro Steps:** None — ready for Step 10.2
 
 ---
 
@@ -74,8 +74,8 @@
 | Layer | Status | Tests | Tools |
 |-------|--------|-------|-------|
 | Database (SQL) | COMPLETE | 233/233 green | psql + custom framework |
-| AI package | COMPLETE | 251/251 green | Vitest |
-| Web tests (all) | COMPLETE | 476/476 green | Vitest (30 files) |
+| AI package | COMPLETE | 389/389 green | Vitest (29 files) |
+| Web tests (all) | COMPLETE | 523/523 green | Vitest (39 files) |
 | E2E (browser) | COMPLETE | 7/7 smoke pass | Playwright (port 3001) |
 | Mutation testing | COMPLETE | 15/15 killed | Manual + killers (11 tests) |
 | Components | PLANNED | 0 | React Testing Library |

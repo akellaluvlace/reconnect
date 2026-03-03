@@ -34,11 +34,11 @@ CRITICAL RULES:
     const feedbackSection = input.feedback_forms
       .map(
         (f, i) => `
-Interviewer ${i + 1} (${f.interviewer_name}):
-Ratings: ${f.ratings.map((r) => `${r.category}: ${r.score}/4`).join(", ")}
-Strengths: ${f.pros.join("; ")}
-Concerns: ${f.cons.join("; ")}
-${f.notes ? `Notes: ${f.notes}` : ""}`,
+Interviewer ${i + 1} (${sanitizeInput(f.interviewer_name)}):
+Ratings: ${f.ratings.map((r) => `${sanitizeInput(r.category)}: ${r.score}/4`).join(", ")}
+Strengths: ${f.pros.map((p) => sanitizeInput(p)).join("; ")}
+Concerns: ${f.cons.map((c) => sanitizeInput(c)).join("; ")}
+${f.notes ? `Notes: ${sanitizeInput(f.notes)}` : ""}`,
       )
       .join("\n");
 

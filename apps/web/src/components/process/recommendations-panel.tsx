@@ -127,6 +127,13 @@ export function RecommendationsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cleanup debounce timer on unmount / tab switch
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
   function handleGenerate() {
     const currentOp = useAIGenerationStore.getState().operations[genOpKey];
     if (currentOp?.status === "loading") return;
@@ -237,6 +244,11 @@ export function RecommendationsPanel({
 
   function handleApplyClick() {
     if (!refinements || selectedCount === 0) return;
+    // Cancel any pending debounced save — apply flow persists its own state
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+    }
     const selected = refinements.items.filter((i) => i.selected);
     onApply(selected, refinements, userPrompt);
   }

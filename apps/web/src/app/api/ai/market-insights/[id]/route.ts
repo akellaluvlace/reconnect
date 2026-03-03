@@ -247,11 +247,13 @@ async function triggerDeepResearch(
     }
 
     // Write deep results back to the playbook so the UI polling picks it up
+    // Scope write to this org's playbooks only (prevents cross-tenant writes via spoofed playbook_id)
     if (playbookId) {
       const { error: playbookError } = await db
         .from("playbooks")
         .update({ market_insights: deepInsights as unknown as Json })
-        .eq("id", playbookId);
+        .eq("id", playbookId)
+        .eq("organization_id", orgId);
 
       if (playbookError) {
         console.error("[deep-research] Failed to update playbook:", playbookError);

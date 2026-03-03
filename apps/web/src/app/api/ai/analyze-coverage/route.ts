@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeCoverage, analyzeCoverageAnchored, AIError, CoverageAnalysisSchema } from "@reconnect/ai";
+import { analyzeCoverage, analyzeCoverageAnchored, safeErrorMessage, CoverageAnalysisSchema } from "@reconnect/ai";
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -93,10 +93,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[analyze-coverage] Error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to analyze coverage";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to analyze coverage") },
+      { status: 500 },
+    );
   }
 }

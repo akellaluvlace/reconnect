@@ -140,6 +140,12 @@ export async function POST(req: NextRequest) {
 
     if (finalStatusError) {
       console.error("[transcription] Final status update failed:", finalStatusError.message);
+      // Transcription succeeded but status wasn't updated — flag to caller
+      return NextResponse.json({
+        success: true,
+        duration_seconds: transcription.duration,
+        status_warning: "Transcription completed but status update failed — recording may show as 'uploaded' instead of 'transcribed'",
+      });
     }
 
     return NextResponse.json({
@@ -149,12 +155,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[transcription] Error:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Transcription failed",
-      },
+      { error: "Transcription failed" },
       { status: 500 },
     );
   }

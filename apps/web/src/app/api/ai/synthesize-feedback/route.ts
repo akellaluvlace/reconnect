@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { synthesizeFeedback, AIError } from "@reconnect/ai";
+import { synthesizeFeedback, safeErrorMessage } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+
+// Opus 4.6 with 16K token budget + optional transcript fetch — routinely 60-120s
+export const maxDuration = 120;
 
 const RatingSchema = z.object({
   category: z.string().min(1).max(200),
@@ -106,7 +109,12 @@ export async function POST(req: NextRequest) {
           "[synthesis] Failed to persist:",
           insertError.message,
         );
-        // Don't fail the request — synthesis was successful
+        // Don't fail the request — synthesis was successful, but flag the save failure
+        return NextResponse.json({
+          data: result.data,
+          metadata: result.metadata,
+          persist_warning: "Synthesis generated but failed to save — results may not persist",
+        });
       }
     }
 
@@ -116,11 +124,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Feedback synthesis error:", error);
-    const message =
-      error instanceof AIError
-        ? error.message
-        : "Failed to synthesize feedback";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: safeErrorMessage(error, "Failed to synthesize feedback") },
+      { status: 500 },
+    );
   }
   } catch (outerError) {
     console.error("[synthesize-feedback] Unhandled error:", outerError);
