@@ -173,6 +173,12 @@ export function RecommendationsPanel({
           })),
           user_prompt: userPrompt || undefined,
         }),
+        signal: AbortSignal.timeout(60_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Recommendations timed out — please try again");
+        }
+        throw err;
       });
 
       if (!res.ok) {
@@ -239,7 +245,7 @@ export function RecommendationsPanel({
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       persistRefinements(data);
-    }, 500);
+    }, 2000);
   }
 
   function handleApplyClick() {

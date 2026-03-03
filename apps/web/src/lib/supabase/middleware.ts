@@ -39,14 +39,15 @@ export async function updateSession(request: NextRequest) {
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError) {
-    console.error("[middleware] Auth check failed:", authError.message);
-  }
-
   // Public routes that don't require authentication
   const isPublicPath = PUBLIC_PATHS.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
+
+  // Only log auth errors for protected routes — public pages (login, register) always lack sessions
+  if (authError && !isPublicPath) {
+    console.error("[middleware] Auth check failed:", authError.message);
+  }
 
   // On auth SERVICE failure (5xx, network), handle gracefully:
   // - API routes: return 503 (don't let unauthenticated requests through)

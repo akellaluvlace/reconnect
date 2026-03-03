@@ -78,8 +78,38 @@ export function MarketIntelligencePanel({
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
         <Globe size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
-          No market insights available. Complete the playbook wizard to generate initial insights.
+          No market insights available yet. Data may still be loading.
         </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          onClick={async () => {
+            setIsRefreshing(true);
+            try {
+              const res = await fetch(`/api/playbooks/${playbookId}`);
+              if (!res.ok) throw new Error("Failed to refresh");
+              const data = await res.json();
+              if (data.market_insights) {
+                onUpdate(data.market_insights as MarketInsights);
+              } else {
+                toast.error("No market data found. Try completing the wizard first.");
+              }
+            } catch {
+              toast.error("Failed to refresh market data");
+            } finally {
+              setIsRefreshing(false);
+            }
+          }}
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
+          ) : (
+            <ArrowsClockwise size={16} weight="duotone" className="mr-2" />
+          )}
+          Refresh
+        </Button>
       </div>
     );
   }
@@ -111,6 +141,12 @@ export function MarketIntelligencePanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role, level, industry, location, market_focus: "irish" }),
+        signal: AbortSignal.timeout(45_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Market insights request timed out — please try again");
+        }
+        throw err;
       });
 
       if (!res.ok) throw new Error("Failed to get cache key");
@@ -152,6 +188,12 @@ export function MarketIntelligencePanel({
           location,
           playbook_id: playbookId,
         }),
+        signal: AbortSignal.timeout(30_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Competitor listings search timed out — please try again");
+        }
+        throw err;
       });
 
       if (!res.ok) {

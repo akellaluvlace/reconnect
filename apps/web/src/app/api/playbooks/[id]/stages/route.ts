@@ -169,7 +169,19 @@ export async function PUT(
       parsedItems.push(parsed.data);
     }
 
-    // Delete ALL existing stages for this playbook
+    // Batch insert rows — single operation so it's atomic
+    const insertRows = parsedItems.map((item, i) => ({
+      playbook_id: id,
+      name: item.name,
+      type: item.type,
+      duration_minutes: item.duration_minutes,
+      description: item.description ?? null,
+      focus_areas: (item.focus_areas ?? []) as unknown as Json,
+      suggested_questions: (item.suggested_questions ?? []) as unknown as Json,
+      order_index: i,
+    }));
+
+    // Delete existing stages
     const { error: deleteError } = await supabase
       .from("interview_stages")
       .delete()
@@ -183,45 +195,23 @@ export async function PUT(
       );
     }
 
-    // Insert all new stages with fresh order_index
-    const results = [];
-    const errors = [];
+    // Single batch insert — all-or-nothing
+    const { data: results, error: insertError } = await supabase
+      .from("interview_stages")
+      .insert(insertRows)
+      .select();
 
-    for (let i = 0; i < parsedItems.length; i++) {
-      const item = parsedItems[i];
-      const { data, error } = await supabase
-        .from("interview_stages")
-        .insert({
-          playbook_id: id,
-          name: item.name,
-          type: item.type,
-          duration_minutes: item.duration_minutes,
-          description: item.description ?? null,
-          focus_areas: (item.focus_areas ?? []) as unknown as Json,
-          suggested_questions: (item.suggested_questions ?? []) as unknown as Json,
-          order_index: i,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error("[stages/PUT] Insert failed:", error.message);
-        errors.push({ name: item.name, error: "Insert failed" });
-      } else {
-        results.push(data);
-      }
-    }
-
-    if (results.length === 0 && parsedItems.length > 0) {
+    if (insertError) {
+      console.error("[stages/PUT] Batch insert failed:", insertError.message);
       return NextResponse.json(
         { error: "Failed to create replacement stages" },
         { status: 500 },
       );
     }
 
-    console.log(`[stages/PUT] OK { deleted_all=true, created=${results.length}, errors=${errors.length} }`);
+    console.log(`[stages/PUT] OK { deleted_all=true, created=${results.length} }`);
 
-    return NextResponse.json({ data: results, errors });
+    return NextResponse.json({ data: results, errors: [] });
   } catch (err) {
     console.error("[stages/PUT] Unexpected error:", err);
     return NextResponse.json(

@@ -85,6 +85,7 @@ export async function GET(
     }
 
     if (deepCached) {
+      console.log("[deep-research] Poll cache HIT:", cacheKey.slice(0, 16));
       return NextResponse.json({
         status: "complete",
         data: deepCached.results,
@@ -93,6 +94,7 @@ export async function GET(
       });
     }
 
+    console.log("[deep-research] Poll cache MISS:", cacheKey.slice(0, 16));
     return NextResponse.json({ status: "pending" });
   }
 

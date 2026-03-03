@@ -3,7 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateRefinements, applyRefinements, applyRefinementsDiff, safeErrorMessage } from "@reconnect/ai";
 
-export const maxDuration = 120;
+// Apply diff benchmarked at 57s, full apply longer. Vercel Pro supports up to 300s.
+export const maxDuration = 300;
 
 const GenerateSchema = z.object({
   role: z.string().min(1).max(200),

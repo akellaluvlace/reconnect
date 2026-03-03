@@ -86,23 +86,16 @@ export function JDStructuredEditor({
   }, [jobDescription]);
 
   function handleToggleSection(section: string) {
-    setHiddenSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(section)) {
-        next.delete(section);
-      } else {
-        next.add(section);
-      }
-      return next;
-    });
-
-    // Side effects outside the state updater — use ref for fresh jobDescription
+    // Compute toggled set once to avoid stale closure on hiddenSections
     const nextHidden = new Set(hiddenSections);
     if (nextHidden.has(section)) {
       nextHidden.delete(section);
     } else {
       nextHidden.add(section);
     }
+
+    setHiddenSections(nextHidden);
+
     const updated = {
       ...jdRef.current,
       hidden_jd_sections: [...nextHidden],
@@ -162,6 +155,12 @@ export function JDStructuredEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(60_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("JD generation timed out — please try again");
+        }
+        throw err;
       });
 
       if (!res.ok) {

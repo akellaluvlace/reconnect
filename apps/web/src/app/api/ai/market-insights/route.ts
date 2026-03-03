@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (cached) {
+    console.log("[market-insights] Cache HIT (quick phase):", cacheKey.slice(0, 16));
     // Check if deep research also cached
     const { data: deepCached } = await supabase
       .from("ai_research_cache")
@@ -102,7 +103,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Phase 1: Generate quick insights
+  // Phase 1: Generate quick insights — cache miss
+  console.log("[market-insights] Cache MISS (quick phase):", cacheKey.slice(0, 16));
   const modelUsed = AI_CONFIG.marketInsightsQuick.model;
 
   try {

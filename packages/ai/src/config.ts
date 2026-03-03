@@ -108,3 +108,12 @@ export const PROMPT_VERSIONS = {
   refinementApply: "2.0.0",
   anchoredCoverage: "2.0.0",
 } as const;
+
+/** Default SDK timeout for AI calls (milliseconds) */
+export const DEFAULT_TIMEOUT_MS = 90_000;
+
+/** Per-endpoint timeout overrides (milliseconds) — all others use DEFAULT_TIMEOUT_MS */
+export const ENDPOINT_TIMEOUT_MS: Partial<Record<AIEndpoint, number>> = {
+  stageGeneration: 110_000,
+  strategyGeneration: 60_000,
+};

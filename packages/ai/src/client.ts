@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
-import { AI_CONFIG, type AIEndpoint } from "./config";
+import { AI_CONFIG, DEFAULT_TIMEOUT_MS, ENDPOINT_TIMEOUT_MS, type AIEndpoint } from "./config";
 import {
   AIError,
   AIOutputTruncatedError,
@@ -59,9 +59,11 @@ export async function callClaude<T extends z.ZodType>(options: {
   schema: T;
   prompt: string;
   systemPrompt?: string;
+  timeoutMs?: number;
 }): Promise<{ data: z.infer<T>; model: string }> {
-  const { endpoint, schema, prompt, systemPrompt } = options;
+  const { endpoint, schema, prompt, systemPrompt, timeoutMs: overrideTimeout } = options;
   const config = AI_CONFIG[endpoint];
+  const effectiveTimeout = overrideTimeout ?? ENDPOINT_TIMEOUT_MS[endpoint] ?? DEFAULT_TIMEOUT_MS;
   const client = getClient();
   const startTime = Date.now();
 
@@ -78,16 +80,19 @@ export async function callClaude<T extends z.ZodType>(options: {
   };
 
   try {
-    const response = await client.messages.create({
-      model: config.model,
-      max_tokens: config.maxTokens,
-      temperature: config.temperature,
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
-      output_config: {
-        format: zodOutputFormat(schema),
+    const response = await client.messages.create(
+      {
+        model: config.model,
+        max_tokens: config.maxTokens,
+        temperature: config.temperature,
+        system: systemPrompt,
+        messages: [{ role: "user", content: prompt }],
+        output_config: {
+          format: zodOutputFormat(schema),
+        },
       },
-    });
+      { timeout: effectiveTimeout },
+    );
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
@@ -179,9 +184,11 @@ export async function callClaudeText(options: {
   endpoint: AIEndpoint;
   prompt: string;
   systemPrompt?: string;
+  timeoutMs?: number;
 }): Promise<{ content: string; model: string }> {
-  const { endpoint, prompt, systemPrompt } = options;
+  const { endpoint, prompt, systemPrompt, timeoutMs: overrideTimeout } = options;
   const config = AI_CONFIG[endpoint];
+  const effectiveTimeout = overrideTimeout ?? ENDPOINT_TIMEOUT_MS[endpoint] ?? DEFAULT_TIMEOUT_MS;
   const client = getClient();
   const startTime = Date.now();
 
@@ -197,13 +204,16 @@ export async function callClaudeText(options: {
   };
 
   try {
-    const response = await client.messages.create({
-      model: config.model,
-      max_tokens: config.maxTokens,
-      temperature: config.temperature,
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
-    });
+    const response = await client.messages.create(
+      {
+        model: config.model,
+        max_tokens: config.maxTokens,
+        temperature: config.temperature,
+        system: systemPrompt,
+        messages: [{ role: "user", content: prompt }],
+      },
+      { timeout: effectiveTimeout },
+    );
 
     logEntry.inputTokens = response.usage?.input_tokens ?? 0;
     logEntry.outputTokens = response.usage?.output_tokens ?? 0;

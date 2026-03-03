@@ -229,6 +229,12 @@ export function StageBlueprint({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(150_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Stage generation timed out — please try again");
+        }
+        throw err;
       });
 
       if (!aiRes.ok) {

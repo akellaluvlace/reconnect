@@ -10,11 +10,10 @@ import { Step3Generate } from "@/components/playbooks/wizard/step-3-generate";
 export default function NewPlaybookPage() {
   const { draft, setStep, resetDraft } = usePlaybookStore();
 
-  // Reset draft on fresh mount — clears stale data from previous playbook creation
+  // Always reset draft on mount — ensures clean state for new playbook creation
   const didReset = useRef(false);
   useEffect(() => {
-    if (!didReset.current && draft.step === 3 && draft.generatedContent) {
-      // User returned to /new after a successful generation — reset
+    if (!didReset.current) {
       resetDraft();
       didReset.current = true;
     }

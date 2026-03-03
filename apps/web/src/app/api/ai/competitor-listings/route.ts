@@ -182,6 +182,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (cached?.results) {
+    console.log("[competitor-listings] Cache HIT:", listingsCacheKey.slice(0, 16));
     return NextResponse.json({
       listings: cached.results as unknown as CompetitorListing[],
       cached: true,
@@ -189,7 +190,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Run Tavily searches
+  // Run Tavily searches — cache miss
+  console.log("[competitor-listings] Cache MISS:", listingsCacheKey.slice(0, 16));
   const currentYear = new Date().getFullYear();
   // Core role term for industry-focused query (e.g., "Sales Rep" from "Senior Sales Rep")
   const coreRoleTerm = role.split(/\s+/).slice(-2).join(" ");

@@ -3,8 +3,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateStages, safeErrorMessage } from "@reconnect/ai";
 
-// Benchmarked at 81-90s in production (single Sonnet call, 8K token output)
-export const maxDuration = 120;
+// Benchmarked at 81-100s in production. Vercel Pro supports up to 300s.
+export const maxDuration = 300;
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),

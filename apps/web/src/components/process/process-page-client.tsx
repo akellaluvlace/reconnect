@@ -260,6 +260,12 @@ export function ProcessPageClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(120_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Apply timed out — please try again");
+        }
+        throw err;
       });
 
       if (!aiRes.ok) {
@@ -394,6 +400,12 @@ export function ProcessPageClient({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(coverageBody),
+            signal: AbortSignal.timeout(90_000),
+          }).catch((err) => {
+            if (err instanceof DOMException && err.name === "TimeoutError") {
+              throw new Error("Coverage re-analysis timed out");
+            }
+            throw err;
           });
 
           if (covRes.ok) {
@@ -482,8 +494,8 @@ export function ProcessPageClient({
       setApplyInProgress(false);
       setApplyStep(null);
 
-      // Navigate back to recommendations
-      setActiveItem("recommendations");
+      // Navigate to appropriate tab — recommendations if available, else stages
+      setActiveItem(prevCoverage ? "recommendations" : "stages");
 
       toast.error(err instanceof Error ? err.message : "Failed to apply recommendations");
     } finally {
