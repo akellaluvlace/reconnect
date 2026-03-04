@@ -7,13 +7,13 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 10.1 COMPLETE + all hardening + Process chapter client feedback round 2 COMPLETE
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. All 6 Process chapter feedback items implemented + UX polish + review fixes. Awaiting client decision on recommendations panel. Client texted — reading email, response expected shortly.
-**Next task:** Deploy → live test → await client decision on recommendations panel → zero-stuck-state plan (4 fixes) → Step 10.2.
-**Blockers:** (1) Waiting on client decision: remove Recommendations panel or keep/merge? (2) Google Workspace upgrade to Business Plus (auto-recording). Neither blocks deployment.
+**Step:** Step 10.1 COMPLETE + all hardening + Process chapter Option A COMPLETE (Recommendations removed)
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Client confirmed Option A — Recommendations panel removed, user drives edits directly, AI assists via question regenerate/refine. Coverage Analysis stays as quality dashboard with anchored re-analysis (score regression protection). Lock-in button renamed "Lock your process". Stages-changed banner on Coverage tab. 4 commits deployed (2026-03-04): `bd8a497` (feedback round 2) + `a0b9ed3` (Option A removal) + `d0b89be` (tracers + banner + lock-in). 535 web + 389 AI tests green. Typecheck clean.
+**Next task:** Live test coverage tracers → zero-stuck-state plan (4 fixes) → Step 10.2 (cron + state machine + UI).
+**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Does not block code work.
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
 
-**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → ~~process hardening~~ → ~~coverage progression fix~~ → ~~production hardening r2~~ → ~~production resilience~~ → ~~session 401 + role suggestions + server cap~~ → ~~live test + timeout fix~~ → zero-stuck-state plan (4 fixes) → 10.2 (cron + state machine + UI) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~anchored coverage~~ → ~~gap severity weights~~ → ~~process hardening~~ → ~~coverage progression fix~~ → ~~production hardening r2~~ → ~~production resilience~~ → ~~session 401 + role suggestions + server cap~~ → ~~live test + timeout fix~~ → ~~Option A (remove Recommendations)~~ → zero-stuck-state plan (4 fixes) → 10.2 (cron + state machine + UI) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -242,9 +242,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-04:** Process chapter client feedback round 2 — all 6 items done. Questions under FAs, per-question editing (inline edit, AI refine, AI generate, regenerate all), weight tooltip, process source info, finalize button, "How to use" guide. 3-agent review → 9 fixes (stale closure, index drift, save rollback, etc). UX polish: spacing, text contrast, focus outline fix, FA scroll-into-view. Status report updated.
+- **2026-03-04 (b):** Client confirmed Option A — removed Recommendations panel entirely (-586 lines). Wired anchored coverage on re-analysis (monotonic score clamp + gap severity floor). Lock-in button → "Lock your process" + persists latest coverage. Stages-changed banner on Coverage tab. Detailed coverage tracers (stage names + FA counts) on client + server. 535 web + 389 AI tests green.
+- **2026-03-04:** Process chapter client feedback round 2 — all 6 items done. Questions under FAs, per-question editing (inline edit, AI refine, AI generate, regenerate all), weight tooltip, process source info, finalize button, "How to use" guide. UX polish: spacing, text contrast, focus outline fix, FA scroll-into-view. Status report updated.
 - **2026-03-03 (d):** Session 401 detection (50+ fetches, 16 components), role suggestion typeahead (API + combobox + 12 tests), server-side refinement cap, JSONB 100→250KB, timeout alignment. Live tested. Wrote zero-stuck-state plan. 389 AI + 535 web tests green.
 - **2026-03-03 (b):** Production resilience round. All AI routes maxDuration=300. SDK+client-side timeouts. Cache logging. Monotonic score clamp + gap severity floor. AI refinement cap. 389 AI + 523 web tests green.
 - **2026-03-03:** Production hardening round 2. Deep 5-agent audit → 30+ issues. Critical tier fixed. 389 AI + 523 web tests green.
-- **2026-03-02 (d):** Coverage score progression fix (P0). Gap-targeted re-evaluation + deterministic fallback. 389 AI + 523 web tests green.
 > Keep max 5 entries. Remove oldest when adding new.

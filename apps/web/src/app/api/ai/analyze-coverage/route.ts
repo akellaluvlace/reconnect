@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { analyzeCoverage, analyzeCoverageAnchored, safeErrorMessage, CoverageAnalysisSchema } from "@reconnect/ai";
+import { analyzeCoverage, safeErrorMessage } from "@reconnect/ai";
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -23,17 +23,6 @@ const RequestSchema = z.object({
       ).max(10),
     }),
   ).max(20),
-});
-
-const AnchoredRequestSchema = RequestSchema.extend({
-  previous_coverage: CoverageAnalysisSchema,
-  changed_fa_names: z.array(z.string().max(200)).max(50),
-  has_additions: z.boolean(),
-  gap_targets: z.array(z.object({
-    gap_requirement: z.string().max(500),
-    fa_name: z.string().max(200),
-    fa_description: z.string().max(1000),
-  })).max(50).optional(),
 });
 
 // Coverage analysis observed at 31s but can spike under load. Vercel Pro supports up to 300s.
@@ -58,29 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    // Explicit dispatch: anchored mode if previous_coverage present
-    const rawBody = body as Record<string, unknown>;
-    const isAnchored = "previous_coverage" in rawBody && rawBody.previous_coverage != null;
-
-    if (isAnchored) {
-      const anchoredParsed = AnchoredRequestSchema.safeParse(body);
-      if (!anchoredParsed.success) {
-        return NextResponse.json(
-          { error: "Invalid anchored coverage input", issues: anchoredParsed.error.issues },
-          { status: 400 },
-        );
-      }
-      const stageNames = anchoredParsed.data.stages.map((s) => `${s.name}(${s.focus_areas.length})`).join(", ");
-      console.log(`[analyze-coverage] ANCHORED RECEIVED { stages=${anchoredParsed.data.stages.length}: [${stageNames}], previousScore=${anchoredParsed.data.previous_coverage.overall_coverage_score}% }`);
-      const result = await analyzeCoverageAnchored(anchoredParsed.data);
-      console.log(`[analyze-coverage] ANCHORED OK { score=${result.data?.overall_coverage_score}%, covered=${result.data?.requirements_covered?.length ?? 0}, gaps=${result.data?.gaps?.length ?? 0} }`);
-      return NextResponse.json({
-        data: result.data,
-        metadata: result.metadata,
-      });
-    }
-
-    // Full analysis mode
+    // Full analysis — always fresh, score reflects current stages accurately
     const parsed = RequestSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -89,10 +56,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const stageNames = parsed.data.stages.map((s) => `${s.name}(${s.focus_areas.length})`).join(", ");
-    console.log(`[analyze-coverage] FULL RECEIVED { stages=${parsed.data.stages.length}: [${stageNames}] }`);
+    const stageNames = parsed.data.stages.map((s) => `${s.name}(${s.focus_areas.length}FAs)`).join(", ");
+    console.log(`[analyze-coverage] INPUT { stages=${parsed.data.stages.length}: [${stageNames}], reqs=${parsed.data.jd_requirements.required.length}req+${parsed.data.jd_requirements.preferred.length}pref }`);
+
     const result = await analyzeCoverage(parsed.data);
-    console.log(`[analyze-coverage] FULL OK { score=${result.data?.overall_coverage_score}%, covered=${result.data?.requirements_covered?.length ?? 0}, gaps=${result.data?.gaps?.length ?? 0} }`);
+
+    console.log(`[analyze-coverage] RESULT { score=${result.data?.overall_coverage_score}%, covered=${result.data?.requirements_covered?.length ?? 0}, gaps=${result.data?.gaps?.length ?? 0} }`);
 
     return NextResponse.json({
       data: result.data,

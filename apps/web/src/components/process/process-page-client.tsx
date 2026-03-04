@@ -151,6 +151,9 @@ export function ProcessPageClient({
               )}
             >
               {item.name}
+              {item.id === "coverage" && stagesChangedSinceCoverage && coverageAnalysis && (
+                <span className="ml-auto h-2 w-2 rounded-full bg-amber-500" title="Stages changed — re-analyze recommended" />
+              )}
             </button>
           );
         })}
@@ -180,19 +183,24 @@ export function ProcessPageClient({
                 </button>
               </div>
             ) : (
-              <Button
-                size="sm"
-                onClick={handleFinalize}
-                disabled={isFinalizing}
-                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-              >
-                {isFinalizing ? (
-                  <CircleNotch size={14} weight="bold" className="mr-1.5 animate-spin" />
-                ) : (
-                  <Lock size={14} weight="fill" className="mr-1.5" />
-                )}
-                Lock your process
-              </Button>
+              <div className="space-y-2">
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Happy with your stages? Lock in to mark your process as ready.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={handleFinalize}
+                  disabled={isFinalizing}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+                >
+                  {isFinalizing ? (
+                    <CircleNotch size={14} weight="bold" className="mr-1.5 animate-spin" />
+                  ) : (
+                    <Lock size={14} weight="fill" className="mr-1.5" />
+                  )}
+                  Lock in
+                </Button>
+              </div>
             )}
           </div>
         )}
