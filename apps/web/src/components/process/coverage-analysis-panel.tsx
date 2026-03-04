@@ -25,6 +25,7 @@ interface CoverageAnalysisPanelProps {
   stages: StageData[];
   initialAnalysis: CoverageAnalysis | null;
   onAnalysisChange?: (analysis: CoverageAnalysis) => void;
+  stagesChanged?: boolean;
 }
 
 const SEVERITY_CONFIG = {
@@ -47,6 +48,7 @@ export function CoverageAnalysisPanel({
   stages,
   initialAnalysis,
   onAnalysisChange,
+  stagesChanged,
 }: CoverageAnalysisPanelProps) {
   const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(initialAnalysis);
 
@@ -98,8 +100,9 @@ export function CoverageAnalysisPanel({
 
       const totalFAs = stagesSummary.reduce((n, s) => n + s.focus_areas.length, 0);
       const isReAnalysis = analysis !== null;
+      const stageNames = stagesSummary.map((s) => `${s.name} (${s.focus_areas.length} FAs)`).join(", ");
 
-      console.log(`[coverage] ${isReAnalysis ? "Re-analyze" : "Analyze"} { stages=${stagesSummary.length}, totalFAs=${totalFAs}, anchored=${isReAnalysis}, previousScore=${analysis?.overall_coverage_score ?? "none"} }`);
+      console.log(`[coverage] SENDING ${isReAnalysis ? "re-analysis" : "analysis"} { stages=${stagesSummary.length}: [${stageNames}], totalFAs=${totalFAs}, anchored=${isReAnalysis}, previousScore=${analysis?.overall_coverage_score ?? "none"} }`);
 
       // Build request — use anchored mode on re-analysis to protect against score regression
       const body: Record<string, unknown> = {
@@ -180,6 +183,32 @@ export function CoverageAnalysisPanel({
 
   return (
     <div className="space-y-4">
+      {/* Stages changed banner */}
+      {stagesChanged && (
+        <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Warning size={16} weight="duotone" className="text-amber-600 shrink-0" />
+            <span className="text-[13px] text-amber-800">
+              Interview stages have changed since this analysis was run.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
+          >
+            {isAnalyzing ? (
+              <CircleNotch size={14} weight="bold" className="mr-1.5 animate-spin" />
+            ) : (
+              <Sparkle size={14} weight="duotone" className="mr-1.5" />
+            )}
+            Re-analyze
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-end">
         <Button

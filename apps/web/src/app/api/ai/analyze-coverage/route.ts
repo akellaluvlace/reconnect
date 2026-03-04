@@ -70,7 +70,10 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
+      const stageNames = anchoredParsed.data.stages.map((s) => `${s.name}(${s.focus_areas.length})`).join(", ");
+      console.log(`[analyze-coverage] ANCHORED RECEIVED { stages=${anchoredParsed.data.stages.length}: [${stageNames}], previousScore=${anchoredParsed.data.previous_coverage.overall_coverage_score}% }`);
       const result = await analyzeCoverageAnchored(anchoredParsed.data);
+      console.log(`[analyze-coverage] ANCHORED OK { score=${result.data?.overall_coverage_score}%, covered=${result.data?.requirements_covered?.length ?? 0}, gaps=${result.data?.gaps?.length ?? 0} }`);
       return NextResponse.json({
         data: result.data,
         metadata: result.metadata,
@@ -86,7 +89,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const stageNames = parsed.data.stages.map((s) => `${s.name}(${s.focus_areas.length})`).join(", ");
+    console.log(`[analyze-coverage] FULL RECEIVED { stages=${parsed.data.stages.length}: [${stageNames}] }`);
     const result = await analyzeCoverage(parsed.data);
+    console.log(`[analyze-coverage] FULL OK { score=${result.data?.overall_coverage_score}%, covered=${result.data?.requirements_covered?.length ?? 0}, gaps=${result.data?.gaps?.length ?? 0} }`);
 
     return NextResponse.json({
       data: result.data,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type {
   HiringStrategy,
   JobDescription,
@@ -59,6 +59,21 @@ export function ProcessPageClient({
   const [coverageAnalysis, setCoverageAnalysis] = useState<CoverageAnalysis | null>(
     playbook.coverage_analysis,
   );
+
+  // Track whether stages have been edited since last coverage analysis
+  const [stagesChangedSinceCoverage, setStagesChangedSinceCoverage] = useState(false);
+
+  const handleStagesChange = useCallback((updated: StageData[]) => {
+    setStages(updated);
+    if (coverageAnalysis) {
+      setStagesChangedSinceCoverage(true);
+    }
+  }, [coverageAnalysis]);
+
+  const handleCoverageChange = useCallback((analysis: CoverageAnalysis) => {
+    setCoverageAnalysis(analysis);
+    setStagesChangedSinceCoverage(false);
+  }, []);
 
   const [playbookStatus, setPlaybookStatus] = useState(playbook.status);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -176,7 +191,7 @@ export function ProcessPageClient({
                 ) : (
                   <Lock size={14} weight="fill" className="mr-1.5" />
                 )}
-                Lock it in
+                Lock your process
               </Button>
             )}
           </div>
@@ -192,7 +207,7 @@ export function ProcessPageClient({
           <StageBlueprint
             playbookId={playbook.id}
             stages={stages}
-            onStagesChange={setStages}
+            onStagesChange={handleStagesChange}
             strategy={strategy}
             jd={jd}
             role={playbook.title}
@@ -209,7 +224,8 @@ export function ProcessPageClient({
             jd={jd!}
             stages={stages}
             initialAnalysis={coverageAnalysis}
-            onAnalysisChange={setCoverageAnalysis}
+            onAnalysisChange={handleCoverageChange}
+            stagesChanged={stagesChangedSinceCoverage}
           />
         )}
       </div>
