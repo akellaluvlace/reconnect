@@ -22,15 +22,10 @@ import type { HiringStrategy, JobDescription } from "@reconnect/database";
 import { Button } from "@/components/ui/button";
 import { StageCard, type StageEditPayload } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
-import { Sparkle, CircleNotch, Plus, Warning, Info, Question, DotsSixVertical, PencilSimple, Trash, CaretDown, ChatCenteredText, Target } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, Plus, Info, Question, DotsSixVertical, PencilSimple, Trash, CaretDown, ChatCenteredText, Target } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { StageData } from "./process-page-client";
-
-export interface ApplyState {
-  step: "ai" | "saving" | "coverage";
-  error?: string | null;
-}
 
 interface StageBlueprintProps {
   playbookId: string;
@@ -41,7 +36,6 @@ interface StageBlueprintProps {
   role: string;
   level: string;
   industry: string;
-  applyState?: ApplyState | null;
 }
 
 const SPEED_LABELS: Record<string, string> = {
@@ -136,12 +130,6 @@ function createBlankStage(id: string): StageData {
   };
 }
 
-const APPLY_STEP_LABELS: Record<string, string> = {
-  ai: "Generating refined stages...",
-  saving: "Saving updated stages...",
-  coverage: "Re-analysing coverage...",
-};
-
 export function StageBlueprint({
   playbookId,
   stages,
@@ -151,7 +139,6 @@ export function StageBlueprint({
   role,
   level,
   industry,
-  applyState,
 }: StageBlueprintProps) {
   const opKey = `stages-${playbookId}`;
   const { status: genStatus, result: genResult, error: genError } = useAIGenerationStore(
@@ -461,36 +448,6 @@ export function StageBlueprint({
   // Insert at end
   if (insertAtIndex !== null && insertAtIndex >= stages.length) {
     renderItems.push({ type: "new", displayIndex: displayIdx });
-  }
-
-  // ── Apply overlay: show instead of normal content while apply is in progress ──
-  if (applyState) {
-    if (applyState.error) {
-      return (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50/50 py-16">
-          <Warning size={24} weight="duotone" className="text-red-500" />
-          <p className="mt-3 text-[14px] font-medium text-red-800">
-            Failed to apply recommendations
-          </p>
-          <p className="mt-1 text-[13px] text-red-600">{applyState.error}</p>
-          <p className="mt-3 text-[12px] text-muted-foreground">
-            Return to Recommendations to try again.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <CircleNotch size={24} weight="bold" className="animate-spin text-teal-600" />
-        <p className="mt-3 text-[14px] font-medium text-foreground">
-          Applying recommendations...
-        </p>
-        <p className="mt-1 text-[13px] text-muted-foreground">
-          {APPLY_STEP_LABELS[applyState.step] ?? "Processing..."}
-        </p>
-      </div>
-    );
   }
 
   return (

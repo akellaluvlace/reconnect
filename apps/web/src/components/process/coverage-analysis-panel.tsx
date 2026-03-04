@@ -87,26 +87,44 @@ export function CoverageAnalysisPanel({
 
   function handleAnalyze() {
     useAIGenerationStore.getState().startOperation(opKey, async () => {
+      const stagesSummary = stages.map((s) => ({
+        name: s.name,
+        type: s.type,
+        focus_areas: (s.focus_areas ?? []).map((fa) => ({
+          name: fa.name,
+          description: fa.description,
+        })),
+      }));
+
+      const totalFAs = stagesSummary.reduce((n, s) => n + s.focus_areas.length, 0);
+      const isReAnalysis = analysis !== null;
+
+      console.log(`[coverage] ${isReAnalysis ? "Re-analyze" : "Analyze"} { stages=${stagesSummary.length}, totalFAs=${totalFAs}, anchored=${isReAnalysis}, previousScore=${analysis?.overall_coverage_score ?? "none"} }`);
+
+      // Build request — use anchored mode on re-analysis to protect against score regression
+      const body: Record<string, unknown> = {
+        role,
+        level,
+        jd_requirements: {
+          required: jd.requirements?.required ?? [],
+          preferred: jd.requirements?.preferred ?? [],
+          responsibilities: jd.responsibilities ?? [],
+        },
+        stages: stagesSummary,
+      };
+
+      if (isReAnalysis) {
+        body.previous_coverage = analysis;
+        // All FAs are potentially changed since user edits directly
+        const allFANames = stagesSummary.flatMap((s) => s.focus_areas.map((fa) => fa.name));
+        body.changed_fa_names = allFANames;
+        body.has_additions = true;
+      }
+
       const res = await fetch("/api/ai/analyze-coverage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          role,
-          level,
-          jd_requirements: {
-            required: jd.requirements?.required ?? [],
-            preferred: jd.requirements?.preferred ?? [],
-            responsibilities: jd.responsibilities ?? [],
-          },
-          stages: stages.map((s) => ({
-            name: s.name,
-            type: s.type,
-            focus_areas: (s.focus_areas ?? []).map((fa) => ({
-              name: fa.name,
-              description: fa.description,
-            })),
-          })),
-        }),
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(120_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
@@ -122,6 +140,8 @@ export function CoverageAnalysisPanel({
       }
 
       const { data } = await res.json();
+
+      console.log(`[coverage] ${isReAnalysis ? "Re-analyze" : "Analyze"} OK { score=${data.overall_coverage_score}%, covered=${data.requirements_covered?.length ?? 0}, gaps=${data.gaps?.length ?? 0} }`);
 
       // Persist to DB immediately (runs even if component unmounts during AI call)
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
