@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { generateQuestions, safeErrorMessage } from "@reconnect/ai";
+import { generateQuestions, refineQuestion, safeErrorMessage } from "@reconnect/ai";
 
 // Single Sonnet call, typically 5-10s
 export const maxDuration = 30;
@@ -13,6 +13,9 @@ const RequestSchema = z.object({
   focus_area_description: z.string().min(1).max(1000),
   stage_type: z.string().min(1).max(100),
   existing_questions: z.array(z.string().max(500)).max(20).optional(),
+  mode: z.enum(["generate", "refine"]).default("generate"),
+  current_question: z.string().min(1).max(1000).optional(),
+  guidance: z.string().max(500).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -41,9 +44,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  try {
-    const result = await generateQuestions(parsed.data);
+  const { mode, current_question, ...rest } = parsed.data;
 
+  if (mode === "refine" && !current_question) {
+    return NextResponse.json(
+      { error: "current_question is required for refine mode" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    if (mode === "refine") {
+      const result = await refineQuestion({
+        ...rest,
+        current_question: current_question!,
+      });
+      console.log(`[generate-questions] Refine OK { fa="${rest.focus_area}", alternatives=${result.data?.alternatives?.length ?? 0} }`);
+      return NextResponse.json({
+        data: result.data,
+        metadata: result.metadata,
+      });
+    }
+
+    // Default: generate mode (existing behavior)
+    const result = await generateQuestions({
+      ...rest,
+      guidance: parsed.data.guidance,
+    });
+
+    console.log(`[generate-questions] Generate OK { fa="${rest.focus_area}", questions=${result.data?.questions?.length ?? 0} }`);
     return NextResponse.json({
       data: result.data,
       metadata: result.metadata,

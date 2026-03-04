@@ -24,6 +24,11 @@ export const AI_CONFIG = {
     temperature: 0.3,
     maxTokens: 4096,
   },
+  questionRefine: {
+    model: "claude-sonnet-4-5-20250929" as const,
+    temperature: 0.4,
+    maxTokens: 4096,
+  },
   feedbackSynthesis: {
     model: "claude-opus-4-6" as const,
     temperature: 0.1,
@@ -100,6 +105,7 @@ export const PROMPT_VERSIONS = {
   jdGeneration: "1.0.0",
   stageGeneration: "1.0.0",
   questionGeneration: "1.0.0",
+  questionRefine: "1.0.0",
   feedbackSynthesis: "1.0.0",
   strategyGeneration: "1.0.0",
   coverageAnalysis: "1.0.0",
@@ -114,6 +120,6 @@ export const DEFAULT_TIMEOUT_MS = 90_000;
 
 /** Per-endpoint timeout overrides (milliseconds) — all others use DEFAULT_TIMEOUT_MS */
 export const ENDPOINT_TIMEOUT_MS: Partial<Record<AIEndpoint, number>> = {
-  stageGeneration: 110_000,
-  strategyGeneration: 60_000,
+  stageGeneration: 150_000,
+  strategyGeneration: 120_000,
 };

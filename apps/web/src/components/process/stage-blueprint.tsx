@@ -22,7 +22,7 @@ import type { HiringStrategy, JobDescription } from "@reconnect/database";
 import { Button } from "@/components/ui/button";
 import { StageCard, type StageEditPayload } from "./stage-card";
 import { TotalTimeline } from "./total-timeline";
-import { Sparkle, CircleNotch, Plus, Warning } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, Plus, Warning, Info, Question, DotsSixVertical, PencilSimple, Trash, CaretDown, ChatCenteredText, Target } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { StageData } from "./process-page-client";
@@ -53,6 +53,9 @@ const SPEED_LABELS: Record<string, string> = {
 function SortableStageCard({
   stage,
   index,
+  playbookId,
+  role,
+  level,
   isEditing,
   isSaving,
   onEdit,
@@ -62,6 +65,9 @@ function SortableStageCard({
 }: {
   stage: StageData;
   index: number;
+  playbookId: string;
+  role: string;
+  level: string;
   isEditing: boolean;
   isSaving: boolean;
   onEdit: () => void;
@@ -82,6 +88,9 @@ function SortableStageCard({
       <StageCard
         stage={stage}
         index={index}
+        playbookId={playbookId}
+        role={role}
+        level={level}
         dragHandleProps={isEditing ? undefined : { ...attributes, ...listeners }}
         isEditing={isEditing}
         isSaving={isSaving}
@@ -97,7 +106,7 @@ function SortableStageCard({
 /** Centered "+ Insert stage" button, visible on hover */
 function InsertBetweenControl({ onClick }: { onClick: () => void }) {
   return (
-    <div className="group flex items-center justify-center py-1">
+    <div className="group flex items-center justify-center py-3">
       <Button
         variant="ghost"
         size="sm"
@@ -164,6 +173,7 @@ export function StageBlueprint({
     }
   }, [genStatus, genResult, genError, onStagesChange, opKey]);
 
+  const [showGuide, setShowGuide] = useState(false);
   // Which stage is being edited: existing stage id, or "new-{index}" for inserts
   const [editingStageId, setEditingStageId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -234,7 +244,7 @@ export function StageBlueprint({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(150_000),
+        signal: AbortSignal.timeout(180_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Stage generation timed out — please try again");
@@ -487,41 +497,93 @@ export function StageBlueprint({
     <div className="space-y-5">
       {/* Header */}
       {stages.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {strategy?.process_speed && (
-              <span className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-semibold text-foreground">
-                {SPEED_LABELS[strategy.process_speed.recommendation] ??
-                  strategy.process_speed.recommendation}
-              </span>
-            )}
-            <TotalTimeline stages={stages} />
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => startInsert(stages.length)}
-              disabled={editingStageId !== null}
-            >
-              <Plus size={12} className="mr-1" />
-              Add Stage
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={isGenerating}
-              aria-label="Regenerate stages"
-            >
-              {isGenerating ? (
-                <CircleNotch size={16} weight="bold" className="animate-spin" />
-              ) : (
-                <Sparkle size={16} weight="duotone" />
+        <>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {strategy?.process_speed && (
+                <span className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[12px] font-semibold text-foreground">
+                  {SPEED_LABELS[strategy.process_speed.recommendation] ??
+                    strategy.process_speed.recommendation}
+                </span>
               )}
-            </Button>
+              <TotalTimeline stages={stages} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => startInsert(stages.length)}
+                disabled={editingStageId !== null}
+              >
+                <Plus size={12} className="mr-1" />
+                Add Stage
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                aria-label="Regenerate stages"
+              >
+                {isGenerating ? (
+                  <CircleNotch size={16} weight="bold" className="animate-spin" />
+                ) : (
+                  <Sparkle size={16} weight="duotone" />
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+          <div className="pb-2 space-y-2">
+            <p className="flex items-center gap-2 text-[14px] text-muted-foreground">
+              <Info size={15} weight="duotone" className="shrink-0 text-teal-600" />
+              Process designed from your market research, role requirements, and industry interview frameworks.
+            </p>
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/30 px-3 py-1.5 text-[13px] font-medium text-foreground/70 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors"
+            >
+              <Question size={15} weight="bold" className="text-teal-600" />
+              {showGuide ? "Hide guide" : "How to use this page"}
+            </button>
+
+            {showGuide && (
+              <div className="mt-3 rounded-xl border border-border/30 bg-muted/20 px-6 py-5 space-y-4 text-[13px] text-foreground/80 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-start gap-3">
+                  <DotsSixVertical size={16} weight="bold" className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Drag & drop</span> — Grab the 6-dot handle on any stage card to reorder your interview process.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <PencilSimple size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Edit stage</span> — Click the pencil icon to modify the stage name, type, duration, description, and focus areas.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CaretDown size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Expand stage</span> — Click the chevron to view all focus areas, questions, and rationale for a stage.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Target size={16} weight="duotone" className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Focus areas</span> — Each stage has weighted focus areas (1–4). In edit mode, add/remove focus areas and adjust their importance.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <ChatCenteredText size={16} weight="duotone" className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Questions</span> — Each focus area has interview questions. In edit mode: inline-edit, delete, AI refine (with optional guidance), or generate new questions from a prompt.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Plus size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">Add / Insert stage</span> — Use the "Add Stage" button or hover between cards to insert a stage at any position.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Sparkle size={16} weight="duotone" className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p><span className="font-semibold text-foreground">AI regenerate</span> — The sparkle button regenerates the entire interview process from scratch using your strategy and job description.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Trash size={16} className="mt-0.5 shrink-0 text-destructive/60" />
+                  <p><span className="font-semibold text-foreground">Delete stage</span> — In edit mode, use the delete button at the bottom. Requires confirmation.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {stages.length === 0 && insertAtIndex === null ? (
@@ -560,7 +622,7 @@ export function StageBlueprint({
             items={stages.map((s) => s.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-1">
+            <div className="space-y-2.5">
               {renderItems.map((item, ri) => {
                 if (item.type === "new") {
                   const blankStage = createBlankStage(`new-${insertAtIndex}`);
@@ -569,6 +631,9 @@ export function StageBlueprint({
                       <StageCard
                         stage={blankStage}
                         index={item.displayIndex}
+                        playbookId={playbookId}
+                        role={role}
+                        level={level}
                         isEditing
                         isSaving={isSaving}
                         onEdit={() => {}}
@@ -598,6 +663,9 @@ export function StageBlueprint({
                     <SortableStageCard
                       stage={stage}
                       index={item.displayIndex}
+                      playbookId={playbookId}
+                      role={role}
+                      level={level}
                       isEditing={isEditingThis}
                       isSaving={isSaving && isEditingThis}
                       onEdit={() => setEditingStageId(stage.id)}

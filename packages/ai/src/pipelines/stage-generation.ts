@@ -2,12 +2,15 @@ import { callClaude } from "../client";
 import {
   InterviewStagesSchema,
   QuestionsForFocusAreaSchema,
+  QuestionAlternativesSchema,
   type InterviewStagesOutput,
   type QuestionsForFocusAreaOutput,
+  type QuestionAlternativesOutput,
 } from "../schemas";
 import {
   STAGE_GENERATION_PROMPT,
   QUESTION_GENERATION_PROMPT,
+  QUESTION_REFINE_PROMPT,
   type StageGenerationInput,
   type QuestionGenerationInput,
 } from "../prompts/stage-generation";
@@ -233,6 +236,85 @@ export async function generateQuestions(
       metadata: {
         model_used: result.model,
         prompt_version: PROMPT_VERSIONS.stageGeneration,
+        generated_at: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    s2.fail(err instanceof Error ? err.message : String(err));
+    trace.finish();
+    throw err;
+  }
+}
+
+export interface QuestionRefineInput {
+  role: string;
+  level: string;
+  focus_area: string;
+  focus_area_description: string;
+  stage_type: string;
+  current_question: string;
+  guidance?: string;
+  existing_questions?: string[];
+}
+
+/**
+ * Refine a single question — returns 2-3 alternative versions.
+ */
+export async function refineQuestion(
+  input: QuestionRefineInput,
+): Promise<{
+  data: QuestionAlternativesOutput;
+  metadata: {
+    model_used: string;
+    prompt_version: string;
+    generated_at: string;
+  };
+}> {
+  const trace = new PipelineTrace("refineQuestion");
+
+  const s1 = trace.step("validate-input", {
+    role: input.role,
+    level: input.level,
+    stage_type: input.stage_type,
+    focus_area: input.focus_area,
+    current_question: input.current_question.substring(0, 100),
+    has_guidance: !!input.guidance,
+    existing_questions_count: input.existing_questions?.length ?? 0,
+  });
+  const warnings = checkParams(
+    input as unknown as Record<string, unknown>,
+    ["role", "level", "stage_type", "focus_area", "current_question"],
+  );
+  s1.ok({}, warnings);
+
+  const s2 = trace.step("call-claude", {
+    endpoint: "questionRefine",
+    schema: "QuestionAlternativesSchema",
+    schema_bounds: { alternatives: "min(2) max(3)" },
+  });
+
+  try {
+    const prompt = QUESTION_REFINE_PROMPT.user(input);
+    const result = await withRetry(() =>
+      callClaude({
+        endpoint: "questionRefine",
+        schema: QuestionAlternativesSchema,
+        prompt,
+        systemPrompt: QUESTION_REFINE_PROMPT.system,
+      }),
+    );
+
+    s2.ok({
+      model: result.model,
+      alternatives_count: result.data.alternatives.length,
+    });
+    trace.finish();
+
+    return {
+      data: result.data,
+      metadata: {
+        model_used: result.model,
+        prompt_version: PROMPT_VERSIONS.questionRefine,
         generated_at: new Date().toISOString(),
       },
     };

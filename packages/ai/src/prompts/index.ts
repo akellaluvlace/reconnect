@@ -13,8 +13,10 @@ export {
 export {
   STAGE_GENERATION_PROMPT,
   QUESTION_GENERATION_PROMPT,
+  QUESTION_REFINE_PROMPT,
   type StageGenerationInput,
   type QuestionGenerationInput,
+  type QuestionRefinePromptInput,
 } from "./stage-generation";
 
 export {

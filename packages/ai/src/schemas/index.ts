@@ -18,9 +18,11 @@ export {
   FocusAreaSchema,
   SuggestedQuestionSchema,
   QuestionsForFocusAreaSchema,
+  QuestionAlternativesSchema,
   type InterviewStageOutput,
   type InterviewStagesOutput,
   type QuestionsForFocusAreaOutput,
+  type QuestionAlternativesOutput,
 } from "./interview-stage";
 
 export {

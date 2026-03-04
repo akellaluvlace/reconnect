@@ -157,7 +157,7 @@ export function JDStructuredEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(120_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("JD generation timed out — please try again");

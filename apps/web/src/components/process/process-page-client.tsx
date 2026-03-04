@@ -17,7 +17,8 @@ import type { RefinementDiff } from "@reconnect/ai/schemas";
 import { StageBlueprint, type ApplyState } from "./stage-blueprint";
 import { CoverageAnalysisPanel } from "./coverage-analysis-panel";
 import { RecommendationsPanel } from "./recommendations-panel";
-import { Sparkle, CircleNotch, ArrowRight, ClockCounterClockwise } from "@phosphor-icons/react";
+import { Sparkle, CircleNotch, ArrowRight, ClockCounterClockwise, CheckCircle, LockOpen } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
@@ -40,6 +41,7 @@ interface ProcessPageClientProps {
   playbook: {
     id: string;
     title: string;
+    status: string;
     level: string | null;
     industry: string | null;
     job_description: JobDescription | null;
@@ -78,6 +80,49 @@ export function ProcessPageClient({
   const [iterationHistory, setIterationHistory] = useState<ProcessIteration[]>(
     playbook.stage_refinements?.history ?? [],
   );
+
+  const [playbookStatus, setPlaybookStatus] = useState(playbook.status);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+
+  async function handleFinalize() {
+    setIsFinalizing(true);
+    try {
+      const res = await fetch(`/api/playbooks/${playbook.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active" }),
+      });
+      if (handleSessionExpired(res)) return;
+      if (!res.ok) throw new Error("Failed to finalize process");
+      setPlaybookStatus("active");
+      toast.success("Process finalized — ready to add collaborators");
+    } catch (err) {
+      console.error("[process] Finalize failed:", err);
+      toast.error("Failed to finalize process");
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
+
+  async function handleUnfinalize() {
+    setIsFinalizing(true);
+    try {
+      const res = await fetch(`/api/playbooks/${playbook.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "draft" }),
+      });
+      if (handleSessionExpired(res)) return;
+      if (!res.ok) throw new Error("Failed to update status");
+      setPlaybookStatus("draft");
+      toast.success("Process unlocked for editing");
+    } catch (err) {
+      console.error("[process] Unfinalize failed:", err);
+      toast.error("Failed to update status");
+    } finally {
+      setIsFinalizing(false);
+    }
+  }
 
   const strategy = playbook.hiring_strategy;
   const jd = playbook.job_description;
@@ -265,7 +310,7 @@ export function ProcessPageClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(150_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Apply timed out — please try again");
@@ -407,7 +452,7 @@ export function ProcessPageClient({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(coverageBody),
-            signal: AbortSignal.timeout(90_000),
+            signal: AbortSignal.timeout(120_000),
           }).catch((err) => {
             if (err instanceof DOMException && err.name === "TimeoutError") {
               throw new Error("Coverage re-analysis timed out");
@@ -587,6 +632,42 @@ export function ProcessPageClient({
           <Sparkle size={12} weight="duotone" className="mt-0.5 shrink-0" />
           <span>AI-generated content. Hiring decisions must be made by humans.</span>
         </div>
+
+        {/* Finalize button */}
+        {stages.length > 0 && !applyInProgress && (
+          <div className="mt-4 px-3">
+            {playbookStatus === "active" ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 rounded-md bg-green-50 border border-green-200 px-3 py-2">
+                  <CheckCircle size={14} weight="fill" className="text-green-600 shrink-0" />
+                  <span className="text-[12px] font-medium text-green-800">Process Finalized</span>
+                </div>
+                <button
+                  onClick={handleUnfinalize}
+                  disabled={isFinalizing}
+                  className="flex items-center gap-1 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                >
+                  <LockOpen size={10} />
+                  Unlock for editing
+                </button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleFinalize}
+                disabled={isFinalizing}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                {isFinalizing ? (
+                  <CircleNotch size={14} weight="bold" className="mr-1.5 animate-spin" />
+                ) : (
+                  <CheckCircle size={14} weight="fill" className="mr-1.5" />
+                )}
+                Finalize Process
+              </Button>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* Vertical divider */}

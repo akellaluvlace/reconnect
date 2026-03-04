@@ -57,6 +57,7 @@ export default async function ProcessPage({
       playbook={{
         id: playbook.id,
         title: playbook.title,
+        status: playbook.status ?? "draft",
         level: playbook.level ?? null,
         industry: playbook.industry ?? null,
         job_description: parseJsonb(playbook.job_description, JobDescriptionSchema, "job_description"),

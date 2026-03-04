@@ -87,6 +87,7 @@ export interface QuestionGenerationInput {
   focus_area_description: string;
   stage_type: string;
   existing_questions?: string[];
+  guidance?: string;
 }
 
 export const QUESTION_GENERATION_PROMPT = {
@@ -99,13 +100,80 @@ Generate 3-5 targeted interview questions for a specific focus area.
 Each question must have a clear purpose and specific things to look for in the answer.
 Questions should be open-ended and probe for depth of experience.`,
 
-  user: (input: QuestionGenerationInput) =>
-    `Generate 3-5 interview questions for:
-- Role: ${sanitizeInput(input.role)} (${sanitizeInput(input.level)})
-- Focus area: ${sanitizeInput(input.focus_area)}
-- Description: ${sanitizeInput(input.focus_area_description)}
-- Stage type: ${sanitizeInput(input.stage_type)}
-${input.existing_questions?.length ? `- Avoid overlap with: ${input.existing_questions.map(q => sanitizeInput(q)).join("; ")}` : ""}
+  user: (input: QuestionGenerationInput) => {
+    const lines = [
+      `Generate 3-5 interview questions for:`,
+      `- Role: ${sanitizeInput(input.role)} (${sanitizeInput(input.level)})`,
+      `- Focus area: ${sanitizeInput(input.focus_area)}`,
+      `- Description: ${sanitizeInput(input.focus_area_description)}`,
+      `- Stage type: ${sanitizeInput(input.stage_type)}`,
+    ];
 
-Each question needs: question text, purpose, and look_for (array of specific things to evaluate in the answer).`,
+    if (input.existing_questions?.length) {
+      lines.push(`- Avoid overlap with: ${input.existing_questions.map(q => sanitizeInput(q)).join("; ")}`);
+    }
+
+    if (input.guidance) {
+      lines.push(`- User's specific direction: ${sanitizeInput(input.guidance)}`);
+    }
+
+    lines.push(
+      ``,
+      `Each question needs: question text, purpose, and look_for (array of specific things to evaluate in the answer).`,
+    );
+
+    return lines.join("\n");
+  },
 } as const;
+
+export interface QuestionRefinePromptInput {
+  role: string;
+  level: string;
+  focus_area: string;
+  focus_area_description: string;
+  stage_type: string;
+  current_question: string;
+  guidance?: string;
+  existing_questions?: string[];
+}
+
+export const QUESTION_REFINE_PROMPT = {
+  system: `You are an expert interview question designer.
+${COMPLIANCE_SYSTEM_PROMPT}
+
+Generate 2-3 alternative versions of a given interview question.
+Each alternative should assess the same competency but from a different angle or with different depth.
+Preserve the assessment intent. Vary the approach: behavioral, situational, technical, or probing.`,
+
+  user: (input: QuestionRefinePromptInput) => {
+    const lines = [
+      `Suggest 2-3 improved alternatives for this interview question:`,
+      ``,
+      `Current question: "${sanitizeInput(input.current_question)}"`,
+      ``,
+      `Context:`,
+      `- Role: ${sanitizeInput(input.role)} (${sanitizeInput(input.level)})`,
+      `- Focus area: ${sanitizeInput(input.focus_area)}`,
+      `- Description: ${sanitizeInput(input.focus_area_description)}`,
+      `- Stage type: ${sanitizeInput(input.stage_type)}`,
+    ];
+
+    if (input.guidance) {
+      lines.push(``, `User's direction: ${sanitizeInput(input.guidance)}`);
+    }
+
+    if (input.existing_questions?.length) {
+      lines.push(
+        ``,
+        `Avoid overlap with these existing questions: ${input.existing_questions.map(sanitizeInput).join("; ")}`,
+      );
+    }
+
+    lines.push(
+      ``,
+      `Each alternative needs: question text, purpose, and look_for (array of specific evaluation criteria).`,
+    );
+
+    return lines.join("\n");
+  },
+};

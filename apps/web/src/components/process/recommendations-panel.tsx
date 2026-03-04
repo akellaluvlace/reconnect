@@ -174,7 +174,7 @@ export function RecommendationsPanel({
           })),
           user_prompt: userPrompt || undefined,
         }),
-        signal: AbortSignal.timeout(60_000),
+        signal: AbortSignal.timeout(120_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Recommendations timed out — please try again");

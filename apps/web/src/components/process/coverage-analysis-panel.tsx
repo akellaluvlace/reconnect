@@ -107,7 +107,7 @@ export function CoverageAnalysisPanel({
             })),
           })),
         }),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(120_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Coverage analysis timed out — please try again");

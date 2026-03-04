@@ -16,8 +16,10 @@ export {
 export {
   generateStages,
   generateQuestions,
+  refineQuestion,
   type StagePipelineInput,
   type StagePipelineResult,
+  type QuestionRefineInput,
 } from "./stage-generation";
 
 export {

@@ -126,7 +126,7 @@ export function StrategyPanel({
           },
           current_strategy: strategy,
         }),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(150_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Strategy adjustment timed out — please try again");
@@ -199,7 +199,7 @@ export function StrategyPanel({
             trends: marketInsights.trends,
           },
         }),
-        signal: AbortSignal.timeout(90_000),
+        signal: AbortSignal.timeout(150_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Strategy generation timed out — please try again");

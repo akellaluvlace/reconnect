@@ -37,10 +37,11 @@ const updateStageSchema = z.object({
       z.object({
         question: z.string().max(1000),
         purpose: z.string().max(500),
-        look_for: z.array(z.string().max(200)),
+        look_for: z.array(z.string().max(200)).max(10),
         focus_area: z.string().max(200),
       }),
     )
+    .max(30)
     .optional(),
   rationale: z.string().max(1000).optional(),
 });
@@ -140,6 +141,8 @@ export async function PATCH(
       );
     }
 
+    const fields = Object.keys(parsed.data);
+    console.log(`[stages/PATCH] OK { stageId=${stageId}, fields=[${fields.join(",")}] }`);
     return NextResponse.json(data);
   } catch (err) {
     console.error("[stages/PATCH] Unexpected error:", err);

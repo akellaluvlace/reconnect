@@ -193,7 +193,7 @@ export function MarketIntelligencePanel({
           location,
           playbook_id: playbookId,
         }),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(60_000),
       }).catch((err) => {
         if (err instanceof DOMException && err.name === "TimeoutError") {
           throw new Error("Competitor listings search timed out — please try again");

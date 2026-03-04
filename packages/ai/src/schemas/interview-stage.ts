@@ -49,3 +49,19 @@ export const QuestionsForFocusAreaSchema = z.object({
 export type QuestionsForFocusAreaOutput = z.infer<
   typeof QuestionsForFocusAreaSchema
 >;
+
+/** Schema for question refinement — 2-3 alternative versions of a question */
+export const QuestionAlternativesSchema = z.object({
+  alternatives: z
+    .array(
+      z.object({
+        question: z.string(),
+        purpose: z.string(),
+        look_for: z.array(z.string()),
+      }),
+    )
+    .min(2)
+    .max(3),
+});
+
+export type QuestionAlternativesOutput = z.infer<typeof QuestionAlternativesSchema>;
