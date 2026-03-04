@@ -53,6 +53,7 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
           <Link
             key={pb.id}
             href={`/playbooks/${pb.id}`}
+            prefetch={false}
             className={
               "group flex items-center gap-4 px-5 py-4 transition-all duration-150 hover:bg-cream-100" +
               (i < playbooks.length - 1 ? " border-b border-border/40" : "")

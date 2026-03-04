@@ -52,7 +52,7 @@ export function PlaybookCard({ playbook }: { playbook: PlaybookListItem }) {
       </CardContent>
       <CardFooter>
         <Button variant="outline" size="sm" asChild>
-          <Link href={`/playbooks/${playbook.id}`}>View</Link>
+          <Link href={`/playbooks/${playbook.id}`} prefetch={false}>View</Link>
         </Button>
       </CardFooter>
     </Card>
