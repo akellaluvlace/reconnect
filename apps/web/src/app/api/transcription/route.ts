@@ -66,6 +66,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Verify interview belongs to user's org (RLS covers .update but service_role upsert below bypasses it)
+    const { data: interview, error: interviewError } = await supabase
+      .from("interviews")
+      .select("id")
+      .eq("id", interview_id)
+      .single();
+
+    if (interviewError || !interview) {
+      return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+    }
+
     // Mark that transcription is in progress (uploaded → will become transcribed on success)
     const { error: statusError } = await supabase
       .from("interviews")

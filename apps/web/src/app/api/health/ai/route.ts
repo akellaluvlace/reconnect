@@ -32,7 +32,6 @@ export async function GET() {
   }
 
   const stats = pipelineLogger.getStats();
-  const recentEntries = pipelineLogger.getRecentEntries(10);
 
   const configCheck = {
     anthropic_key_set: !!process.env.ANTHROPIC_API_KEY,
@@ -43,20 +42,10 @@ export async function GET() {
     configCheck.anthropic_key_set &&
     (stats.totalCalls === 0 || stats.failures / stats.totalCalls < 0.5);
 
+  // Aggregate stats only — recent entries stripped to avoid cross-org info leak
   return NextResponse.json({
     status: healthy ? "healthy" : "degraded",
     config: configCheck,
     stats,
-    recent: recentEntries.map((e) => ({
-      timestamp: e.timestamp,
-      endpoint: e.endpoint,
-      model: e.model,
-      latencyMs: e.latencyMs,
-      tokens: `${e.inputTokens}+${e.outputTokens}`,
-      stopReason: e.stopReason,
-      validationPassed: e.validationPassed,
-      coercionApplied: e.coercionApplied,
-      error: e.error ?? null,
-    })),
   });
 }

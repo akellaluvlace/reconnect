@@ -73,6 +73,12 @@ export function CandidateProfileBuilder({
               }
             : undefined,
         }),
+        signal: AbortSignal.timeout(120_000),
+      }).catch((err) => {
+        if (err instanceof DOMException && err.name === "TimeoutError") {
+          throw new Error("Profile generation timed out — please try again");
+        }
+        throw err;
       });
 
       if (handleSessionExpired(res)) return;

@@ -72,7 +72,18 @@ function setupAuth(user: typeof MOCK_USER | null = MOCK_USER) {
 }
 
 function setupDBs() {
-  mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+  mockFrom.mockImplementation((table: string) => {
+    if (table === "interviews") {
+      // First call is SELECT (ownership check) returning the interview,
+      // subsequent calls are UPDATE (status changes) returning null
+      const selectBuilder = chainBuilder({ data: { id: INTERVIEW_ID }, error: null });
+      const updateBuilder = chainBuilder({ data: null, error: null });
+      // select → ownership check chain, update → status update chain
+      selectBuilder.update = vi.fn().mockReturnValue(updateBuilder);
+      return selectBuilder;
+    }
+    return chainBuilder({ data: null, error: null });
+  });
   mockServiceFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
 }
 

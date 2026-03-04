@@ -774,7 +774,15 @@ describe("Authorization Matrix", () => {
     it("POST /api/transcription returns 200 for interviewer", async () => {
       const originalFetch = globalThis.fetch;
       mockGetUser.mockResolvedValue({ data: { user: MOCK_USER }, error: null });
-      mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+      mockFrom.mockImplementation((table: string) => {
+        if (table === "interviews") {
+          const selectBuilder = chainBuilder({ data: { id: INTERVIEW_ID }, error: null });
+          const updateBuilder = chainBuilder({ data: null, error: null });
+          selectBuilder.update = vi.fn().mockReturnValue(updateBuilder);
+          return selectBuilder;
+        }
+        return chainBuilder({ data: null, error: null });
+      });
       mockServiceFrom.mockReturnValue(
         chainBuilder({ data: null, error: null }),
       );

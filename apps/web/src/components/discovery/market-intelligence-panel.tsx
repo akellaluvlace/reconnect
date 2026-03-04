@@ -163,6 +163,7 @@ export function MarketIntelligencePanel({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playbook_id: playbookId }),
+        signal: AbortSignal.timeout(30_000),
       });
 
       if (handleSessionExpired(deepRes)) return;

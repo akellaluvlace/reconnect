@@ -22,6 +22,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // Defense-in-depth: verify playbook is accessible to user (RLS enforces, but be explicit)
+    const { data: playbook, error: pbError } = await supabase
+      .from("playbooks")
+      .select("id")
+      .eq("id", playbookId)
+      .single();
+
+    if (pbError || !playbook) {
+      return NextResponse.json({ error: "Playbook not found" }, { status: 404 });
+    }
+
     const { data, error } = await supabase
       .from("collaborators")
       .select("*")

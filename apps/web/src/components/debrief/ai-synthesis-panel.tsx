@@ -138,6 +138,7 @@ export function AISynthesisPanel({
         const fbRes = await fetch(
           `/api/feedback?interview_id=${interview.id}`,
         );
+        if (handleSessionExpired(fbRes)) return;
         if (!fbRes.ok) continue;
 
         const { data: fbData } = await fbRes.json();

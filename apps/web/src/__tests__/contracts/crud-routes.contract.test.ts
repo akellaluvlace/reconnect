@@ -670,7 +670,15 @@ describe("CONTRACT: POST /api/transcription", () => {
 
   it("happy path: response matches TranscriptionResponseSchema", async () => {
     setupAuth();
-    mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "interviews") {
+        const selectBuilder = chainBuilder({ data: { id: INTERVIEW_ID }, error: null });
+        const updateBuilder = chainBuilder({ data: null, error: null });
+        selectBuilder.update = vi.fn().mockReturnValue(updateBuilder);
+        return selectBuilder;
+      }
+      return chainBuilder({ data: null, error: null });
+    });
     mockServiceFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
 
     // Mock audio download via globalThis.fetch
