@@ -29,9 +29,6 @@ export { pipelineLogger, type PipelineLogEntry } from "./logger";
 // Coercion
 export { coerceAIResponse } from "./coerce";
 
-// Merge
-export { mergeRefinementDiff, type MergeResult } from "./merge-refinement-diff";
-
 // Tracer
 export { PipelineTrace, checkParams } from "./tracer";
 

@@ -38,18 +38,6 @@ export {
 } from "./coverage-analysis";
 
 export {
-  analyzeCoverageAnchored,
-  partitionCoverage,
-  fixStageNames,
-  type AnchoredCoverageInput,
-  type PartitionInput,
-  type PartitionResult,
-  type ReevalRequirement,
-  type ReevalGap,
-  type GapTarget,
-} from "./anchored-coverage";
-
-export {
   synthesizeFeedback,
   type FeedbackSynthesisPipelineInput,
   type FeedbackSynthesisPipelineResult,
@@ -67,13 +55,3 @@ export {
   type CandidateProfilePipelineResult,
 } from "./candidate-profile";
 
-export {
-  generateRefinements,
-  applyRefinements,
-  applyRefinementsDiff,
-  type RefinementPipelineInput,
-  type RefinementPipelineResult,
-  type ApplyRefinementsPipelineInput,
-  type ApplyRefinementsPipelineResult,
-  type ApplyRefinementsDiffResult,
-} from "./stage-refinements";

@@ -64,21 +64,6 @@ export const AI_CONFIG = {
     temperature: 0.3,
     maxTokens: 8192,
   },
-  refinementGeneration: {
-    model: "claude-sonnet-4-5-20250929" as const,
-    temperature: 0.2,
-    maxTokens: 4096,
-  },
-  refinementApply: {
-    model: "claude-sonnet-4-5-20250929" as const,
-    temperature: 0.2,
-    maxTokens: 4096,
-  },
-  anchoredCoverage: {
-    model: "claude-sonnet-4-5-20250929" as const,
-    temperature: 0,
-    maxTokens: 4096,
-  },
 } as const;
 
 export type AIEndpoint = keyof typeof AI_CONFIG;
@@ -110,9 +95,6 @@ export const PROMPT_VERSIONS = {
   strategyGeneration: "1.0.0",
   coverageAnalysis: "1.0.0",
   candidateProfile: "1.0.0",
-  refinementGeneration: "1.0.0",
-  refinementApply: "2.0.0",
-  anchoredCoverage: "2.0.0",
 } as const;
 
 /** Default SDK timeout for AI calls (milliseconds) */

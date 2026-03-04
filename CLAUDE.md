@@ -7,8 +7,8 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 10.1 COMPLETE + all hardening + production audit COMPLETE + Process chapter COMPLETE
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process chapters live and client-tested. All client feedback resolved (2 rounds). Option A shipped. Production audit done — dead code deleted, 3 API org-checks fixed, 3 client timeouts added. 528 web + 389 AI + 233 DB tests green. Typecheck clean. Live on app.axil.ie.
+**Step:** Step 10.1 COMPLETE + all hardening + production audit COMPLETE + Process chapter COMPLETE + AI package dead code cleanup COMPLETE
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process chapters live and client-tested. All client feedback resolved (2 rounds). Option A shipped. Production audit done — dead code deleted (web + AI package), 3 API org-checks fixed, 3 client timeouts added, prefetch storm fixed. 528 web + 316 AI + 233 DB tests green (AI count down from 389 — removed 73 tests for deleted modules). Typecheck clean. Live on app.axil.ie.
 **Next task:** Alignment chapter (candidate profiling, share links, feedback forms) → Step 10.2 (recording pipeline).
 **Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Does not block Alignment work.
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
@@ -213,7 +213,7 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **16 lint errors:** All `no-explicit-any` in test files. Zero production impact.
 
 ### Pipeline Flow Issues (updated 2026-03-03)
-- **Deep research fire-and-forget — no recovery.** Wizard fires `keepalive` fetch and navigates away. If the request dies (network, browser kill), deep research never runs. User is stuck on Market Research tab with Strategy locked forever. **Fix:** Add "Retry deep research" button that shows after polling times out (~120s with no phase change).
+- **~~Deep research fire-and-forget — no recovery.~~** ALREADY FIXED: 8-minute polling timeout → amber retry banner → `handleRetryDeepResearch()` re-triggers with same cache_key. Implemented in `market-intelligence-panel.tsx`.
 - **~~Vercel function timeout on deep research.~~** FIXED (2026-03-03): `maxDuration=300` on ALL AI route handlers (11 routes). Vercel Pro supports up to 300s. Strategy route was timing out at 120s — bumped in resilience round.
 - **Candidate profile — no gating on Alignment page.** User can navigate to Alignment and generate candidate profile with zero context (no strategy, no market skills, no JD). Tracer confirmed: "No context data provided — profile will be based on model knowledge only". **Fix:** Disable Generate button until `hiringStrategy` exists, or show warning explaining profile quality depends on completing Discovery + Process first.
 - **Stage generation latency: 81-90s consistently.** Confirmed across 2 runs (81s and 90s). Near timeout boundary. **Fix:** Monitor in production, consider splitting into smaller calls if timeouts occur.
@@ -225,7 +225,7 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **~~Merge `replaces` miss.~~** FIXED (2026-03-02): Better warning message includes existing FA names. Merge warnings surfaced to user via toast.
 - **~~Anchored coverage fallback to full re-eval + score regression.~~** FIXED (2026-03-03): When most FAs change, anchoring provides 0 benefit (all entries re-eval). AI was also reclassifying gap severity non-deterministically (minor→critical), causing 81%→78% regression. Fixed with: (1) gap severity floor — existing gaps can only decrease in severity, never increase, (2) monotonic score clamp — `Math.max(rawScore, previousScore)`. Trace now logs `raw_score`, `previous_score`, `clamped`.
 - **~~P0 — Coverage score STUCK at 81-82%.~~** FIXED (2026-03-02): Gap-targeted re-evaluation + deterministic fallback. Prompt now tells AI which FA was SPECIFICALLY ADDED for which gap. If AI still misses, fallback forces gap to covered(weak). Guarantees monotonic score improvement. Prompt version bumped to 2.0.0. 5 new tests.
-- **AI refinement cap: 2 iterations max.** After 2 apply cycles, recommendations panel shows banner: "AI refinements have diminishing returns — manual adjustments recommended." Generate/apply buttons hidden, iteration history with restore stays visible. Auto-generation suppressed when maxed out.
+- **~~AI refinement cap: 2 iterations max.~~** REMOVED (2026-03-04): Recommendations panel deleted (Option A). Coverage improvements now done via direct stage editing + re-analysis. No cap needed.
 
 ---
 
@@ -242,9 +242,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-04 (d):** Production hardening audit. Deleted 3 dead files (recommendations-panel, generate-refinements route+test). Fixed 3 API org-checks (transcription, health/ai, collaborators). Added 3 client timeouts (candidate-profile, deep-research, synthesis feedback loop). Updated 4 test files. 528 web + 389 AI tests green.
+- **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green. Updated pipeline flow issues (deep research recovery already fixed, refinement cap removed).
+- **2026-03-04 (d):** Production hardening audit. Deleted 3 dead web files. Fixed 3 API org-checks. Added 3 client timeouts. 528 web + 389 AI tests green.
 - **2026-03-04 (c):** Removed anchored coverage (always full analysis). Lock-in button restyled. Prefetch disabled on playbook list. Status report + email draft updated.
 - **2026-03-04 (b):** Option A shipped — removed Recommendations panel (-586 lines). Coverage tracers. Stages-changed amber dot + banner. Lock-in persists coverage.
 - **2026-03-04:** Process chapter client feedback round 2 — all 6 items done. Per-question editing, weight tooltip, process source, "How to use" guide. UX polish.
-- **2026-03-03 (d):** Session 401 detection, role suggestion typeahead, server-side refinement cap, timeout alignment. Live tested.
 > Keep max 5 entries. Remove oldest when adding new.

@@ -57,15 +57,3 @@ export {
   type CandidateProfileOutput,
 } from "./candidate-profile";
 
-export {
-  StageRefinementsOutputSchema,
-  StageRefinementsPersistedSchema,
-  StagePatchSchema,
-  RefinementDiffSchema,
-  StageSnapshotSchema,
-  VersionSnapshotSchema,
-  type StageRefinementsOutput,
-  type StagePatch,
-  type RefinementDiff,
-  type VersionSnapshot,
-} from "./stage-refinements";
