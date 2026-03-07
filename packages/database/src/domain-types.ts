@@ -140,6 +140,7 @@ export interface CandidateProfile {
   experience_range?: string;
   cultural_fit_indicators?: string[];
   disclaimer: string;
+  generated_at?: string;
 }
 
 export interface OrgSettings {
@@ -185,6 +186,7 @@ export interface HiringStrategy {
   key_risks: Array<{ risk: string; mitigation: string }>;
   recommendations: string[];
   disclaimer: string;
+  generated_at?: string;
 }
 
 export interface RefinementItem {

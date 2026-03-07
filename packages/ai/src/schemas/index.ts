@@ -57,3 +57,8 @@ export {
   type CandidateProfileOutput,
 } from "./candidate-profile";
 
+export {
+  RefineProfileSectionSchema,
+  type RefineProfileSectionOutput,
+} from "./refine-profile-section";
+

@@ -18,6 +18,9 @@ export interface CandidateProfilePipelineInput {
   jd_requirements?: CandidateProfileInput["jd_requirements"];
   strategy_skills_priority?: CandidateProfileInput["strategy_skills_priority"];
   market_key_skills?: CandidateProfileInput["market_key_skills"];
+  emerging_premium?: string[];
+  stage_types_summary?: string;
+  coverage_gaps?: string[];
 }
 
 export interface CandidateProfilePipelineResult {
@@ -49,6 +52,9 @@ export async function generateCandidateProfile(
     has_market_skills: !!input.market_key_skills,
     market_required: input.market_key_skills?.required?.length ?? 0,
     market_emerging: input.market_key_skills?.emerging?.length ?? 0,
+    has_emerging_premium: !!input.emerging_premium?.length,
+    has_stage_types: !!input.stage_types_summary,
+    coverage_gaps_count: input.coverage_gaps?.length ?? 0,
   });
 
   const warnings = checkParams(

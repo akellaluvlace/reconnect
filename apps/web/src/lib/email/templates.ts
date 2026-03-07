@@ -82,6 +82,135 @@ export function recordingConsentHtml(params: {
   `);
 }
 
+export interface PrepEmailStage {
+  name: string;
+  type: string;
+  duration_minutes: number;
+  focus_areas: Array<{ name: string; description: string; weight: number }>;
+  questions: Array<{
+    question: string;
+    purpose: string;
+    focus_area?: string;
+    look_for?: string[];
+  }>;
+}
+
+export function prepEmailHtml(params: {
+  interviewerName: string;
+  playbookTitle: string;
+  stages: PrepEmailStage[];
+}): string {
+  const stageCards = params.stages
+    .map(
+      (stage) => `
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden">
+        <tr>
+          <td style="background:#f4f4f5;padding:12px 16px;border-bottom:1px solid #e4e4e7">
+            <strong style="font-size:15px;color:#18181b">${escapeHtml(stage.name)}</strong>
+            <span style="margin-left:8px;font-size:12px;color:#71717a">${escapeHtml(stage.type)} &middot; ${stage.duration_minutes} min</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px">
+            ${
+              stage.focus_areas.length > 0
+                ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#18181b">Focus Areas</p>
+                   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px">
+                     ${stage.focus_areas
+                       .map(
+                         (fa) => `<tr>
+                       <td style="padding:4px 0;font-size:13px;color:#3f3f46">
+                         <strong>${escapeHtml(fa.name)}</strong>
+                         <span style="color:#71717a"> (weight: ${fa.weight})</span>
+                         ${fa.description ? `<br><span style="font-size:12px;color:#71717a">${escapeHtml(fa.description)}</span>` : ""}
+                       </td>
+                     </tr>`,
+                       )
+                       .join("")}
+                   </table>`
+                : ""
+            }
+            ${
+              stage.questions.length > 0
+                ? `<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#18181b">Questions</p>
+                   <table width="100%" cellpadding="0" cellspacing="0">
+                     ${stage.questions
+                       .map(
+                         (q, i) => `<tr>
+                       <td style="padding:6px 0;border-bottom:1px solid #f4f4f5;font-size:13px;color:#3f3f46">
+                         <strong>${i + 1}.</strong> ${escapeHtml(q.question)}
+                         <br><span style="font-size:12px;color:#71717a"><em>Purpose:</em> ${escapeHtml(q.purpose)}</span>
+                         ${q.focus_area ? `<br><span style="font-size:11px;color:#a1a1aa">Focus area: ${escapeHtml(q.focus_area)}</span>` : ""}
+                         ${q.look_for && q.look_for.length > 0 ? `<br><span style="font-size:11px;color:#a1a1aa">Look for: ${q.look_for.map(escapeHtml).join(", ")}</span>` : ""}
+                       </td>
+                     </tr>`,
+                       )
+                       .join("")}
+                   </table>`
+                : ""
+            }
+          </td>
+        </tr>
+      </table>`,
+    )
+    .join("");
+
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Interview Preparation Brief</h2>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Hi ${escapeHtml(params.interviewerName)}, here's your preparation brief for
+      <strong>"${escapeHtml(params.playbookTitle)}"</strong>.
+    </p>
+    ${stageCards}
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;border:1px solid #e4e4e7;border-radius:8px;overflow:hidden">
+      <tr>
+        <td style="background:#f0fdfa;padding:12px 16px;border-bottom:1px solid #e4e4e7">
+          <strong style="font-size:14px;color:#042f2e">Rating Guide</strong>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 16px;font-size:13px;color:#3f3f46;line-height:1.8">
+          <strong>1</strong> — Does not meet expectations<br>
+          <strong>2</strong> — Partially meets expectations<br>
+          <strong>3</strong> — Meets expectations<br>
+          <strong>4</strong> — Exceeds expectations
+        </td>
+      </tr>
+    </table>
+    <p style="margin:16px 0 0;color:#71717a;font-size:12px">
+      Use this guide when providing ratings during and after the interview.
+    </p>
+  `);
+}
+
+export function reminderEmailHtml(params: {
+  interviewerName: string;
+  playbookTitle: string;
+  message?: string;
+}): string {
+  const messageBox = params.message
+    ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0">
+        <tr>
+          <td style="background:#fefce8;border:1px solid #fde68a;border-radius:6px;padding:12px 16px;font-size:13px;color:#92400e;line-height:1.6">
+            ${escapeHtml(params.message)}
+          </td>
+        </tr>
+      </table>`
+    : "";
+
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Feedback Reminder</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Hi ${escapeHtml(params.interviewerName)}, this is a friendly reminder to submit your interview feedback for
+      <strong>"${escapeHtml(params.playbookTitle)}"</strong>.
+    </p>
+    ${messageBox}
+    <p style="margin:0 0 0;color:#3f3f46;font-size:14px;line-height:1.6">
+      Timely feedback helps the hiring team make better decisions. Please submit your ratings, pros, and cons at your earliest convenience.
+    </p>
+  `);
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

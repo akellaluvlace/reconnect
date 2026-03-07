@@ -29,6 +29,9 @@ const RequestSchema = z.object({
       emerging: z.array(z.string()),
     })
     .optional(),
+  emerging_premium: z.array(z.string()).max(10).optional(),
+  stage_types_summary: z.string().max(500).optional(),
+  coverage_gaps: z.array(z.string().max(200)).max(20).optional(),
 });
 
 export async function POST(req: NextRequest) {

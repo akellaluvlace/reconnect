@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const chapters = [
   { id: "discovery", name: "Discovery", icon: MagnifyingGlass, enabled: true },
   { id: "process", name: "Process", icon: ListChecks, enabled: true },
-  { id: "alignment", name: "Alignment", icon: Target, enabled: false },
+  { id: "alignment", name: "Alignment", icon: Target, enabled: true },
   { id: "debrief", name: "Debrief", icon: ChatCircleDots, enabled: false },
 ];
 

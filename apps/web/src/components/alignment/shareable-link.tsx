@@ -9,6 +9,8 @@ import {
   CircleNotch,
   ArrowSquareOut,
   Eye,
+  EyeSlash,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
@@ -34,6 +36,7 @@ export function ShareableLink({
   onUpdate,
 }: ShareableLinkProps) {
   const [isCreating, setIsCreating] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   async function handleCreate() {
     setIsCreating(true);
@@ -128,59 +131,118 @@ export function ShareableLink({
         <div className="space-y-2">
           {shareLinks.map((link) => {
             const expired = isExpired(link.expires_at);
+            const showingPreview = previewId === link.id;
             return (
               <div
                 key={link.id}
-                className="flex items-center justify-between rounded-xl border border-border/40 bg-card px-5 py-3.5 shadow-sm"
+                className="rounded-xl border border-border/40 bg-card shadow-sm overflow-hidden"
               >
-                <div className="flex items-center gap-3">
-                  <ArrowSquareOut size={16} weight="duotone" className="text-muted-foreground" />
-                  <div>
-                    <p className="text-[13px] font-mono text-foreground">
-                      /share/{link.token.slice(0, 8)}...
-                    </p>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      {link.expires_at && (
-                        <span>
-                          {expired ? "Expired" : `Expires ${new Date(link.expires_at).toLocaleDateString()}`}
+                <div className="flex items-center justify-between px-5 py-3.5">
+                  <div className="flex items-center gap-3">
+                    <ArrowSquareOut size={16} weight="duotone" className="text-muted-foreground" />
+                    <div>
+                      <p className="text-[13px] font-mono text-foreground">
+                        /share/{link.token.slice(0, 8)}...
+                      </p>
+                      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        {link.expires_at && (
+                          <span>
+                            {expired ? "Expired" : `Expires ${new Date(link.expires_at).toLocaleDateString()}`}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-0.5">
+                          <Eye size={12} weight="duotone" />
+                          {link.view_count ?? 0} views
                         </span>
-                      )}
-                      <span className="flex items-center gap-0.5">
-                        <Eye size={12} weight="duotone" />
-                        {link.view_count ?? 0} views
+                      </div>
+                    </div>
+                    {expired ? (
+                      <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-800">
+                        Expired
                       </span>
+                    ) : (
+                      <span className="rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-teal-600"
+                      onClick={() => setPreviewId(showingPreview ? null : link.id)}
+                      aria-label="Preview link"
+                      title="Preview what recipient sees"
+                    >
+                      {showingPreview ? (
+                        <EyeSlash size={14} weight="duotone" />
+                      ) : (
+                        <Eye size={14} weight="duotone" />
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => copyLink(link.token)}
+                      aria-label="Copy link"
+                    >
+                      <Copy size={14} weight="duotone" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRevoke(link.id)}
+                      aria-label="Revoke link"
+                    >
+                      <Trash size={14} weight="duotone" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Preview panel */}
+                {showingPreview && (
+                  <div className="border-t border-border/30 px-5 py-4 bg-muted/10 animate-in fade-in slide-in-from-top-1 duration-150">
+                    <div className="rounded-lg border border-teal-200 bg-gradient-to-b from-teal-50/40 to-white p-5 space-y-3">
+                      <p className="text-[11px] font-medium uppercase tracking-wider text-teal-700">
+                        What the recipient sees
+                      </p>
+
+                      <div className="space-y-3 text-[13px]">
+                        <div className="flex items-start gap-2">
+                          <ShieldCheck size={14} weight="duotone" className="mt-0.5 text-teal-500 shrink-0" />
+                          <div>
+                            <p className="font-medium text-foreground">Candidate first name + role</p>
+                            <p className="text-[12px] text-muted-foreground">Basic candidate info only</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <ShieldCheck size={14} weight="duotone" className="mt-0.5 text-teal-500 shrink-0" />
+                          <div>
+                            <p className="font-medium text-foreground">Their assigned stage</p>
+                            <p className="text-[12px] text-muted-foreground">Focus areas and interview questions</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                          <ShieldCheck size={14} weight="duotone" className="mt-0.5 text-teal-500 shrink-0" />
+                          <div>
+                            <p className="font-medium text-foreground">Feedback form</p>
+                            <p className="text-[12px] text-muted-foreground">Rating categories (1-4), pros, cons, focus area confirmation</p>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-border/20 text-[12px] text-muted-foreground space-y-1">
+                          <p className="font-medium text-foreground">Not visible to recipient:</p>
+                          <p>Other feedback, salary data, CV, AI synthesis, full playbook, or scores</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  {expired ? (
-                    <span className="rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-800">
-                      Expired
-                    </span>
-                  ) : (
-                    <span className="rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
-                      Active
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                    onClick={() => copyLink(link.token)}
-                    aria-label="Copy link"
-                  >
-                    <Copy size={14} weight="duotone" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                    onClick={() => handleRevoke(link.id)}
-                    aria-label="Revoke link"
-                  >
-                    <Trash size={14} weight="duotone" />
-                  </Button>
-                </div>
+                )}
               </div>
             );
           })}

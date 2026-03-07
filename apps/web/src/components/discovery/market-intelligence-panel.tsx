@@ -449,9 +449,9 @@ export function MarketIntelligencePanel({
               <div className="mt-4">
                 <p className="mb-2.5 text-[12px] font-medium text-muted-foreground">Companies hiring</p>
                 <div className="flex flex-wrap gap-2">
-                  {mi.competition.companies_hiring.map((c) => (
+                  {mi.competition.companies_hiring.map((c, i) => (
                     <span
-                      key={c}
+                      key={`${c}-${i}`}
                       className="rounded-md border border-border/60 bg-muted/40 px-2.5 py-1 text-[13px] font-medium text-foreground"
                     >
                       {c}

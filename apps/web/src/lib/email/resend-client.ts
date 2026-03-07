@@ -88,3 +88,31 @@ export async function sendRecordingConsentEmail(params: {
     html: recordingConsentHtml(params),
   });
 }
+
+export async function sendReminderEmail(params: {
+  to: string;
+  interviewerName: string;
+  playbookTitle: string;
+  message?: string;
+}): Promise<SendResult> {
+  const { reminderEmailHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `Feedback Reminder: ${params.playbookTitle}`,
+    html: reminderEmailHtml(params),
+  });
+}
+
+export async function sendPrepEmail(params: {
+  to: string;
+  interviewerName: string;
+  playbookTitle: string;
+  stages: import("./templates").PrepEmailStage[];
+}): Promise<SendResult> {
+  const { prepEmailHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `Interview Prep: ${params.playbookTitle}`,
+    html: prepEmailHtml(params),
+  });
+}

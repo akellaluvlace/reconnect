@@ -64,6 +64,11 @@ export const AI_CONFIG = {
     temperature: 0.3,
     maxTokens: 8192,
   },
+  profileRefine: {
+    model: "claude-sonnet-4-5-20250929" as const,
+    temperature: 0.4,
+    maxTokens: 4096,
+  },
 } as const;
 
 export type AIEndpoint = keyof typeof AI_CONFIG;
@@ -95,6 +100,7 @@ export const PROMPT_VERSIONS = {
   strategyGeneration: "1.0.0",
   coverageAnalysis: "1.0.0",
   candidateProfile: "1.0.0",
+  profileRefine: "1.0.0",
 } as const;
 
 /** Default SDK timeout for AI calls (milliseconds) */

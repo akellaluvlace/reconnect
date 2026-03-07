@@ -18,6 +18,9 @@ export interface CandidateProfileInput {
     required: string[];
     emerging: string[];
   };
+  emerging_premium?: string[];
+  stage_types_summary?: string;
+  coverage_gaps?: string[];
 }
 
 export const CANDIDATE_PROFILE_PROMPT = {
@@ -54,12 +57,24 @@ Guidelines:
 - Emerging: ${input.market_key_skills.emerging.slice(0, 5).join(", ")}`
       : "";
 
+    const emergingSection = input.emerging_premium?.length
+      ? `\nEMERGING PREMIUM SKILLS: ${input.emerging_premium.slice(0, 5).join(", ")}`
+      : "";
+
+    const stageSection = input.stage_types_summary
+      ? `\nINTERVIEW PROCESS: ${sanitizeInput(input.stage_types_summary)}`
+      : "";
+
+    const gapsSection = input.coverage_gaps?.length
+      ? `\nCOVERAGE GAPS (undertested areas): ${input.coverage_gaps.slice(0, 10).join(", ")}`
+      : "";
+
     return `Build an ideal candidate profile for:
 
 ROLE: ${sanitizeInput(input.role)}
 LEVEL: ${sanitizeInput(input.level)}
 INDUSTRY: ${sanitizeInput(input.industry)}
-${jdSection}${strategySection}${marketSection}
+${jdSection}${strategySection}${marketSection}${emergingSection}${stageSection}${gapsSection}
 
 Produce:
 1. ideal_background (brief description of ideal experience/background)

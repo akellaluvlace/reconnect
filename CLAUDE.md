@@ -7,10 +7,10 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Step 10.1 COMPLETE + all hardening + production audit COMPLETE + Process chapter COMPLETE + AI package dead code cleanup COMPLETE
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process chapters live and client-tested. All client feedback resolved (2 rounds). Option A shipped. Production audit done — dead code deleted (web + AI package), 3 API org-checks fixed, 3 client timeouts added, prefetch storm fixed. 528 web + 316 AI + 233 DB tests green (AI count down from 389 — removed 73 tests for deleted modules). Typecheck clean. Live on app.axil.ie.
-**Next task:** Alignment chapter (candidate profiling, share links, feedback forms) → Step 10.2 (recording pipeline).
-**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Does not block Alignment work.
+**Step:** Alignment chapter COMPLETE (Tier 1+2+3) → ready for Step 10.2 (recording pipeline)
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process + Alignment chapters done. All client feedback resolved (2 rounds). Option A shipped. Production audit done. Alignment chapter: editable candidate profile (inline edit + AI refine per-section), stale detection, process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. 528 web + 316 AI + 233 DB tests green. Typecheck clean. Live on app.axil.ie.
+**Next task:** Awaiting client feedback on Alignment chapter + proposal (docs/client-proposal-alignment-debrief.md). Then Step 10.2 (recording pipeline).
+**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Resend domain verification for collaborator invite emails (client emailed).
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
 
 **Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → Alignment chapter → 10.2 (recording pipeline) → 10.3-10.8
@@ -215,7 +215,7 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 ### Pipeline Flow Issues (updated 2026-03-03)
 - **~~Deep research fire-and-forget — no recovery.~~** ALREADY FIXED: 8-minute polling timeout → amber retry banner → `handleRetryDeepResearch()` re-triggers with same cache_key. Implemented in `market-intelligence-panel.tsx`.
 - **~~Vercel function timeout on deep research.~~** FIXED (2026-03-03): `maxDuration=300` on ALL AI route handlers (11 routes). Vercel Pro supports up to 300s. Strategy route was timing out at 120s — bumped in resilience round.
-- **Candidate profile — no gating on Alignment page.** User can navigate to Alignment and generate candidate profile with zero context (no strategy, no market skills, no JD). Tracer confirmed: "No context data provided — profile will be based on model knowledge only". **Fix:** Disable Generate button until `hiringStrategy` exists, or show warning explaining profile quality depends on completing Discovery + Process first.
+- **~~Candidate profile — no gating on Alignment page.~~** FIXED (2026-03-05): Profile prompt now enriched with emerging_premium skills, stage_types_summary, coverage_gaps. Stale detection warns when strategy updated. Inline editing + AI refine per-section.
 - **Stage generation latency: 81-90s consistently.** Confirmed across 2 runs (81s and 90s). Near timeout boundary. **Fix:** Monitor in production, consider splitting into smaller calls if timeouts occur.
 - **`parseJsonb` transient failure on page load.** Quick-phase market data can fail validation when Discovery page loads during deep research. Causes brief `null` marketInsights state. Self-resolves when polling updates. **Fix (low priority):** Use a looser schema for quick-phase data, or handle null gracefully in tab gating (already does — tabs stay locked).
 - **Stage question count under target.** AI consistently generates 4-5 questions when prompt asks for 6+. Confirmed across 8 stages in 2 runs. Not random — AI self-limits. **Fix (low priority):** Strengthen prompt constraints or add retry on under-count.
@@ -242,9 +242,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green. Updated pipeline flow issues (deep research recovery already fixed, refinement cap removed).
+- **2026-03-05:** Alignment chapter Tier 1+2+3 complete. Editable candidate profile (inline edit, tag editor, AI refine per-section), stale detection amber banner, "How to Use" guide, nav grouping with progress dots, enriched profile prompt, interactive process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. Fixed input focus loss bug (inner components → plain render functions). Resend domain not verified — client emailed. Proposal doc created (docs/client-proposal-alignment-debrief.md).
+- **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green.
 - **2026-03-04 (d):** Production hardening audit. Deleted 3 dead web files. Fixed 3 API org-checks. Added 3 client timeouts. 528 web + 389 AI tests green.
 - **2026-03-04 (c):** Removed anchored coverage (always full analysis). Lock-in button restyled. Prefetch disabled on playbook list. Status report + email draft updated.
 - **2026-03-04 (b):** Option A shipped — removed Recommendations panel (-586 lines). Coverage tracers. Stages-changed amber dot + banner. Lock-in persists coverage.
-- **2026-03-04:** Process chapter client feedback round 2 — all 6 items done. Per-question editing, weight tooltip, process source, "How to use" guide. UX polish.
 > Keep max 5 entries. Remove oldest when adding new.

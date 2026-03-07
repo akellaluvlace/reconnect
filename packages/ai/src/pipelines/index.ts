@@ -55,3 +55,9 @@ export {
   type CandidateProfilePipelineResult,
 } from "./candidate-profile";
 
+export {
+  refineProfileSection,
+  type RefineProfileSectionInput,
+  type RefineProfileSectionResult,
+} from "./refine-profile-section";
+

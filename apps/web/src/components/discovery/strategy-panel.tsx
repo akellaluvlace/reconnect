@@ -215,10 +215,13 @@ export function StrategyPanel({
 
       const { data } = await res.json();
 
+      // Stamp generated_at for stale detection in Alignment chapter
+      const strategyWithTimestamp = { ...data, generated_at: new Date().toISOString() };
+
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hiring_strategy: data }),
+        body: JSON.stringify({ hiring_strategy: strategyWithTimestamp }),
       });
 
       if (handleSessionExpired(saveRes)) return;
@@ -227,7 +230,7 @@ export function StrategyPanel({
         toast.error("Strategy generated but failed to save. Try refreshing the page.");
       }
 
-      return data;
+      return strategyWithTimestamp;
     });
   }
 

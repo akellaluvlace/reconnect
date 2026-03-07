@@ -42,3 +42,8 @@ export {
   type CandidateProfileInput,
 } from "./candidate-profile";
 
+export {
+  REFINE_PROFILE_SECTION_PROMPT,
+  type RefineProfileSectionInput,
+} from "./refine-profile-section";
+

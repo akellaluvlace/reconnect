@@ -11,29 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UsersThree, Trash, CircleNotch, EnvelopeSimple, CheckCircle } from "@phosphor-icons/react";
+import {
+  UsersThree,
+  Trash,
+  CircleNotch,
+  EnvelopeSimple,
+  CheckCircle,
+  PencilSimple,
+  BellRinging,
+  Check,
+  X,
+} from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
-
-interface StageInfo {
-  id: string;
-  name: string;
-  type: string;
-  duration_minutes: number;
-  order_index: number;
-}
-
-interface CollaboratorData {
-  id: string;
-  email: string;
-  name: string | null;
-  role: string | null;
-  assigned_stages: string[] | null;
-  expires_at: string;
-  accepted_at: string | null;
-  invite_token: string | null;
-  created_at: string | null;
-}
+import { cn } from "@/lib/utils";
+import type { StageInfo, CollaboratorData } from "./alignment-page-client";
 
 interface CollaboratorManagerProps {
   playbookId: string;
@@ -52,6 +44,26 @@ export function CollaboratorManager({
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<string>("interviewer");
+  const [selectedStages, setSelectedStages] = useState<string[]>([]);
+
+  // Editing assignments for existing collaborator
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editStages, setEditStages] = useState<string[]>([]);
+  const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+
+  // Send prep email
+  const [sendingPrep, setSendingPrep] = useState<string | null>(null);
+
+  // Send reminder email
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+
+  function toggleStage(stageId: string, stageList: string[], setList: (v: string[]) => void) {
+    setList(
+      stageList.includes(stageId)
+        ? stageList.filter((s) => s !== stageId)
+        : [...stageList, stageId],
+    );
+  }
 
   async function handleInvite() {
     if (!email.trim()) {
@@ -69,6 +81,7 @@ export function CollaboratorManager({
           email: email.trim(),
           name: name.trim() || undefined,
           role,
+          assigned_stages: selectedStages.length > 0 ? selectedStages : undefined,
         }),
       });
 
@@ -82,6 +95,7 @@ export function CollaboratorManager({
       onUpdate([collaborator, ...collaborators]);
       setEmail("");
       setName("");
+      setSelectedStages([]);
       toast.success(`Invite sent to ${email.trim()}`);
     } catch (err) {
       console.error("[collaborators] Invite failed:", err);
@@ -115,11 +129,131 @@ export function CollaboratorManager({
     }
   }
 
-  function getStageNames(stageIds: string[] | null): string {
-    if (!stageIds || stageIds.length === 0) return "All stages";
-    return stageIds
-      .map((sid) => stages.find((s) => s.id === sid)?.name ?? sid)
-      .join(", ");
+  function startEditAssignment(collab: CollaboratorData) {
+    setEditingId(collab.id);
+    setEditStages(collab.assigned_stages ?? []);
+  }
+
+  async function saveAssignment(id: string) {
+    setIsSavingAssignment(true);
+    try {
+      const res = await fetch(`/api/collaborators/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assigned_stages: editStages.length > 0 ? editStages : null,
+        }),
+      });
+
+      if (handleSessionExpired(res)) return;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to update assignment");
+      }
+
+      onUpdate(
+        collaborators.map((c) =>
+          c.id === id
+            ? { ...c, assigned_stages: editStages.length > 0 ? editStages : null }
+            : c,
+        ),
+      );
+      setEditingId(null);
+      toast.success("Stage assignment updated");
+    } catch (err) {
+      console.error("[collaborators] Assignment update failed:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update assignment",
+      );
+    } finally {
+      setIsSavingAssignment(false);
+    }
+  }
+
+  async function handleSendPrep(collaboratorId: string) {
+    setSendingPrep(collaboratorId);
+    try {
+      const res = await fetch(`/api/collaborators/${collaboratorId}/send-prep`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playbook_id: playbookId }),
+      });
+
+      if (handleSessionExpired(res)) return;
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send prep email");
+      }
+
+      toast.success("Prep email sent");
+    } catch (err) {
+      console.error("[collaborators] Send prep failed:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to send prep email",
+      );
+    } finally {
+      setSendingPrep(null);
+    }
+  }
+
+  async function handleSendReminder(collaboratorId: string) {
+    setSendingReminder(collaboratorId);
+    try {
+      const res = await fetch(`/api/collaborators/${collaboratorId}/send-reminder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playbook_id: playbookId }),
+      });
+
+      if (handleSessionExpired(res)) return;
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to send reminder");
+      }
+
+      toast.success("Reminder sent");
+    } catch (err) {
+      console.error("[collaborators] Send reminder failed:", err);
+      toast.error(
+        err instanceof Error ? err.message : "Failed to send reminder",
+      );
+    } finally {
+      setSendingReminder(null);
+    }
+  }
+
+  function StageCheckboxes({
+    selected,
+    onChange,
+  }: {
+    selected: string[];
+    onChange: (stageId: string) => void;
+  }) {
+    if (stages.length === 0) return null;
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {stages.map((stage) => {
+          const checked = selected.includes(stage.id);
+          return (
+            <button
+              key={stage.id}
+              type="button"
+              onClick={() => onChange(stage.id)}
+              className={cn(
+                "rounded-md border px-2.5 py-1 text-[12px] font-medium transition-colors",
+                checked
+                  ? "border-teal-300 bg-teal-50 text-teal-800"
+                  : "border-border/60 bg-muted/30 text-muted-foreground hover:border-teal-200 hover:bg-teal-50/50",
+              )}
+            >
+              {stage.name}
+            </button>
+          );
+        })}
+      </div>
+    );
   }
 
   return (
@@ -170,6 +304,20 @@ export function CollaboratorManager({
             </Select>
           </div>
         </div>
+
+        {/* Stage assignment picker */}
+        {stages.length > 0 && (
+          <div className="mt-4">
+            <Label className="text-[12px] font-medium text-muted-foreground mb-2 block">
+              Assign to stages {selectedStages.length === 0 && <span className="text-muted-foreground/60">(all stages if none selected)</span>}
+            </Label>
+            <StageCheckboxes
+              selected={selectedStages}
+              onChange={(id) => toggleStage(id, selectedStages, setSelectedStages)}
+            />
+          </div>
+        )}
+
         <Button
           size="sm"
           className="mt-4"
@@ -198,45 +346,133 @@ export function CollaboratorManager({
           {collaborators.map((collab) => (
             <div
               key={collab.id}
-              className="flex items-center justify-between rounded-xl border border-border/40 bg-card px-5 py-3.5 shadow-sm"
+              className="rounded-xl border border-border/40 bg-card px-5 py-3.5 shadow-sm"
             >
-              <div className="flex items-center gap-3">
-                <div>
-                  <p className="text-[14px] font-medium text-foreground">
-                    {collab.name || collab.email}
-                  </p>
-                  {collab.name && (
-                    <p className="text-[12px] text-muted-foreground">
-                      {collab.email}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-foreground truncate">
+                      {collab.name || collab.email}
                     </p>
+                    {collab.name && (
+                      <p className="text-[12px] text-muted-foreground truncate">
+                        {collab.email}
+                      </p>
+                    )}
+                  </div>
+                  <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground shrink-0">
+                    {collab.role ?? "interviewer"}
+                  </span>
+                  {collab.accepted_at ? (
+                    <span className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800 shrink-0">
+                      <CheckCircle size={12} weight="duotone" />
+                      Accepted
+                    </span>
+                  ) : (
+                    <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground shrink-0">
+                      Pending
+                    </span>
                   )}
                 </div>
-                <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                  {collab.role ?? "interviewer"}
-                </span>
-                <span className="text-[12px] text-muted-foreground">
-                  {getStageNames(collab.assigned_stages)}
-                </span>
-                {collab.accepted_at ? (
-                  <span className="flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800">
-                    <CheckCircle size={12} weight="duotone" />
-                    Accepted
-                  </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => handleSendPrep(collab.id)}
+                    disabled={sendingPrep === collab.id}
+                    className="rounded-lg p-2 text-teal-600 hover:bg-teal-50 transition-colors disabled:opacity-50"
+                    aria-label={`Send interview prep email to ${collab.name || collab.email}`}
+                    title="Send interview prep email"
+                  >
+                    {sendingPrep === collab.id ? (
+                      <CircleNotch size={14} weight="bold" className="animate-spin" />
+                    ) : (
+                      <EnvelopeSimple size={14} weight="duotone" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleSendReminder(collab.id)}
+                    disabled={sendingReminder === collab.id}
+                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                    aria-label={`Send feedback reminder to ${collab.name || collab.email}`}
+                    title="Send feedback reminder"
+                  >
+                    {sendingReminder === collab.id ? (
+                      <CircleNotch size={14} weight="bold" className="animate-spin" />
+                    ) : (
+                      <BellRinging size={14} weight="duotone" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => startEditAssignment(collab)}
+                    className="rounded-lg p-2 text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-colors"
+                    aria-label="Edit stage assignments"
+                    title="Edit stages"
+                  >
+                    <PencilSimple size={14} />
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => handleRevoke(collab.id)}
+                    aria-label={`Revoke invite for ${collab.name || collab.email}`}
+                  >
+                    <Trash size={14} weight="duotone" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Stage badges / edit */}
+              <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                {editingId === collab.id ? (
+                  <div className="w-full space-y-2">
+                    <StageCheckboxes
+                      selected={editStages}
+                      onChange={(id) => toggleStage(id, editStages, setEditStages)}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7"
+                        onClick={() => setEditingId(null)}
+                      >
+                        <X size={14} className="mr-1" /> Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="h-7"
+                        onClick={() => saveAssignment(collab.id)}
+                        disabled={isSavingAssignment}
+                      >
+                        {isSavingAssignment ? (
+                          <CircleNotch size={14} weight="bold" className="mr-1 animate-spin" />
+                        ) : (
+                          <Check size={14} className="mr-1" />
+                        )}
+                        Save
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    Pending
-                  </span>
+                  <>
+                    {(!collab.assigned_stages || collab.assigned_stages.length === 0) ? (
+                      <span className="text-[12px] text-muted-foreground">All stages</span>
+                    ) : (
+                      collab.assigned_stages.map((sid) => {
+                        const stage = stages.find((s) => s.id === sid);
+                        return (
+                          <span
+                            key={sid}
+                            className="rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[11px] font-medium text-teal-800"
+                          >
+                            {stage?.name ?? sid.slice(0, 8)}
+                          </span>
+                        );
+                      })
+                    )}
+                  </>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRevoke(collab.id)}
-                aria-label={`Revoke invite for ${collab.name || collab.email}`}
-              >
-                <Trash size={14} weight="duotone" />
-              </Button>
             </div>
           ))}
         </div>
