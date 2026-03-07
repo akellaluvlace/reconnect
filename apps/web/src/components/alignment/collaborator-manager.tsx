@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,6 +28,7 @@ import {
   BellRinging,
   Check,
   X,
+  PaperPlaneTilt,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
@@ -51,11 +59,13 @@ export function CollaboratorManager({
   const [editStages, setEditStages] = useState<string[]>([]);
   const [isSavingAssignment, setIsSavingAssignment] = useState(false);
 
-  // Send prep email
-  const [sendingPrep, setSendingPrep] = useState<string | null>(null);
-
-  // Send reminder email
-  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  // Email modals
+  const [prepModal, setPrepModal] = useState<CollaboratorData | null>(null);
+  const [reminderModal, setReminderModal] = useState<CollaboratorData | null>(null);
+  const [prepNote, setPrepNote] = useState("");
+  const [reminderMessage, setReminderMessage] = useState("");
+  const [sendingPrep, setSendingPrep] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   function toggleStage(stageId: string, stageList: string[], setList: (v: string[]) => void) {
     setList(
@@ -170,13 +180,14 @@ export function CollaboratorManager({
     }
   }
 
-  async function handleSendPrep(collaboratorId: string) {
-    setSendingPrep(collaboratorId);
+  async function handleSendPrep() {
+    if (!prepModal) return;
+    setSendingPrep(true);
     try {
-      const res = await fetch(`/api/collaborators/${collaboratorId}/send-prep`, {
+      const res = await fetch(`/api/collaborators/${prepModal.id}/send-prep`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playbook_id: playbookId }),
+        body: JSON.stringify({ playbook_id: playbookId, note: prepNote.trim() || undefined }),
       });
 
       if (handleSessionExpired(res)) return;
@@ -186,24 +197,27 @@ export function CollaboratorManager({
         throw new Error(data.error || "Failed to send prep email");
       }
 
-      toast.success("Prep email sent");
+      toast.success(`Prep email sent to ${prepModal.name || prepModal.email}`);
+      setPrepModal(null);
+      setPrepNote("");
     } catch (err) {
       console.error("[collaborators] Send prep failed:", err);
       toast.error(
         err instanceof Error ? err.message : "Failed to send prep email",
       );
     } finally {
-      setSendingPrep(null);
+      setSendingPrep(false);
     }
   }
 
-  async function handleSendReminder(collaboratorId: string) {
-    setSendingReminder(collaboratorId);
+  async function handleSendReminder() {
+    if (!reminderModal) return;
+    setSendingReminder(true);
     try {
-      const res = await fetch(`/api/collaborators/${collaboratorId}/send-reminder`, {
+      const res = await fetch(`/api/collaborators/${reminderModal.id}/send-reminder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ playbook_id: playbookId }),
+        body: JSON.stringify({ playbook_id: playbookId, message: reminderMessage.trim() || undefined }),
       });
 
       if (handleSessionExpired(res)) return;
@@ -213,15 +227,23 @@ export function CollaboratorManager({
         throw new Error(data.error || "Failed to send reminder");
       }
 
-      toast.success("Reminder sent");
+      toast.success(`Reminder sent to ${reminderModal.name || reminderModal.email}`);
+      setReminderModal(null);
+      setReminderMessage("");
     } catch (err) {
       console.error("[collaborators] Send reminder failed:", err);
       toast.error(
         err instanceof Error ? err.message : "Failed to send reminder",
       );
     } finally {
-      setSendingReminder(null);
+      setSendingReminder(false);
     }
+  }
+
+  // Get stages relevant to a collaborator
+  function getCollabStages(collab: CollaboratorData) {
+    if (!collab.assigned_stages || collab.assigned_stages.length === 0) return stages;
+    return stages.filter((s) => collab.assigned_stages!.includes(s.id));
   }
 
   function StageCheckboxes({
@@ -376,30 +398,20 @@ export function CollaboratorManager({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
-                    onClick={() => handleSendPrep(collab.id)}
-                    disabled={sendingPrep === collab.id}
-                    className="rounded-lg p-2 text-teal-600 hover:bg-teal-50 transition-colors disabled:opacity-50"
+                    onClick={() => { setPrepModal(collab); setPrepNote(""); }}
+                    className="rounded-lg p-2 text-teal-600 hover:bg-teal-50 transition-colors"
                     aria-label={`Send interview prep email to ${collab.name || collab.email}`}
                     title="Send interview prep email"
                   >
-                    {sendingPrep === collab.id ? (
-                      <CircleNotch size={14} weight="bold" className="animate-spin" />
-                    ) : (
-                      <EnvelopeSimple size={14} weight="duotone" />
-                    )}
+                    <EnvelopeSimple size={14} weight="duotone" />
                   </button>
                   <button
-                    onClick={() => handleSendReminder(collab.id)}
-                    disabled={sendingReminder === collab.id}
-                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                    onClick={() => { setReminderModal(collab); setReminderMessage(""); }}
+                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors"
                     aria-label={`Send feedback reminder to ${collab.name || collab.email}`}
                     title="Send feedback reminder"
                   >
-                    {sendingReminder === collab.id ? (
-                      <CircleNotch size={14} weight="bold" className="animate-spin" />
-                    ) : (
-                      <BellRinging size={14} weight="duotone" />
-                    )}
+                    <BellRinging size={14} weight="duotone" />
                   </button>
                   <button
                     onClick={() => startEditAssignment(collab)}
@@ -477,6 +489,161 @@ export function CollaboratorManager({
           ))}
         </div>
       )}
+
+      {/* Prep email preview modal */}
+      <Dialog open={!!prepModal} onOpenChange={(open) => { if (!open) setPrepModal(null); }}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <EnvelopeSimple size={18} weight="duotone" className="text-teal-600" />
+              Interview Prep Email
+            </DialogTitle>
+          </DialogHeader>
+
+          {prepModal && (
+            <div className="space-y-4">
+              <div className="flex justify-between text-[13px]">
+                <span className="text-muted-foreground">To</span>
+                <span className="font-medium">{prepModal.name || prepModal.email}</span>
+              </div>
+
+              {/* Personal note */}
+              <div>
+                <Label htmlFor="prep-note" className="text-[12px] font-medium text-muted-foreground">
+                  Personal note (optional)
+                </Label>
+                <textarea
+                  id="prep-note"
+                  value={prepNote}
+                  onChange={(e) => setPrepNote(e.target.value)}
+                  placeholder="Add a personal message to the top of the email..."
+                  className="mt-1 w-full rounded-md border border-border/60 bg-background px-3 py-2 text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-300 resize-none"
+                  rows={2}
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="rounded-lg border border-border/40 bg-muted/20 p-4 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">Email preview</p>
+
+                {getCollabStages(prepModal).map((stage) => (
+                  <div key={stage.id} className="rounded-md border border-border/30 bg-background p-3">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[13px] font-semibold text-foreground">{stage.name}</p>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        {stage.type}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">{stage.duration_minutes} min</span>
+                    </div>
+
+                    {stage.focus_areas && stage.focus_areas.length > 0 && (
+                      <div className="mt-2 space-y-1.5">
+                        {stage.focus_areas.map((fa, i) => (
+                          <div key={i} className="text-[12px]">
+                            <span className="font-medium text-foreground">{fa.name}</span>
+                            <span className="text-muted-foreground ml-1">(weight: {fa.weight}/4)</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {stage.questions && stage.questions.length > 0 && (
+                      <div className="mt-2 space-y-1 border-t border-border/20 pt-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">Questions</p>
+                        {stage.questions.map((q, i) => (
+                          <p key={i} className="text-[12px] text-foreground/80 pl-2 border-l-2 border-teal-200">
+                            {q.question}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                <div className="rounded-md bg-teal-50/50 border border-teal-100 p-2.5 text-[11px] text-teal-800">
+                  <p className="font-semibold mb-1">Rating Guide (1-4)</p>
+                  <p>1 = Does not meet &middot; 2 = Partially meets &middot; 3 = Meets &middot; 4 = Exceeds</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setPrepModal(null)} disabled={sendingPrep}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSendPrep} disabled={sendingPrep}>
+              {sendingPrep ? (
+                <CircleNotch size={14} weight="bold" className="mr-2 animate-spin" />
+              ) : (
+                <PaperPlaneTilt size={14} weight="duotone" className="mr-2" />
+              )}
+              Send Prep Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reminder email preview modal */}
+      <Dialog open={!!reminderModal} onOpenChange={(open) => { if (!open) setReminderModal(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BellRinging size={18} weight="duotone" className="text-amber-600" />
+              Feedback Reminder
+            </DialogTitle>
+          </DialogHeader>
+
+          {reminderModal && (
+            <div className="space-y-4">
+              <div className="flex justify-between text-[13px]">
+                <span className="text-muted-foreground">To</span>
+                <span className="font-medium">{reminderModal.name || reminderModal.email}</span>
+              </div>
+
+              {/* Preview */}
+              <div className="rounded-lg border border-border/40 bg-muted/20 p-4 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">Email preview</p>
+                <p className="text-[13px] text-foreground/80">
+                  Hi {reminderModal.name || reminderModal.email.split("@")[0]}, this is a friendly reminder to submit your interview feedback.
+                </p>
+                <p className="text-[13px] text-foreground/80">
+                  Timely feedback helps the hiring team make better decisions. Please submit your ratings, pros, and cons at your earliest convenience.
+                </p>
+              </div>
+
+              {/* Custom message */}
+              <div>
+                <Label htmlFor="reminder-msg" className="text-[12px] font-medium text-muted-foreground">
+                  Custom message (optional)
+                </Label>
+                <textarea
+                  id="reminder-msg"
+                  value={reminderMessage}
+                  onChange={(e) => setReminderMessage(e.target.value)}
+                  placeholder="Add a personal note, e.g. 'We're making a decision on Monday — would be great to have your feedback by then.'"
+                  className="mt-1 w-full rounded-md border border-border/60 bg-background px-3 py-2 text-[13px] placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-300 resize-none"
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setReminderModal(null)} disabled={sendingReminder}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={handleSendReminder} disabled={sendingReminder}>
+              {sendingReminder ? (
+                <CircleNotch size={14} weight="bold" className="mr-2 animate-spin" />
+              ) : (
+                <PaperPlaneTilt size={14} weight="duotone" className="mr-2" />
+              )}
+              Send Reminder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
