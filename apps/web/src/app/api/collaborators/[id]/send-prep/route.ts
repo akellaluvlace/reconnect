@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendPrepEmail } from "@/lib/email/resend-client";
+import { sendPrepEmail, sendCustomBodyEmail } from "@/lib/email/resend-client";
 import type { PrepEmailStage } from "@/lib/email/templates";
 
 export const maxDuration = 30;
@@ -143,13 +143,24 @@ export async function POST(
       };
     });
 
-    // Send email
-    const result = await sendPrepEmail({
-      to: collaborator.email,
-      interviewerName: collaborator.name ?? collaborator.email,
-      playbookTitle: playbook.title,
-      stages: emailStages,
-    });
+    // Send email — use custom_body if provided, otherwise auto-generate
+    const customBody =
+      body && typeof body === "object" && "custom_body" in body
+        ? (body as { custom_body: unknown }).custom_body
+        : undefined;
+
+    const result = typeof customBody === "string" && customBody.trim()
+      ? await sendCustomBodyEmail({
+          to: collaborator.email,
+          subject: `Interview Prep: ${playbook.title}`,
+          body: customBody,
+        })
+      : await sendPrepEmail({
+          to: collaborator.email,
+          interviewerName: collaborator.name ?? collaborator.email,
+          playbookTitle: playbook.title,
+          stages: emailStages,
+        });
 
     if (!result.success) {
       console.error("[collaborators/send-prep] Email failed:", result.error);

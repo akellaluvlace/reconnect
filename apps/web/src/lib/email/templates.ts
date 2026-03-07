@@ -33,6 +33,17 @@ function baseWrapper(content: string): string {
 </html>`;
 }
 
+/** Wrap user-edited plain text in the branded email template. */
+export function customBodyHtml(plainText: string): string {
+  const escaped = escapeHtml(plainText);
+  // Convert line breaks to HTML, preserve blank-line paragraph separation
+  const htmlBody = escaped
+    .split("\n\n")
+    .map((para) => `<p style="margin:0 0 12px;color:#3f3f46;font-size:14px;line-height:1.6;white-space:pre-wrap">${para.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return baseWrapper(htmlBody);
+}
+
 export function collaboratorInviteHtml(params: {
   inviterName: string;
   playbookTitle: string;

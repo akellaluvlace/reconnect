@@ -116,3 +116,16 @@ export async function sendPrepEmail(params: {
     html: prepEmailHtml(params),
   });
 }
+
+export async function sendCustomBodyEmail(params: {
+  to: string;
+  subject: string;
+  body: string;
+}): Promise<SendResult> {
+  const { customBodyHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: params.subject,
+    html: customBodyHtml(params.body),
+  });
+}

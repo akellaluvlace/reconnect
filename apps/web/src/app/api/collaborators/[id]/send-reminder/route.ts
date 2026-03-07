@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { sendReminderEmail } from "@/lib/email/resend-client";
+import { sendReminderEmail, sendCustomBodyEmail } from "@/lib/email/resend-client";
 
 export const maxDuration = 30;
 
@@ -115,13 +115,24 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Send reminder email
-    const result = await sendReminderEmail({
-      to: collaborator.email,
-      interviewerName: collaborator.name ?? collaborator.email,
-      playbookTitle: playbook.title,
-      message: validMessage,
-    });
+    // Send reminder — use custom_body if provided, otherwise auto-generate
+    const customBody =
+      body && typeof body === "object" && "custom_body" in body
+        ? (body as { custom_body: unknown }).custom_body
+        : undefined;
+
+    const result = typeof customBody === "string" && customBody.trim()
+      ? await sendCustomBodyEmail({
+          to: collaborator.email,
+          subject: `Feedback Reminder: ${playbook.title}`,
+          body: customBody,
+        })
+      : await sendReminderEmail({
+          to: collaborator.email,
+          interviewerName: collaborator.name ?? collaborator.email,
+          playbookTitle: playbook.title,
+          message: validMessage,
+        });
 
     if (!result.success) {
       console.error("[collaborators/send-reminder] Email failed:", result.error);
