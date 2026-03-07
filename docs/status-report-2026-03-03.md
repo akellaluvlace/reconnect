@@ -92,8 +92,8 @@ Expired sessions redirect to login with clear message instead of error popups.
 
 ## Test Coverage
 
-- **535 automated tests** passing across the web application
-- **389 AI pipeline tests** passing
+- **528 automated tests** passing across the web application
+- **316 AI pipeline tests** passing
 - **233 database tests** passing
 - All changes typecheck clean with zero errors
 
@@ -101,6 +101,45 @@ Expired sessions redirect to login with clear message instead of error popups.
 
 ## What's Next
 
-- Zero-stuck-state resilience (4 planned fixes for edge cases)
+- Alignment chapter: candidate profiling, share links, feedback forms
 - Step 10.2: Interview scheduling pipeline (cron jobs, state machine, UI)
-- Share link stage scoping (collaborators see only their assigned stage)
+- Debrief/synthesis wiring (transcript + feedback → AI analysis)
+
+---
+
+## Addendum — External Service Setup (Action Required)
+
+### 1. Google Workspace Tier — Decision Needed
+
+Currently on **Business Standard**. The recording pipeline requires **Business Plus** (or Enterprise) for:
+
+- **Auto-recording** — Meet auto-records when a Rec+onnect-hosted meeting starts. Without it, someone has to manually click "Record" every interview. This is the core automation.
+- **Google Meet transcripts** — Business Plus generates VTT transcripts automatically (~50KB text). This is our **primary transcript source**. Without it, we'd need to download the full video (100-300MB) and run it through OpenAI Whisper API, which adds cost (~$0.006/min of audio) and complexity (file size limits, serverless constraints).
+- **Bottom line:** Business Plus saves us the Whisper API cost entirely for scheduled interviews and gives us the hands-free recording we need. Manual audio uploads (edge case) still use Whisper as fallback.
+
+**Action:** Upgrade Google Workspace to Business Plus. After upgrade, enable auto-recording in Google Admin → Apps → Google Meet → Meet settings → Recording.
+
+### 2. Resend (Email)
+
+**Already configured.** `RESEND_API_KEY` is set in Vercel env vars. Resend handles all transactional emails:
+- Share link invitations (collaborator gets magic link to their feedback form)
+- Future: interview scheduling confirmations, reminders
+
+**Action needed:** Verify the sending domain. Currently emails send from Resend's default domain. For production, we should add and verify `axil.ie` as a sending domain in Resend dashboard (DNS records: SPF, DKIM, DMARC). This ensures emails don't land in spam.
+
+### 3. Other External Services — Status
+
+| Service | Status | Notes |
+|---------|--------|-------|
+| **Anthropic (Claude AI)** | Active, topped up | ~€0.80/playbook. Opus for deep analysis, Sonnet for everything else. |
+| **Tavily (Web Search)** | Active | Powers market research. Job posting counts, competitor data. |
+| **OpenAI (Whisper)** | Key set | Fallback only — used for manual audio uploads. Not needed if Google Meet transcripts work (Business Plus). |
+| **Supabase** | Active | Auth, database, RLS, storage. All configured. |
+| **Vercel** | Active (Pro) | Hosting, serverless functions (up to 5 min timeout). |
+| **Sentry** | Not yet | Error monitoring. Should add before beta. Low effort. |
+
+### Summary of Actions
+
+1. **Google Workspace** → Upgrade to Business Plus (enables auto-record + transcripts)
+2. **Resend** → Add `axil.ie` as verified sending domain (SPF/DKIM/DMARC DNS records)
+3. **Sentry** → Set up before beta for error monitoring (optional but recommended)

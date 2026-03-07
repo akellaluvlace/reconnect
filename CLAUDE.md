@@ -7,13 +7,13 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Alignment chapter COMPLETE (Tier 1+2+3) → ready for Step 10.2 (recording pipeline)
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process + Alignment chapters done. All client feedback resolved (2 rounds). Option A shipped. Production audit done. Alignment chapter: editable candidate profile (inline edit + AI refine per-section), stale detection, process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. 528 web + 316 AI + 233 DB tests green. Typecheck clean. Live on app.axil.ie.
-**Next task:** Awaiting client feedback on Alignment chapter + proposal (docs/client-proposal-alignment-debrief.md). Then Step 10.2 (recording pipeline).
-**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Resend domain verification for collaborator invite emails (client emailed).
+**Step:** Alignment chapter COMPLETE + enhancements (A1,A3,A4,A5,A6) → ready for Step 10.2 (recording pipeline)
+**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process + Alignment chapters done. All client feedback resolved (3 rounds). Option A shipped. Production audit done. Alignment enhancements: process health warnings (A3+A4), competitive offer intelligence (A5), interview prep email (A1), feedback reminder email (A6), collaborator invite accept page. Resend domain verified + RESEND_FROM_EMAIL env var set — emails now delivering. 563 web + 316 AI + 233 DB tests green. Typecheck clean. Live on app.axil.ie.
+**Next task:** Awaiting client feedback on Alignment enhancements. Then Step 10.2 (recording pipeline). A2 (playbook duplication) on hold pending pricing model decision.
+**Blockers:** Google Workspace upgrade to Business Plus (auto-recording).
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
 
-**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → Alignment chapter → 10.2 (recording pipeline) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → 10.2 (recording pipeline) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -242,9 +242,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-03-07:** Alignment enhancements (A1,A3,A4,A5,A6). Process health warnings, competitive offer intelligence, interview prep email, feedback reminder email. Resend fixed (RESEND_FROM_EMAIL env var added to Vercel). Collaborator invite accept page built (/auth/collaborator?token=). 563 web tests green. Debrief features logged in memory. Client feedback round 3 processed.
 - **2026-03-05:** Alignment chapter Tier 1+2+3 complete. Editable candidate profile (inline edit, tag editor, AI refine per-section), stale detection amber banner, "How to Use" guide, nav grouping with progress dots, enriched profile prompt, interactive process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. Fixed input focus loss bug (inner components → plain render functions). Resend domain not verified — client emailed. Proposal doc created (docs/client-proposal-alignment-debrief.md).
 - **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green.
 - **2026-03-04 (d):** Production hardening audit. Deleted 3 dead web files. Fixed 3 API org-checks. Added 3 client timeouts. 528 web + 389 AI tests green.
 - **2026-03-04 (c):** Removed anchored coverage (always full analysis). Lock-in button restyled. Prefetch disabled on playbook list. Status report + email draft updated.
-- **2026-03-04 (b):** Option A shipped — removed Recommendations panel (-586 lines). Coverage tracers. Stages-changed amber dot + banner. Lock-in persists coverage.
 > Keep max 5 entries. Remove oldest when adding new.
