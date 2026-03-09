@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { StageData } from "./process-page-client";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 
 interface CoverageAnalysisPanelProps {
   playbookId: string;
@@ -342,6 +343,7 @@ export function CoverageAnalysisPanel({
           ))}
         </div>
       )}
+      <AIDisclaimer />
     </div>
   );
 }

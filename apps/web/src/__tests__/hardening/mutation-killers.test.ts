@@ -268,7 +268,10 @@ describe("M7: UUID validation on feedback GET query param", () => {
 describe("M10: Synthesis score range validation (1-4)", () => {
   it("rejects score=5 in synthesis feedback_forms", async () => {
     setupAuth(MOCK_USER);
-    mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") return chainBuilder({ data: { role: "admin" }, error: null });
+      return chainBuilder({ data: null, error: null });
+    });
     mockServiceFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
 
     const { POST } = await import("@/app/api/ai/synthesize-feedback/route");
@@ -293,7 +296,10 @@ describe("M10: Synthesis score range validation (1-4)", () => {
 
   it("rejects score=0 in synthesis feedback_forms", async () => {
     setupAuth(MOCK_USER);
-    mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") return chainBuilder({ data: { role: "admin" }, error: null });
+      return chainBuilder({ data: null, error: null });
+    });
 
     const { POST } = await import("@/app/api/ai/synthesize-feedback/route");
     const req = makeReq("http://localhost:3000/api/ai/synthesize-feedback", "POST", {
@@ -315,7 +321,10 @@ describe("M10: Synthesis score range validation (1-4)", () => {
 
   it("accepts score=4 in synthesis feedback_forms", async () => {
     setupAuth(MOCK_USER);
-    mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") return chainBuilder({ data: { role: "admin" }, error: null });
+      return chainBuilder({ data: null, error: null });
+    });
     mockServiceFrom.mockReturnValue(
       chainBuilder({ data: null, error: { code: "PGRST116", message: "not found" } }),
     );

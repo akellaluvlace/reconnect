@@ -7,13 +7,14 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** Alignment chapter COMPLETE + enhancements (A1,A3,A4,A5,A6) → ready for Step 10.2 (recording pipeline)
-**Status:** Steps 1-9 complete + hardened. Step 10.1 done. Discovery + Process + Alignment chapters done. All client feedback resolved (3 rounds). Option A shipped. Production audit done. Alignment enhancements: process health warnings (A3+A4), competitive offer intelligence (A5), interview prep email (A1), feedback reminder email (A6), collaborator invite accept page. Resend domain verified + RESEND_FROM_EMAIL env var set — emails now delivering. 563 web + 316 AI + 233 DB tests green. Typecheck clean. Live on app.axil.ie.
-**Next task:** Awaiting client feedback on Alignment enhancements. Then Step 10.2 (recording pipeline). A2 (playbook duplication) on hold pending pricing model decision.
-**Blockers:** Google Workspace upgrade to Business Plus (auto-recording).
+**Step:** CMS + Platform + org approval + collaborator flow fixes done. Step 10 plan updated with missing features (feedback submission, notifications). Pending manual QA + deploy.
+**Status:** Steps 1-9 complete + hardened. Step 10.1 partial (OAuth done, API helpers pending). All 4 chapters functional. CMS Admin: 7 pages with full CRUD, seed defaults, wizard integration, question bank picker, email template interpolation. Platform Superadmin: org/user management, stats, env-var gated. Org approval flow: pending/active/suspended with dashboard blocking. Collaborator prep page: public, shows stages+questions+rating guide. CMS email templates integrated into prep/reminder modals (fetch + interpolate). 644 web + 316 AI + 233 DB tests green. Typecheck clean. 0 lint errors. NOT YET DEPLOYED — pending manual QA.
+**Next task:** Manual QA testing of all CMS + Platform pages. Add `PLATFORM_ADMIN_EMAILS` to Vercel. Deploy. Then Step 10.2 (recording pipeline + feedback submission + consent flow) when Google Workspace upgraded. Step 10.2b (notification system) after. A2 on hold pending pricing model.
+**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Without it: no recording pipeline, no feedback submission (needs interview records).
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
+**Key gap:** FeedbackForm component exists but is never rendered — no page where collaborators submit feedback. Planned for 10.2 task D.
 
-**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → 10.2 (recording pipeline) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → 10.2 (recording + feedback + consent) → 10.2b (notifications) → 10.3-10.8
 
 > Update this section at end of every session.
 
@@ -182,7 +183,7 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 ### Infrastructure
 - [ ] All migrations deployed to production (currently 28, including FK cascade fix + cache phase + stage refinements + coverage analysis)
 - [ ] Env vars set in Vercel (Supabase, Anthropic, Tavily, OpenAI, Resend, Google)
-- [ ] Rate limiting on AI endpoints (not implemented yet — add in 10.3 or 10.4)
+- [x] Rate limiting on AI endpoints — in-memory per-user throttle (10 req/min) on all 10 AI routes
 - [ ] Error monitoring (Sentry or equivalent) configured
 
 ### Data Integrity
@@ -209,8 +210,8 @@ Everything below MUST pass before any beta tester gets access. Not optional.
 - **~~Anthropic API credits exhausted~~** Topped up 2026-03-01. AI generation working. ~$0.80/playbook (with 2 improvement loops).
 - **Data retention cron:** Not implemented. Needs client decision: build now or defer.
 - **Audit logging:** No admin action logging. Low risk for beta, needed for production.
-- **Rate limiting:** No AI endpoint rate limiting. Could allow credit burn during beta if abused.
-- **16 lint errors:** All `no-explicit-any` in test files. Zero production impact.
+- **~~Rate limiting~~:** DONE (2026-03-07). In-memory per-user throttle, 10 req/min, all AI routes.
+- **~~Lint errors~~:** DONE (2026-03-07). 0 errors (was 25). Fixed `no-explicit-any`, unescaped entities, react-hooks issues.
 
 ### Pipeline Flow Issues (updated 2026-03-03)
 - **~~Deep research fire-and-forget — no recovery.~~** ALREADY FIXED: 8-minute polling timeout → amber retry banner → `handleRetryDeepResearch()` re-triggers with same cache_key. Implemented in `market-intelligence-panel.tsx`.
@@ -242,9 +243,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-03-08:** CMS Admin Controls + Platform Superadmin (12 tasks). 7 admin pages with full CRUD, generic API, seed defaults, wizard integration, question bank picker, email template interpolation. Platform superadmin (org/user mgmt, stats, env-var gated). Code review: 5 fixes (org scoping, explicit columns, seed error check, email error sanitization, Link nav). 644 web tests green. Pending manual QA.
+- **2026-03-07 (b):** Debrief chapter unlocked + D2/D3/D4 built. Candidate comparison (side-by-side grid), bias detection (TDD, 12 tests), activity timeline. Review fixes: parallel fetches (Promise.allSettled), failure warnings, memoized refs, transcript leak fixed (select("*") → explicit columns), role error logged. 25 lint errors → 0. Rate limiting on all 10 AI routes (in-memory, 10 req/min). 575 web tests green.
 - **2026-03-07:** Alignment enhancements (A1,A3,A4,A5,A6). Process health warnings, competitive offer intelligence, interview prep email, feedback reminder email. Resend fixed (RESEND_FROM_EMAIL env var added to Vercel). Collaborator invite accept page built (/auth/collaborator?token=). 563 web tests green. Debrief features logged in memory. Client feedback round 3 processed.
 - **2026-03-05:** Alignment chapter Tier 1+2+3 complete. Editable candidate profile (inline edit, tag editor, AI refine per-section), stale detection amber banner, "How to Use" guide, nav grouping with progress dots, enriched profile prompt, interactive process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. Fixed input focus loss bug (inner components → plain render functions). Resend domain not verified — client emailed. Proposal doc created (docs/client-proposal-alignment-debrief.md).
 - **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green.
-- **2026-03-04 (d):** Production hardening audit. Deleted 3 dead web files. Fixed 3 API org-checks. Added 3 client timeouts. 528 web + 389 AI tests green.
-- **2026-03-04 (c):** Removed anchored coverage (always full analysis). Lock-in button restyled. Prefetch disabled on playbook list. Status report + email draft updated.
 > Keep max 5 entries. Remove oldest when adding new.

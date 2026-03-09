@@ -8,6 +8,7 @@ import {
   scoreIndustryRelevance,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Tavily searches + parallel URL liveness checks (up to 4s each, 20 max)
 export const maxDuration = 60;
@@ -116,6 +117,14 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+    );
   }
 
   let body: unknown;

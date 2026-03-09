@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { analyzeCoverage, safeErrorMessage } from "@reconnect/ai";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const RequestSchema = z.object({
   role: z.string().min(1).max(200),
@@ -38,6 +39,14 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimited = checkRateLimit(user.id);
+    if (rateLimited) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again shortly." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+      );
     }
 
     let body: unknown;

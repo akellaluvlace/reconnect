@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendPrepEmail, sendCustomBodyEmail } from "@/lib/email/resend-client";
 import type { PrepEmailStage } from "@/lib/email/templates";
+import { interpolateTemplate } from "@/lib/admin/email-interpolation";
 
 export const maxDuration = 30;
 
@@ -77,7 +78,7 @@ export async function POST(
     // Fetch collaborator
     const { data: collaborator, error: collabError } = await supabase
       .from("collaborators")
-      .select("id, email, name, assigned_stages")
+      .select("id, email, name, assigned_stages, invite_token")
       .eq("id", id)
       .single();
 
@@ -143,29 +144,68 @@ export async function POST(
       };
     });
 
-    // Send email — use custom_body if provided, otherwise auto-generate
+    // Check for CMS email template (prep type) — silently fall back on error
+    let cmsTemplate: { subject: string; body_html: string } | null = null;
+    try {
+      const { data } = await supabase
+        .from("cms_email_templates")
+        .select("subject, body_html")
+        .eq("organization_id", profile.organization_id)
+        .eq("template_type", "prep")
+        .eq("is_active", true)
+        .limit(1)
+        .single();
+      cmsTemplate = data;
+    } catch {
+      // CMS table query failed — fall back to default
+    }
+
+    // Build template variables for CMS interpolation
+    const templateVars: Record<string, string> = {
+      candidate_name: playbook.title.split(" - ")[0] || playbook.title,
+      role_title: playbook.title,
+      stage_name: emailStages.map((s) => s.name).join(", "),
+      interviewer_name: collaborator.name ?? collaborator.email,
+      playbook_link: collaborator.invite_token
+        ? `${process.env.NEXT_PUBLIC_APP_URL || "https://app.axil.ie"}/auth/collaborator?token=${collaborator.invite_token}`
+        : `${process.env.NEXT_PUBLIC_APP_URL || "https://app.axil.ie"}/playbooks/${playbookId}`,
+    };
+
+    // Send email — priority: custom_body > CMS template > default auto-generate
     const customBody =
       body && typeof body === "object" && "custom_body" in body
         ? (body as { custom_body: unknown }).custom_body
         : undefined;
 
-    const result = typeof customBody === "string" && customBody.trim()
-      ? await sendCustomBodyEmail({
-          to: collaborator.email,
-          subject: `Interview Prep: ${playbook.title}`,
-          body: customBody,
-        })
-      : await sendPrepEmail({
-          to: collaborator.email,
-          interviewerName: collaborator.name ?? collaborator.email,
-          playbookTitle: playbook.title,
-          stages: emailStages,
-        });
+    let result;
+    if (typeof customBody === "string" && customBody.trim()) {
+      // User provided custom body — use it as-is
+      result = await sendCustomBodyEmail({
+        to: collaborator.email,
+        subject: `Interview Prep: ${playbook.title}`,
+        body: customBody,
+      });
+    } else if (cmsTemplate) {
+      // CMS template found — interpolate and send
+      result = await sendCustomBodyEmail({
+        to: collaborator.email,
+        subject: interpolateTemplate(cmsTemplate.subject, templateVars),
+        body: interpolateTemplate(cmsTemplate.body_html, templateVars),
+      });
+    } else {
+      // No CMS template — use built-in auto-generate
+      result = await sendPrepEmail({
+        to: collaborator.email,
+        interviewerName: collaborator.name ?? collaborator.email,
+        playbookTitle: playbook.title,
+        stages: emailStages,
+      });
+    }
 
     if (!result.success) {
       console.error("[collaborators/send-prep] Email failed:", result.error);
       return NextResponse.json(
-        { error: `Failed to send prep email: ${result.error ?? "unknown error"}` },
+        { error: "Failed to send prep email" },
         { status: 500 },
       );
     }

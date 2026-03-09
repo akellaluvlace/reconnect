@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JobDescription, MarketInsights, HiringStrategy } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Sparkle, CircleNotch, Info, Copy, Eye, EyeSlash } from "@phosphor-icons
 import { useAutoSave } from "@/hooks/use-auto-save";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 
 const SALARY_LABELS: Record<string, string> = {
   lead: "Lead Market",
@@ -71,20 +72,25 @@ export function JDStructuredEditor({
 
   const { save } = useAutoSave({ onSave: saveToServer });
 
-  const [hiddenSections, setHiddenSections] = useState<Set<string>>(() => {
-    const hidden = (jobDescription as Record<string, unknown> | null)?.hidden_jd_sections;
-    return new Set(Array.isArray(hidden) ? (hidden as string[]) : []);
-  });
+  // Derive hiddenSections from jobDescription, recomputing when it changes
+  const hiddenJdSections = (jobDescription as Record<string, unknown> | null)?.hidden_jd_sections;
+  const derivedHidden = useMemo(
+    () => new Set(Array.isArray(hiddenJdSections) ? (hiddenJdSections as string[]) : []),
+    [hiddenJdSections],
+  );
+  const [localHidden, setLocalHidden] = useState<Set<string> | null>(null);
+  const [prevHiddenJdSections, setPrevHiddenJdSections] = useState(hiddenJdSections);
+  if (hiddenJdSections !== prevHiddenJdSections) {
+    setPrevHiddenJdSections(hiddenJdSections);
+    setLocalHidden(null); // reset local overrides when prop changes
+  }
+  const hiddenSections = localHidden ?? derivedHidden;
+  const setHiddenSections = setLocalHidden;
 
   // Keep a ref to the latest jobDescription so the toggle handler never reads stale data
   const jdRef = useRef(jobDescription);
-  jdRef.current = jobDescription;
-
-  // Sync hiddenSections when jobDescription changes externally (e.g. after AI regeneration)
   useEffect(() => {
-    const hidden = (jobDescription as Record<string, unknown> | null)?.hidden_jd_sections;
-    const arr = Array.isArray(hidden) ? (hidden as string[]) : [];
-    setHiddenSections(new Set(arr));
+    jdRef.current = jobDescription;
   }, [jobDescription]);
 
   function handleToggleSection(section: string) {
@@ -490,6 +496,7 @@ export function JDStructuredEditor({
           )}
         </>
       )}
+      <AIDisclaimer />
     </div>
   );
 }

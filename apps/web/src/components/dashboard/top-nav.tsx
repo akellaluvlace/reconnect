@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GearSix, SignOut } from "@phosphor-icons/react";
+import { GearSix, Shield, SignOut } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useSignOut } from "@/lib/hooks/use-sign-out";
 import { useAuthStore } from "@/stores/auth-store";
@@ -22,7 +22,11 @@ const navItems = [
   { name: "Team", href: "/team", enabled: false },
 ];
 
-export function TopNav() {
+interface TopNavProps {
+  showPlatformLink?: boolean;
+}
+
+export function TopNav({ showPlatformLink = false }: TopNavProps) {
   const pathname = usePathname();
   const handleSignOut = useSignOut();
   const user = useAuthStore((s) => s.user);
@@ -84,6 +88,20 @@ export function TopNav() {
 
         {/* Right side */}
         <div className="ml-auto flex items-center gap-1">
+          {showPlatformLink && (
+            <Link
+              href="/platform"
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                isActive("/platform")
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <Shield size={16} weight="duotone" />
+              Platform
+            </Link>
+          )}
           <Link
             href="/settings"
             className={cn(

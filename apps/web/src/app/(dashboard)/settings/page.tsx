@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     { name: "Profile", description: "Your personal settings", href: "/settings/profile", icon: UserCircle },
     { name: "Integrations", description: "Connected services", href: "/settings/integrations", icon: PlugsConnected },
     ...(role === "admin"
-      ? [{ name: "Admin", description: "CMS controls (admin only)", href: "/settings/admin/skills", icon: ShieldCheck }]
+      ? [{ name: "Admin", description: "CMS controls (admin only)", href: "/settings/admin", icon: ShieldCheck }]
       : []),
   ];
 

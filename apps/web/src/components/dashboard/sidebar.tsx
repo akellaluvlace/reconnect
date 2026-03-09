@@ -8,6 +8,7 @@ import {
   UsersThree,
   UserPlus,
   GearSix,
+  Shield,
   SignOut,
   CaretRight,
 } from "@phosphor-icons/react";
@@ -28,7 +29,11 @@ const utilityNav: { name: string; href: string; icon: PhosphorIcon }[] = [
   { name: "Settings", href: "/settings", icon: GearSix },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  showPlatformLink?: boolean;
+}
+
+export function Sidebar({ showPlatformLink = false }: SidebarProps) {
   const pathname = usePathname();
   const handleSignOut = useSignOut();
   const user = useAuthStore((s) => s.user);
@@ -132,6 +137,19 @@ export function Sidebar() {
             );
           })}
         </div>
+
+        {showPlatformLink && (
+          <>
+            <div className="my-2 border-t border-border/30" />
+            <a
+              href="/platform"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-foreground/70 hover:bg-muted/50"
+            >
+              <Shield size={16} weight="duotone" />
+              Platform
+            </a>
+          </>
+        )}
 
         {/* Divider */}
         <div className="my-3 h-px bg-border/60" />

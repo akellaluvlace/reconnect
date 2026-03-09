@@ -10,6 +10,7 @@ import {
   safeErrorMessage,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Quick-phase Sonnet call, typically 10-15s
 export const maxDuration = 30;
@@ -30,6 +31,14 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+    );
   }
 
   let body: unknown;

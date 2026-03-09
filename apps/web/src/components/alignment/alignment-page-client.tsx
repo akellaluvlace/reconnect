@@ -382,6 +382,7 @@ export function AlignmentPageClient({
         {activeItem === "collaborators" && (
           <CollaboratorManager
             playbookId={playbook.id}
+            playbookTitle={playbook.title}
             collaborators={collaborators}
             stages={initialStages}
             onUpdate={setCollaborators}

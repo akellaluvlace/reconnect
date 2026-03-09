@@ -23,7 +23,7 @@ import { PATCH } from "@/app/api/playbooks/[id]/route";
 // ---------------------------------------------------------------------------
 
 function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
-  const builder: Record<string, any> = {};
+  const builder: Record<string, ReturnType<typeof vi.fn> | ((resolve: (value: { data: unknown; error: unknown }) => void) => void)> = {};
   [
     "select",
     "insert",
@@ -41,7 +41,7 @@ function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
     builder[m] = vi.fn().mockReturnValue(builder);
   });
   builder.single = vi.fn().mockResolvedValue(resolvedValue);
-  builder.then = (resolve: any) => resolve(resolvedValue);
+  builder.then = (resolve: (value: { data: unknown; error: unknown }) => void) => resolve(resolvedValue);
   return builder;
 }
 

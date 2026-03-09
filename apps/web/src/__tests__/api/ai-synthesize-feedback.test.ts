@@ -97,12 +97,26 @@ const MOCK_RESULT = {
   },
 };
 
-function setupAuth(user: typeof MOCK_USER | null = MOCK_USER) {
+function setupAuth(user: typeof MOCK_USER | null = MOCK_USER, role = "admin") {
   mockGetUser.mockResolvedValue({ data: { user }, error: null });
+  if (user) {
+    // Role check: synthesis route queries users table for role
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({ data: { role }, error: null });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
+  }
 }
 
 function setupDBs() {
-  mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+  mockFrom.mockImplementation((table: string) => {
+    if (table === "users") {
+      return chainBuilder({ data: { role: "admin" }, error: null });
+    }
+    return chainBuilder({ data: null, error: null });
+  });
   mockServiceFrom.mockReturnValue(
     chainBuilder({ data: { transcript: "Hello world" }, error: null }),
   );
@@ -129,6 +143,14 @@ describe("POST /api/ai/synthesize-feedback", () => {
     const res = await POST(makePost(VALID_BODY));
 
     expect(res.status).toBe(401);
+  });
+
+  it("returns 403 when interviewer calls synthesis", async () => {
+    setupAuth(MOCK_USER, "interviewer");
+
+    const res = await POST(makePost(VALID_BODY));
+
+    expect(res.status).toBe(403);
   });
 
   it("returns 400 with invalid input", async () => {

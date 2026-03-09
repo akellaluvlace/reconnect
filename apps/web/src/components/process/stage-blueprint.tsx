@@ -527,7 +527,7 @@ export function StageBlueprint({
                 </div>
                 <div className="flex items-start gap-3">
                   <Plus size={16} className="mt-0.5 shrink-0 text-muted-foreground" />
-                  <p><span className="font-semibold text-foreground">Add / Insert stage</span> — Use the "Add Stage" button or hover between cards to insert a stage at any position.</p>
+                  <p><span className="font-semibold text-foreground">Add / Insert stage</span> — Use the &quot;Add Stage&quot; button or hover between cards to insert a stage at any position.</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Sparkle size={16} weight="duotone" className="mt-0.5 shrink-0 text-muted-foreground" />

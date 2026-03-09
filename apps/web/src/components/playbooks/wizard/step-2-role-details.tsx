@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,8 +24,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkillsInput } from "./skills-input";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { createClient } from "@/lib/supabase/client";
 
-const levels = [
+const DEFAULT_LEVELS = [
   { value: "junior", label: "Junior (0-2 years)" },
   { value: "mid", label: "Mid-Level (2-5 years)" },
   { value: "senior", label: "Senior (5-8 years)" },
@@ -32,7 +34,7 @@ const levels = [
   { value: "executive", label: "Executive" },
 ];
 
-const industries = [
+const DEFAULT_INDUSTRIES = [
   "Technology",
   "Finance",
   "Healthcare",
@@ -60,6 +62,74 @@ type Step2Values = z.infer<typeof step2Schema>;
 
 export function Step2RoleDetails() {
   const { draft, updateRoleDetails, setStep } = usePlaybookStore();
+
+  const [levels, setLevels] = useState(DEFAULT_LEVELS);
+  const [industries, setIndustries] = useState(DEFAULT_INDUSTRIES);
+  const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
+  const [cmsLoading, setCmsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchCmsData() {
+      try {
+        const supabase = createClient();
+
+        const [levelsRes, industriesRes, skillsRes] = await Promise.all([
+          supabase
+            .from("cms_levels")
+            .select("name, description, order_index")
+            .eq("is_active", true)
+            .order("order_index"),
+          supabase
+            .from("cms_industries")
+            .select("name")
+            .eq("is_active", true)
+            .order("created_at"),
+          supabase
+            .from("cms_skills")
+            .select("name")
+            .eq("is_active", true)
+            .order("name"),
+        ]);
+
+        if (cancelled) return;
+
+        // Levels: use CMS if non-empty, otherwise keep defaults
+        if (levelsRes.data && levelsRes.data.length > 0) {
+          setLevels(
+            levelsRes.data.map((l) => ({
+              value: l.name.toLowerCase(),
+              label: l.name + (l.description ? ` (${l.description})` : ""),
+            })),
+          );
+        }
+
+        // Industries: use CMS if non-empty, otherwise keep defaults. Always ensure "Other" is last.
+        if (industriesRes.data && industriesRes.data.length > 0) {
+          const cmsNames = industriesRes.data.map((i) => i.name).filter((n) => n !== "Other");
+          setIndustries([...cmsNames, "Other"]);
+        }
+
+        // Skills: provide as suggestions (empty array is fine — means no suggestions)
+        if (skillsRes.data && skillsRes.data.length > 0) {
+          setSkillSuggestions(skillsRes.data.map((s) => s.name));
+        }
+      } catch {
+        // On error, keep defaults — no need to surface this to the user
+      } finally {
+        if (!cancelled) {
+          setCmsLoading(false);
+        }
+      }
+    }
+
+    fetchCmsData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Check if stored industry matches a preset; if not, it was a custom entry
   const isCustomIndustry = draft.roleDetails.industry && !industries.includes(draft.roleDetails.industry);
@@ -106,10 +176,11 @@ export function Step2RoleDetails() {
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  disabled={cmsLoading}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select level" />
+                      <SelectValue placeholder={cmsLoading ? "Loading..." : "Select level"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -134,10 +205,11 @@ export function Step2RoleDetails() {
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
+                  disabled={cmsLoading}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select industry" />
+                      <SelectValue placeholder={cmsLoading ? "Loading..." : "Select industry"} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -188,6 +260,7 @@ export function Step2RoleDetails() {
                   <SkillsInput
                     value={field.value}
                     onChange={field.onChange}
+                    suggestions={skillSuggestions}
                   />
                 </FormControl>
                 <FormMessage />

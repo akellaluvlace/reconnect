@@ -22,7 +22,7 @@ import { GET } from "@/app/api/playbooks/role-suggestions/route";
 // ---------------------------------------------------------------------------
 
 function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
-  const builder: Record<string, any> = {};
+  const builder: Record<string, ReturnType<typeof vi.fn> | ((resolve: (value: { data: unknown; error: unknown }) => void) => void)> = {};
   [
     "select",
     "insert",
@@ -46,7 +46,7 @@ function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
   });
   builder.single = vi.fn().mockResolvedValue(resolvedValue);
   // Thenable for queries that don't use .single()
-  builder.then = (resolve: any) => resolve(resolvedValue);
+  builder.then = (resolve: (value: { data: unknown; error: unknown }) => void) => resolve(resolvedValue);
   return builder;
 }
 

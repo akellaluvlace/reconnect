@@ -14,10 +14,12 @@ import {
   Check,
   X,
   ArrowsClockwise,
+  BookOpen,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
 import type { SuggestedQuestion } from "@reconnect/database";
+import { QuestionBankPicker } from "./question-bank-picker";
 
 interface QuestionBankProps {
   playbookId: string;
@@ -70,6 +72,9 @@ export function QuestionBank({
 
   // Custom question state
   const [newQuestion, setNewQuestion] = useState("");
+
+  // Question bank picker state
+  const [showPicker, setShowPicker] = useState(false);
 
   const faQuestions = questions.filter((q) => q.focus_area === focusArea);
 
@@ -690,7 +695,34 @@ export function QuestionBank({
         >
           <Plus size={14} className="mr-1.5" /> Add
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowPicker(true)}
+          className="h-10 text-sm px-4"
+        >
+          <BookOpen size={14} className="mr-1.5" /> Browse Bank
+        </Button>
       </div>
+
+      <QuestionBankPicker
+        open={showPicker}
+        onClose={() => setShowPicker(false)}
+        onSelect={(selected) => {
+          const newQuestions: SuggestedQuestion[] = selected.map((s) => ({
+            question: s.question,
+            purpose: s.purpose,
+            look_for: s.look_for,
+            focus_area: focusArea,
+          }));
+          saveQuestions([...questions, ...newQuestions]);
+          setShowPicker(false);
+          toast.success(
+            `Added ${selected.length} question${selected.length > 1 ? "s" : ""} from bank`
+          );
+        }}
+        existingQuestions={questions.map((q) => q.question)}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cleanAIText, parseNumberedItems } from "@/lib/strip-ai-metadata";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
   Sparkle,
   ShieldWarning,
@@ -781,6 +782,7 @@ export function StrategyPanel({
           )}
         </>
       )}
+      <AIDisclaimer />
     </div>
   );
 }

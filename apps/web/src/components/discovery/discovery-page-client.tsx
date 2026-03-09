@@ -113,50 +113,56 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
   );
 
   // Lifted polling state — survives section switches
-  const [isDeepResearchPolling, setIsDeepResearchPolling] = useState(false);
+  const needsPolling = marketInsights?.phase === "quick";
+  const [isDeepResearchPolling, setIsDeepResearchPolling] = useState(needsPolling);
   const [deepResearchStartedAt, setDeepResearchStartedAt] = useState<number | null>(null);
   const [pollingTimedOut, setPollingTimedOut] = useState(false);
   const [pollGeneration, setPollGeneration] = useState(0);
-
-  const handlePollingStart = useCallback(() => {
-    setDeepResearchStartedAt((prev) => prev ?? Date.now());
-    setIsDeepResearchPolling(true);
-    setPollingTimedOut(false);
-  }, []);
 
   const handlePollingStop = useCallback(() => {
     setIsDeepResearchPolling(false);
     setDeepResearchStartedAt(null);
   }, []);
 
+  // Deep research polling — lives in parent so it survives tab switches
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollActiveRef = useRef(false);
+
   const handleRestartPolling = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current);
     pollActiveRef.current = false;
     setPollingTimedOut(false);
+    setIsDeepResearchPolling(true);
+    setDeepResearchStartedAt(Date.now());
     setPollGeneration((g) => g + 1);
   }, []);
-
-  // Deep research polling — lives in parent so it survives tab switches
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollActiveRef = useRef(false);
 
   useEffect(() => {
     if (marketInsights?.phase !== "quick") return;
     if (pollActiveRef.current) return;
 
     pollActiveRef.current = true;
-    handlePollingStart();
     let ticks = 0;
     let consecutiveFailures = 0;
 
+    const stopAndClean = () => {
+      pollActiveRef.current = false;
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+
     pollRef.current = setInterval(async () => {
+      // Signal polling UI state on first tick (avoids synchronous setState in effect body)
+      if (ticks === 0) {
+        setIsDeepResearchPolling(true);
+        setDeepResearchStartedAt((prev) => prev ?? Date.now());
+        setPollingTimedOut(false);
+      }
       ticks += 1;
       if (ticks > 96) {
         // 8 minutes — give up
         handlePollingStop();
         setPollingTimedOut(true);
-        pollActiveRef.current = false;
-        if (pollRef.current) clearInterval(pollRef.current);
+        stopAndClean();
         return;
       }
       try {
@@ -165,8 +171,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
           if (handleSessionExpired(res)) {
             // Session expired — stop polling and redirect
             handlePollingStop();
-            pollActiveRef.current = false;
-            if (pollRef.current) clearInterval(pollRef.current);
+            stopAndClean();
             return;
           }
           consecutiveFailures += 1;
@@ -178,8 +183,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
         if (mi?.phase === "deep") {
           setMarketInsights(mi);
           handlePollingStop();
-          pollActiveRef.current = false;
-          if (pollRef.current) clearInterval(pollRef.current);
+          stopAndClean();
           toast.success("Deep research complete", {
             description: `${mi.sources?.length ?? 0} web sources analyzed`,
           });
@@ -190,8 +194,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
         if (consecutiveFailures >= 3) {
           handlePollingStop();
           setPollingTimedOut(true);
-          pollActiveRef.current = false;
-          if (pollRef.current) clearInterval(pollRef.current);
+          stopAndClean();
         }
       }
     }, 5000);
@@ -200,7 +203,7 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
       if (pollRef.current) clearInterval(pollRef.current);
       pollActiveRef.current = false;
     };
-  }, [marketInsights?.phase, playbook.id, pollGeneration, handlePollingStart, handlePollingStop]);
+  }, [marketInsights?.phase, playbook.id, pollGeneration, handlePollingStop]);
 
   // Tab gating: deep research → strategy → JD
   const isDeepResearchDone = marketInsights?.phase === "deep";

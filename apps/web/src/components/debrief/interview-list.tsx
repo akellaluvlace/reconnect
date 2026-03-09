@@ -25,7 +25,6 @@ interface InterviewData {
   recording_url: string | null;
   drive_file_id: string | null;
   meet_conference_id: string | null;
-  transcript: string | null;
   transcript_metadata: Json | null;
   created_at: string | null;
 }

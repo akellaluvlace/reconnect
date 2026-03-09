@@ -23,7 +23,7 @@ import { POST } from "@/app/api/playbooks/[id]/stages/reorder/route";
 // ---------------------------------------------------------------------------
 
 function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
-  const builder: Record<string, any> = {};
+  const builder: Record<string, ReturnType<typeof vi.fn> | ((resolve: (value: { data: unknown; error: unknown }) => void) => void)> = {};
   [
     "select",
     "insert",
@@ -43,7 +43,7 @@ function chainBuilder(resolvedValue: { data: unknown; error: unknown }) {
   builder.single = vi.fn().mockResolvedValue(resolvedValue);
   // The reorder route destructures `{ error }` directly from the awaited
   // builder (no .single() call), so .then must resolve with the value.
-  builder.then = (resolve: any) => resolve(resolvedValue);
+  builder.then = (resolve: (value: { data: unknown; error: unknown }) => void) => resolve(resolvedValue);
   return builder;
 }
 

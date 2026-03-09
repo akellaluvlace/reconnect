@@ -184,7 +184,12 @@ function setupAuth(user: typeof MOCK_USER | null = MOCK_USER) {
 }
 
 function setupDefaultDB() {
-  mockFrom.mockReturnValue(chainBuilder({ data: null, error: null }));
+  mockFrom.mockImplementation((table: string) => {
+    if (table === "users") {
+      return chainBuilder({ data: { role: "admin" }, error: null });
+    }
+    return chainBuilder({ data: null, error: null });
+  });
   mockServiceFrom.mockReturnValue(
     chainBuilder({ data: null, error: { code: "PGRST116" } }),
   );

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PhaseBadge } from "@/components/ai/phase-badge";
 import { DeepResearchProgress } from "./deep-research-progress";
 import { cleanAIText, parseNumberedItems } from "@/lib/strip-ai-metadata";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
   UsersThree,
   Buildings,
@@ -696,6 +697,7 @@ export function MarketIntelligencePanel({
           )}
         </div>
       )}
+      <AIDisclaimer />
     </div>
   );
 }

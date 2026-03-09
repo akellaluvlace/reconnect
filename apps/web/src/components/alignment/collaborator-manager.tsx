@@ -37,6 +37,7 @@ import type { StageInfo, CollaboratorData } from "./alignment-page-client";
 
 interface CollaboratorManagerProps {
   playbookId: string;
+  playbookTitle: string;
   collaborators: CollaboratorData[];
   stages: StageInfo[];
   onUpdate: (collaborators: CollaboratorData[]) => void;
@@ -44,6 +45,7 @@ interface CollaboratorManagerProps {
 
 export function CollaboratorManager({
   playbookId,
+  playbookTitle,
   collaborators,
   stages,
   onUpdate,
@@ -66,6 +68,7 @@ export function CollaboratorManager({
   const [reminderBody, setReminderBody] = useState("");
   const [sendingPrep, setSendingPrep] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
 
   function toggleStage(stageId: string, stageList: string[], setList: (v: string[]) => void) {
     setList(
@@ -222,14 +225,70 @@ export function CollaboratorManager({
     return `Hi ${name},\n\nThis is a friendly reminder to submit your interview feedback.\n\nTimely feedback helps the hiring team make better decisions. Please submit your ratings, pros, and cons at your earliest convenience.\n\nThank you!`;
   }
 
-  function openPrepModal(collab: CollaboratorData) {
-    setPrepModal(collab);
-    setPrepBody(generatePrepText(collab));
+  /** Interpolate {{variable}} placeholders in a template string. */
+  function interpolate(template: string, vars: Record<string, string>): string {
+    return template.replace(/\{\{(\w+)\}\}/g, (match, key) => vars[key] ?? match);
   }
 
-  function openReminderModal(collab: CollaboratorData) {
+  /** Build template variables available on the client side. */
+  function buildTemplateVars(collab: CollaboratorData): Record<string, string> {
+    const collabStages = (!collab.assigned_stages || collab.assigned_stages.length === 0)
+      ? stages
+      : stages.filter((s) => collab.assigned_stages!.includes(s.id));
+
+    const appUrl = typeof window !== "undefined" ? window.location.origin : "https://app.axil.ie";
+    const accessLink = collab.invite_token
+      ? `${appUrl}/auth/collaborator?token=${collab.invite_token}`
+      : `${appUrl}/playbooks/${playbookId}`;
+
+    return {
+      candidate_name: playbookTitle.split(" - ")[0] || playbookTitle,
+      role_title: playbookTitle,
+      stage_name: collabStages.map((s) => s.name).join(", "),
+      interviewer_name: collab.name ?? collab.email,
+      playbook_link: accessLink,
+    };
+  }
+
+  async function fetchCmsTemplate(type: "prep" | "reminder"): Promise<{ subject: string; body_html: string } | null> {
+    try {
+      const res = await fetch(`/api/email-templates?type=${type}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data?.template ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function openPrepModal(collab: CollaboratorData) {
+    setPrepModal(collab);
+    setPrepBody(""); // clear while loading
+    setLoadingTemplate(true);
+
+    const template = await fetchCmsTemplate("prep");
+    if (template?.body_html) {
+      const vars = buildTemplateVars(collab);
+      setPrepBody(interpolate(template.body_html, vars));
+    } else {
+      setPrepBody(generatePrepText(collab));
+    }
+    setLoadingTemplate(false);
+  }
+
+  async function openReminderModal(collab: CollaboratorData) {
     setReminderModal(collab);
-    setReminderBody(generateReminderText(collab));
+    setReminderBody(""); // clear while loading
+    setLoadingTemplate(true);
+
+    const template = await fetchCmsTemplate("reminder");
+    if (template?.body_html) {
+      const vars = buildTemplateVars(collab);
+      setReminderBody(interpolate(template.body_html, vars));
+    } else {
+      setReminderBody(generateReminderText(collab));
+    }
+    setLoadingTemplate(false);
   }
 
   async function handleSendPrep() {
@@ -558,13 +617,20 @@ export function CollaboratorManager({
                 <Label htmlFor="prep-body" className="text-[13px] font-medium text-foreground mb-2 block">
                   Email content — edit freely before sending
                 </Label>
-                <textarea
-                  id="prep-body"
-                  value={prepBody}
-                  onChange={(e) => setPrepBody(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-[13px] leading-relaxed font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-300 resize-y"
-                  rows={20}
-                />
+                {loadingTemplate ? (
+                  <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                    <CircleNotch size={16} weight="bold" className="animate-spin" />
+                    Loading template...
+                  </div>
+                ) : (
+                  <textarea
+                    id="prep-body"
+                    value={prepBody}
+                    onChange={(e) => setPrepBody(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-[13px] leading-relaxed font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-300 resize-y"
+                    rows={20}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -609,13 +675,20 @@ export function CollaboratorManager({
                 <Label htmlFor="reminder-body" className="text-[13px] font-medium text-foreground mb-2 block">
                   Email content — edit freely before sending
                 </Label>
-                <textarea
-                  id="reminder-body"
-                  value={reminderBody}
-                  onChange={(e) => setReminderBody(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-background px-4 py-3 text-[13px] leading-relaxed font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-300 resize-y"
-                  rows={10}
-                />
+                {loadingTemplate ? (
+                  <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+                    <CircleNotch size={16} weight="bold" className="animate-spin" />
+                    Loading template...
+                  </div>
+                ) : (
+                  <textarea
+                    id="reminder-body"
+                    value={reminderBody}
+                    onChange={(e) => setReminderBody(e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-4 py-3 text-[13px] leading-relaxed font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-300 resize-y"
+                    rows={10}
+                  />
+                )}
               </div>
             </div>
           )}

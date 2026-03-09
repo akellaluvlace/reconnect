@@ -20,7 +20,7 @@ export default async function DebriefPage({
 
   const { data: playbook, error: pbError } = await supabase
     .from("playbooks")
-    .select("id, title")
+    .select("id, title, status, created_at, updated_at")
     .eq("id", id)
     .single();
 
@@ -43,7 +43,7 @@ export default async function DebriefPage({
 
   const { data: candidates, error: candidatesError } = await supabase
     .from("candidates")
-    .select("*")
+    .select("id, name, email, status, current_stage_id, playbook_id, created_at")
     .eq("playbook_id", id)
     .order("created_at", { ascending: false });
 
@@ -58,7 +58,7 @@ export default async function DebriefPage({
     candidateIds.length > 0
       ? await supabase
           .from("interviews")
-          .select("*")
+          .select("id, candidate_id, stage_id, interviewer_id, status, scheduled_at, completed_at, meet_link, recording_status, recording_consent_at, recording_url, drive_file_id, meet_conference_id, transcript_metadata, created_at")
           .in("candidate_id", candidateIds)
           .order("scheduled_at", { ascending: true })
       : { data: null, error: null };
@@ -79,11 +79,14 @@ export default async function DebriefPage({
 
   let userRole = "interviewer";
   if (user) {
-    const { data: userRow } = await supabase
+    const { data: userRow, error: roleError } = await supabase
       .from("users")
       .select("role")
       .eq("id", user.id)
       .single();
+    if (roleError && roleError.code !== "PGRST116") {
+      console.error("[debrief] User role query failed:", roleError.message);
+    }
     userRole = userRow?.role ?? "interviewer";
   }
 
@@ -91,6 +94,9 @@ export default async function DebriefPage({
     <DebriefPageClient
       playbookId={playbook.id}
       playbookTitle={playbook.title}
+      playbookCreatedAt={playbook.created_at ?? null}
+      playbookStatus={playbook.status ?? null}
+      playbookUpdatedAt={playbook.updated_at ?? null}
       stages={stages ?? []}
       candidates={candidates ?? []}
       interviews={interviews ?? []}

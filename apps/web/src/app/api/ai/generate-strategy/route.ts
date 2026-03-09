@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { generateHiringStrategy, adjustProcessSpeed, safeErrorMessage } from "@reconnect/ai";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Strategy generation observed at 41-47s but can spike under load. Vercel Pro supports up to 300s.
 export const maxDuration = 300;
@@ -64,6 +65,14 @@ export async function POST(req: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimited = checkRateLimit(user.id);
+    if (rateLimited) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again shortly." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+      );
     }
 
     let body: unknown;

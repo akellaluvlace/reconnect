@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@reconnect/database";
 import { supabaseUrl, supabaseAnonKey } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback", "/api/health"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback", "/auth/collaborator", "/api/health"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({

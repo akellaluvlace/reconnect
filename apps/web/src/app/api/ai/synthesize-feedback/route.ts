@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { synthesizeFeedback, safeErrorMessage } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Opus 4.6 with 16K token budget + optional transcript fetch — routinely 60-120s. Vercel Pro supports up to 300s.
 export const maxDuration = 300;
@@ -40,6 +41,25 @@ export async function POST(req: NextRequest) {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Only admin/manager can trigger synthesis (accesses all feedback via service_role)
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || !["admin", "hiring_manager"].includes(profile.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+    );
   }
 
   let body: unknown;

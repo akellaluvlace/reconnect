@@ -322,10 +322,13 @@ describe("FLOW: Feedback -> Synthesis", () => {
 
   it("Step 4: Synthesis from feedback data — response has summary, consensus, key_strengths, key_concerns, rating_overview, disclaimer", async () => {
     setupAuth(INTERVIEWER_A_ID);
-    // Mock the insert chain for ai_synthesis persistence (the route inserts if candidate_id provided)
-    mockFrom.mockReturnValue(
-      chainBuilder({ data: null, error: null }),
-    );
+    // Role check: synthesis requires admin/manager role
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({ data: { role: "admin" }, error: null });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
     mockSynthesizeFeedback.mockResolvedValue(SYNTHESIS_RESULT);
 
     // Build synthesis input from feedback shapes (same bridge as Step 3)
@@ -384,9 +387,12 @@ describe("FLOW: Feedback -> Synthesis", () => {
 
   it("Step 5: rating_overview.total_feedback_count matches submitted feedback count", async () => {
     setupAuth(INTERVIEWER_A_ID);
-    mockFrom.mockReturnValue(
-      chainBuilder({ data: null, error: null }),
-    );
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({ data: { role: "admin" }, error: null });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
     mockSynthesizeFeedback.mockResolvedValue(SYNTHESIS_RESULT);
 
     const feedbackForms = [
@@ -426,6 +432,13 @@ describe("FLOW: Feedback -> Synthesis", () => {
 
   it("verifies synthesis input validation rejects feedback with score > 4", async () => {
     setupAuth(INTERVIEWER_A_ID);
+    // Role check: synthesis requires admin/manager role
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "users") {
+        return chainBuilder({ data: { role: "admin" }, error: null });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
 
     const invalidBody = {
       candidate_name: "Jane Candidate",

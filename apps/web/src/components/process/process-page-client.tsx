@@ -171,7 +171,7 @@ export function ProcessPageClient({
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5 rounded-md bg-green-50 border border-green-200 px-3 py-2">
                   <CheckCircle size={14} weight="fill" className="text-green-600 shrink-0" />
-                  <span className="text-[12px] font-medium text-green-800">Locked in — you're all set</span>
+                  <span className="text-[12px] font-medium text-green-800">Locked in — you&apos;re all set</span>
                 </div>
                 <button
                   onClick={handleUnfinalize}

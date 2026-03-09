@@ -8,6 +8,7 @@ import {
   AIError,
 } from "@reconnect/ai";
 import type { Json } from "@reconnect/database";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // Vercel Pro: allow up to 300s for deep research (60-80s typical, 120s+ possible)
 export const maxDuration = 300;
@@ -118,6 +119,14 @@ export async function POST(
   if (!user) {
     console.log("[deep-research:POST] Unauthorized — no user");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimited.retryAfterMs / 1000)) } },
+    );
   }
 
   console.log("[deep-research:POST] User:", user.id);

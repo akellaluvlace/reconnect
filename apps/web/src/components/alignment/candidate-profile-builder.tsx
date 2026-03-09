@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
 import { cn } from "@/lib/utils";
+import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 
 type EditableSection =
   | "ideal_background"
@@ -763,6 +764,7 @@ export function CandidateProfileBuilder({
         )}
         {renderRefinePanel("cultural_fit_indicators")}
       </div>
+      <AIDisclaimer />
     </div>
   );
 }
