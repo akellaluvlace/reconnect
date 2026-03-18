@@ -9,6 +9,7 @@ import {
 } from "@/lib/google";
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
 import { requireGoogleEnv } from "@/lib/google/env";
+import { scheduleBot, isRecallConfigured } from "@/lib/recall/client";
 
 const CreateInterviewSchema = z.object({
   candidate_id: z.string().uuid(),
@@ -145,15 +146,51 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Schedule Recall.ai recording bot (non-blocking — failure doesn't fail the interview)
+    let recallBotId: string | null = null;
+    if (isRecallConfigured()) {
+      try {
+        const result = await scheduleBot({
+          meetUrl: meetResult.meetLink,
+          joinAt: input.scheduled_at,
+          interviewId: interview.id,
+        });
+        recallBotId = result.botId;
+
+        // Store bot ID on interview
+        await serviceClient
+          .from("interviews")
+          .update({ recall_bot_id: recallBotId })
+          .eq("id", interview.id);
+      } catch (recallErr) {
+        // Graceful degradation: log warning, interview proceeds without recording bot
+        console.warn(
+          `[RECALL:scheduleBot] Failed for interview ${interview.id}:`,
+          recallErr,
+        );
+        // Trace the failure so it's visible in the pipeline log (#6)
+        try {
+          await tracePipeline(interview.id, {
+            from: "scheduled",
+            to: "scheduled",
+            detail: `Recall.ai bot scheduling failed: ${recallErr instanceof Error ? recallErr.message : String(recallErr)}. Interview proceeds without recording bot.`,
+          });
+        } catch {
+          // Best-effort trace
+        }
+      }
+    }
+
     // Trace the creation
     await tracePipeline(interview.id, {
       from: null,
       to: "scheduled",
-      detail: `Interview created. Calendar event: ${meetResult.calendarEventId}. Meet: ${meetResult.meetLink}`,
+      detail: `Interview created. Calendar event: ${meetResult.calendarEventId}. Meet: ${meetResult.meetLink}${recallBotId ? `. Recall bot: ${recallBotId}` : ""}`,
+      metadata: recallBotId ? { recall_bot_id: recallBotId } : undefined,
     });
 
     console.log(
-      `[TRACE:interview:schedule] interviewId=${interview.id} meetLink=${meetResult.meetLink} calendarEventId=${meetResult.calendarEventId}`,
+      `[TRACE:interview:schedule] interviewId=${interview.id} meetLink=${meetResult.meetLink} calendarEventId=${meetResult.calendarEventId}${recallBotId ? ` recallBotId=${recallBotId}` : ""}`,
     );
 
     return NextResponse.json(

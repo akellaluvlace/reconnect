@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
+import { cancelBot, isRecallConfigured } from "@/lib/recall/client";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -65,6 +66,21 @@ export async function POST(
         },
         { status: 404 },
       );
+    }
+
+    // Cancel Recall.ai bot if one was scheduled (#4)
+    if (updated.recall_bot_id && isRecallConfigured()) {
+      try {
+        await cancelBot(updated.recall_bot_id);
+        console.log(
+          `[RECALL:cancel] botId=${updated.recall_bot_id} interviewId=${id} reason=no_consent`,
+        );
+      } catch (recallErr) {
+        console.warn(
+          `[RECALL:cancel] Failed for bot ${updated.recall_bot_id}:`,
+          recallErr,
+        );
+      }
     }
 
     // The .in() filter constrains the prior state to "scheduled" or "pending"

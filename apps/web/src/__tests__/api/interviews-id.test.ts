@@ -12,6 +12,9 @@ const {
   mockUpdateCalendarEvent,
   mockDeleteCalendarEvent,
   mockTracePipeline,
+  mockScheduleBot,
+  mockCancelBot,
+  mockIsRecallConfigured,
 } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockFrom: vi.fn(),
@@ -19,6 +22,9 @@ const {
   mockUpdateCalendarEvent: vi.fn(),
   mockDeleteCalendarEvent: vi.fn(),
   mockTracePipeline: vi.fn(),
+  mockScheduleBot: vi.fn(),
+  mockCancelBot: vi.fn(),
+  mockIsRecallConfigured: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -39,6 +45,12 @@ vi.mock("@/lib/google", () => ({
 
 vi.mock("@/lib/google/pipeline-tracer", () => ({
   tracePipeline: mockTracePipeline,
+}));
+
+vi.mock("@/lib/recall/client", () => ({
+  scheduleBot: mockScheduleBot,
+  cancelBot: mockCancelBot,
+  isRecallConfigured: mockIsRecallConfigured,
 }));
 
 import { PATCH, DELETE } from "@/app/api/interviews/[id]/route";

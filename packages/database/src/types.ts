@@ -719,6 +719,7 @@ export type Database = {
           meet_conference_id: string | null
           meet_link: string | null
           pipeline_log: Json[] | null
+          recall_bot_id: string | null
           recording_consent_at: string | null
           recording_status: string | null
           recording_url: string | null
@@ -741,6 +742,7 @@ export type Database = {
           meet_conference_id?: string | null
           meet_link?: string | null
           pipeline_log?: Json[] | null
+          recall_bot_id?: string | null
           recording_consent_at?: string | null
           recording_status?: string | null
           recording_url?: string | null
@@ -763,6 +765,7 @@ export type Database = {
           meet_conference_id?: string | null
           meet_link?: string | null
           pipeline_log?: Json[] | null
+          recall_bot_id?: string | null
           recording_consent_at?: string | null
           recording_status?: string | null
           recording_url?: string | null

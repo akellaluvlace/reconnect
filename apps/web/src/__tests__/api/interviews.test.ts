@@ -14,6 +14,8 @@ const {
   mockDeleteCalendarEvent,
   mockTracePipeline,
   mockRequireGoogleEnv,
+  mockScheduleBot,
+  mockIsRecallConfigured,
 } = vi.hoisted(() => ({
   mockGetUser: vi.fn(),
   mockFrom: vi.fn(),
@@ -23,6 +25,8 @@ const {
   mockDeleteCalendarEvent: vi.fn(),
   mockTracePipeline: vi.fn(),
   mockRequireGoogleEnv: vi.fn(),
+  mockScheduleBot: vi.fn(),
+  mockIsRecallConfigured: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -48,6 +52,11 @@ vi.mock("@/lib/google/pipeline-tracer", () => ({
 
 vi.mock("@/lib/google/env", () => ({
   requireGoogleEnv: mockRequireGoogleEnv,
+}));
+
+vi.mock("@/lib/recall/client", () => ({
+  scheduleBot: mockScheduleBot,
+  isRecallConfigured: mockIsRecallConfigured,
 }));
 
 import { POST } from "@/app/api/interviews/route";
@@ -163,6 +172,8 @@ function setupDefaultMocks() {
   );
 
   mockTracePipeline.mockResolvedValue(undefined);
+  mockIsRecallConfigured.mockReturnValue(false);
+  mockScheduleBot.mockResolvedValue({ botId: "mock-bot-id" });
 }
 
 // ---------------------------------------------------------------------------
@@ -170,7 +181,11 @@ function setupDefaultMocks() {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/interviews", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset mocks that may have been set to throw in previous tests
+    mockRequireGoogleEnv.mockImplementation(() => {});
+  });
 
   it("returns 401 when not authenticated", async () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: { message: "No session" } });
@@ -407,6 +422,46 @@ describe("POST /api/interviews", () => {
     // Should NOT have attempted Calendar creation
     expect(mockGetOrCreateInterviewCalendar).not.toHaveBeenCalled();
     expect(mockCreateMeetEvent).not.toHaveBeenCalled();
+  });
+
+  it("schedules Recall.ai bot when configured", async () => {
+    setupDefaultMocks();
+    mockIsRecallConfigured.mockReturnValue(true);
+    mockScheduleBot.mockResolvedValue({ botId: "recall-bot-123" });
+
+    const res = await POST(makePost(VALID_BODY));
+    expect(res.status).toBe(201);
+
+    // Verify bot was scheduled
+    expect(mockScheduleBot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meetUrl: "https://meet.google.com/abc-defg-hij",
+        joinAt: VALID_BODY.scheduled_at,
+      }),
+    );
+
+    // Verify bot ID was stored (update call on interviews)
+    expect(mockServiceFrom).toHaveBeenCalledWith("interviews");
+  });
+
+  it("succeeds even when Recall.ai bot scheduling fails", async () => {
+    setupDefaultMocks();
+    mockIsRecallConfigured.mockReturnValue(true);
+    mockScheduleBot.mockRejectedValue(new Error("Recall.ai API down"));
+
+    const res = await POST(makePost(VALID_BODY));
+    // Should still succeed — graceful degradation
+    expect(res.status).toBe(201);
+  });
+
+  it("skips Recall.ai when not configured", async () => {
+    setupDefaultMocks();
+    mockIsRecallConfigured.mockReturnValue(false);
+
+    const res = await POST(makePost(VALID_BODY));
+    expect(res.status).toBe(201);
+
+    expect(mockScheduleBot).not.toHaveBeenCalled();
   });
 
   it("does not leak error details in response", async () => {

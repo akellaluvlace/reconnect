@@ -7,6 +7,7 @@ import {
   deleteCalendarEvent,
 } from "@/lib/google";
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
+import { scheduleBot, cancelBot, isRecallConfigured } from "@/lib/recall/client";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -75,7 +76,7 @@ export async function PATCH(
     const serviceClient = createServiceRoleClient();
     const { data: interview } = await serviceClient
       .from("interviews")
-      .select("id, calendar_event_id, scheduled_at")
+      .select("id, calendar_event_id, scheduled_at, meet_link, recall_bot_id")
       .eq("id", id)
       .single();
 
@@ -130,6 +131,44 @@ export async function PATCH(
     if (updateError) {
       console.error("[interviews/PATCH] update error:", updateError);
       return NextResponse.json({ error: "Update failed" }, { status: 500 });
+    }
+
+    // Reschedule Recall.ai bot if configured
+    if (isRecallConfigured() && interview.meet_link && parsed.data.scheduled_at) {
+      try {
+        // Cancel old bot
+        if (interview.recall_bot_id) {
+          await cancelBot(interview.recall_bot_id);
+        }
+        // Schedule new bot
+        const result = await scheduleBot({
+          meetUrl: interview.meet_link,
+          joinAt: parsed.data.scheduled_at,
+          interviewId: id,
+        });
+        const { error: botUpdateError } = await serviceClient
+          .from("interviews")
+          .update({ recall_bot_id: result.botId })
+          .eq("id", id);
+        if (botUpdateError) {
+          console.error(
+            `[RECALL:reschedule] Bot scheduled but DB update failed for ${id}:`,
+            botUpdateError,
+          );
+        }
+        console.log(
+          `[RECALL:reschedule] interviewId=${id} oldBot=${interview.recall_bot_id} newBot=${result.botId}`,
+        );
+      } catch (recallErr) {
+        console.warn(`[RECALL:reschedule] Failed for interview ${id}:`, recallErr);
+        // Clear stale bot ID since old bot was cancelled but new one failed (#7)
+        if (interview.recall_bot_id) {
+          await serviceClient
+            .from("interviews")
+            .update({ recall_bot_id: null })
+            .eq("id", id);
+        }
+      }
     }
 
     await tracePipeline(id, {
@@ -192,7 +231,7 @@ export async function DELETE(
     const serviceClient = createServiceRoleClient();
     const { data: interview } = await serviceClient
       .from("interviews")
-      .select("id, calendar_event_id")
+      .select("id, calendar_event_id, recall_bot_id")
       .eq("id", id)
       .single();
 
@@ -201,6 +240,18 @@ export async function DELETE(
         { error: "Interview not found" },
         { status: 404 },
       );
+    }
+
+    // Cancel Recall.ai bot
+    if (interview.recall_bot_id && isRecallConfigured()) {
+      try {
+        await cancelBot(interview.recall_bot_id);
+        console.log(
+          `[RECALL:cancel] botId=${interview.recall_bot_id} interviewId=${id}`,
+        );
+      } catch (recallErr) {
+        console.warn(`[RECALL:cancel] Failed for bot ${interview.recall_bot_id}:`, recallErr);
+      }
     }
 
     // Delete Calendar event

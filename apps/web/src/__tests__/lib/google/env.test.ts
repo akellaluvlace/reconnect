@@ -21,6 +21,6 @@ describe("Google env", () => {
     expect(GOOGLE_SCOPES[1]).toBe("email");
     expect(GOOGLE_SCOPES[2]).toContain("calendar");
     expect(GOOGLE_SCOPES[3]).toContain("meetings.space.readonly");
-    expect(GOOGLE_SCOPES[4]).toContain("drive.meet.readonly");
+    expect(GOOGLE_SCOPES[4]).toContain("drive.readonly");
   });
 });
