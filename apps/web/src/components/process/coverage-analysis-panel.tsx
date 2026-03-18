@@ -107,8 +107,6 @@ export function CoverageAnalysisPanel({
       const totalFAs = stagesSummary.reduce((n, s) => n + s.focus_areas.length, 0);
       const stageNames = stagesSummary.map((s) => `${s.name} (${s.focus_areas.length} FAs)`).join(", ");
 
-      console.log(`[coverage] SENDING { stages=${stagesSummary.length}: [${stageNames}], totalFAs=${totalFAs} }`);
-
       // Always use full analysis — user drives all edits, score must reflect reality
       const res = await fetch("/api/ai/analyze-coverage", {
         method: "POST",
@@ -138,8 +136,6 @@ export function CoverageAnalysisPanel({
       }
 
       const { data } = await res.json();
-
-      console.log(`[coverage] OK { score=${data.overall_coverage_score}%, covered=${data.requirements_covered?.length ?? 0}, gaps=${data.gaps?.length ?? 0} }`);
 
       // Persist to DB immediately (runs even if component unmounts during AI call)
       const saveRes = await fetch(`/api/playbooks/${playbookId}`, {

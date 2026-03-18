@@ -86,7 +86,6 @@ export function ProcessPageClient({
       if (coverageAnalysis) {
         payload.coverage_analysis = coverageAnalysis;
       }
-      console.log(`[process] Lock in { stages=${stages.length}, coverageScore=${coverageAnalysis?.overall_coverage_score ?? "none"} }`);
       const res = await fetch(`/api/playbooks/${playbook.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

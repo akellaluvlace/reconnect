@@ -94,7 +94,6 @@ export function QuestionBank({
           toast.error("Failed to save question changes");
           onQuestionsChange(previous);
         } else {
-          console.log(`[questions] Save OK { fa="${focusArea}", count=${updated.filter((q) => q.focus_area === focusArea).length} }`);
         }
       })
       .catch((err) => {
@@ -183,7 +182,6 @@ export function QuestionBank({
         toast.warning("AI returned no suggestions — try different guidance");
         return;
       }
-      console.log(`[questions] Refine OK { fa="${focusArea}", alternatives=${alts.length} }`);
       setAlternatives(alts);
     } catch (err) {
       console.error("[questions] Refine failed:", err);
@@ -254,7 +252,6 @@ export function QuestionBank({
         toast.warning("AI returned no suggestions — try rephrasing");
         return;
       }
-      console.log(`[questions] Generate OK { fa="${focusArea}", prompt="${generatePrompt.trim().slice(0, 40)}", alternatives=${alts.length} }`);
       setGenerateAlternatives(alts);
     } catch (err) {
       console.error("[questions] Generate from prompt failed:", err);
@@ -340,7 +337,6 @@ export function QuestionBank({
         ...questions.filter((q) => q.focus_area !== focusArea),
         ...newQuestions,
       ];
-      console.log(`[questions] Regenerate ALL OK { fa="${focusArea}", new=${newQuestions.length} }`);
       saveQuestions(updated);
       toast.success(`Regenerated ${newQuestions.length} questions`);
     } catch (err) {
