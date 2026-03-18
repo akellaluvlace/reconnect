@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@reconnect/database";
 import { supabaseUrl, supabaseAnonKey } from "./env";
 
-const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback", "/auth/collaborator", "/api/health"];
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/verify", "/auth/callback", "/auth/collaborator", "/api/health", "/api/cron", "/api/feedback/collaborator"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({
@@ -74,8 +74,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirect authenticated users away from auth pages
-  if (user && isPublicPath && request.nextUrl.pathname !== "/auth/callback") {
+  // Redirect authenticated users away from auth pages (but not collaborator/API pages)
+  if (
+    user &&
+    isPublicPath &&
+    request.nextUrl.pathname !== "/auth/callback" &&
+    !request.nextUrl.pathname.startsWith("/auth/collaborator") &&
+    !request.nextUrl.pathname.startsWith("/api/")
+  ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

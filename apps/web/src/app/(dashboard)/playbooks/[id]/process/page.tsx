@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ProcessPageClient } from "@/components/process/process-page-client";
@@ -39,6 +39,11 @@ export default async function ProcessPage({
       console.error("[process] Playbook query failed:", pbError.message);
     }
     notFound();
+  }
+
+  // Server-side chapter gating: Process requires Discovery to be complete
+  if (!playbook.job_description) {
+    redirect(`/playbooks/${id}/discovery`);
   }
 
   const { data: stages, error: stagesError } = await supabase

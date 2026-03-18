@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@reconnect/database";
+import {
+  notifyManager,
+  checkAllFeedbackCollected,
+} from "@/lib/notifications";
 
 const CreateFeedbackSchema = z.object({
   interview_id: z.string().uuid(),
@@ -142,6 +146,58 @@ export async function POST(req: NextRequest) {
         { error: "Failed to submit feedback" },
         { status: 500 },
       );
+    }
+
+    // Fire-and-forget notifications — never block the response
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.axil.ie";
+
+    // Resolve interview → stage → playbook + candidate name
+    const { data: interview } = await supabase
+      .from("interviews")
+      .select("stage_id, candidate_id")
+      .eq("id", parsed.data.interview_id)
+      .single();
+
+    if (interview?.stage_id) {
+      const { data: stage } = await supabase
+        .from("interview_stages")
+        .select("name, playbook_id")
+        .eq("id", interview.stage_id)
+        .single();
+
+      const { data: candidate } = await supabase
+        .from("candidates")
+        .select("name")
+        .eq("id", interview.candidate_id!)
+        .single();
+
+      // Get the submitter's display name
+      const { data: submitter } = await supabase
+        .from("users")
+        .select("name, email")
+        .eq("id", user.id)
+        .single();
+
+      const playbookId = stage?.playbook_id;
+      if (playbookId) {
+        notifyManager({
+          playbookId,
+          type: "feedback_submitted",
+          data: {
+            interviewerName:
+              submitter?.name ?? submitter?.email ?? "An interviewer",
+            stageName: stage?.name ?? "Interview",
+            candidateName: candidate?.name ?? "Candidate",
+            ratingSummary: "",
+            debriefLink: `${appUrl}/playbooks/${playbookId}/debrief`,
+          },
+        }).catch(() => {});
+
+        checkAllFeedbackCollected(
+          parsed.data.interview_id,
+          playbookId,
+        ).catch(() => {});
+      }
     }
 
     return NextResponse.json({ data }, { status: 201 });

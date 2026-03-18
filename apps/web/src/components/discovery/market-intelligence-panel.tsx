@@ -617,11 +617,19 @@ export function MarketIntelligencePanel({
           )}
 
           {/* Results */}
-          {listings.length > 0 && !isLoadingListings && (
+          {listings.length > 0 && !isLoadingListings && (() => {
+            const relevantListings = listings.filter((l) => l.relevanceScore >= 0.7);
+            const hiddenCount = listings.length - relevantListings.length;
+            return (
             <>
               <div className="flex items-center justify-between">
                 <p className="text-[13px] text-muted-foreground">
-                  {listings.length} listing{listings.length !== 1 ? "s" : ""} found
+                  {relevantListings.length} listing{relevantListings.length !== 1 ? "s" : ""} found
+                  {hiddenCount > 0 && (
+                    <span className="ml-1.5 text-[12px] text-muted-foreground/50">
+                      ({hiddenCount} low-relevance result{hiddenCount !== 1 ? "s" : ""} hidden)
+                    </span>
+                  )}
                   {listingsCached && (
                     <span className="ml-1.5 text-[12px] text-muted-foreground/70">(cached)</span>
                   )}
@@ -637,7 +645,7 @@ export function MarketIntelligencePanel({
               </div>
 
               <div className="space-y-3">
-                {listings.map((listing, i) => (
+                {relevantListings.map((listing, i) => (
                   <div
                     key={i}
                     className="rounded-xl border border-border/40 bg-card p-5 shadow-sm"
@@ -694,7 +702,8 @@ export function MarketIntelligencePanel({
                 ))}
               </div>
             </>
-          )}
+            );
+          })()}
         </div>
       )}
       <AIDisclaimer />

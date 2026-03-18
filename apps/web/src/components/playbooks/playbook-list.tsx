@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ArrowRight, Sparkle, Plus } from "@phosphor-icons/react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, FolderPlus, Plus } from "@phosphor-icons/react";
 import { StatusBadge } from "./status-badge";
 
 export interface PlaybookListItem {
@@ -18,20 +17,18 @@ export interface PlaybookListItem {
 export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
   if (playbooks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/80 bg-cream-50 py-16">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50">
-          <Sparkle size={24} weight="duotone" className="text-teal-500" />
-        </div>
-        <h3 className="text-[15px] font-semibold">No playbooks yet</h3>
-        <p className="mt-1 max-w-sm text-center text-[13px] text-muted-foreground">
-          Create your first recruitment playbook to start building your hiring strategy.
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <FolderPlus size={24} weight="duotone" className="text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          No playbooks yet. Create your first one to get started.
         </p>
-        <Button asChild className="mt-4" size="sm">
-          <Link href="/playbooks/new">
-            <Plus size={14} weight="bold" className="mr-1.5" />
-            Create Playbook
-          </Link>
-        </Button>
+        <Link
+          href="/playbooks/new"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-teal-700"
+        >
+          <Plus size={14} weight="bold" />
+          Create Playbook
+        </Link>
       </div>
     );
   }

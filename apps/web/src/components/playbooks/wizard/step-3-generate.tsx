@@ -141,39 +141,68 @@ export function Step3Generate() {
   return (
     <div className="rounded-xl border border-border/60 bg-card p-6">
       <div className="mb-5">
-        <h2 className="text-[15px] font-semibold">Generate Content</h2>
+        <h2 className="text-[15px] font-semibold">Review Your Requirements</h2>
         <p className="mt-0.5 text-[13px] text-muted-foreground">
-          AI will research market data for this role. Strategy and JD are
-          generated in Discovery after deep research completes.
+          Please review everything below before generating. These inputs drive
+          all AI research and cannot be changed after generation.
         </p>
       </div>
 
       <div className="space-y-4">
-        {/* Summary */}
-        <div className="rounded-lg bg-muted/60 p-4 space-y-2">
-          <h4 className="text-[14px] font-semibold">{draft.basicInfo.title}</h4>
-          <p className="text-[13px] text-muted-foreground">
-            {levelLabels[draft.roleDetails.level] ?? draft.roleDetails.level}
-            {" \u00B7 "}
-            {draft.roleDetails.industry}
-            {draft.roleDetails.location &&
-              ` \u00B7 ${draft.roleDetails.location}`}
-          </p>
-          {draft.basicInfo.department && (
-            <p className="text-[13px] text-muted-foreground">
-              {draft.basicInfo.department}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {draft.roleDetails.skills.map((skill) => (
-              <Badge
-                key={skill}
-                variant="secondary"
-                className="bg-teal-50 text-teal-700 text-[11px]"
+        {/* Summary with edit hints */}
+        <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-[14px] font-semibold">{draft.basicInfo.title}</h4>
+            <button
+              onClick={() => setStep(1)}
+              className="text-[12px] font-medium text-teal-600 hover:text-teal-700 hover:underline"
+            >
+              Edit
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-muted-foreground/70 w-20 shrink-0">Level</span>
+              <span className="font-medium">{levelLabels[draft.roleDetails.level] ?? draft.roleDetails.level}</span>
+            </div>
+            <div className="flex items-center gap-2 text-[13px]">
+              <span className="text-muted-foreground/70 w-20 shrink-0">Industry</span>
+              <span className="font-medium">{draft.roleDetails.industry}</span>
+            </div>
+            {draft.roleDetails.location && (
+              <div className="flex items-center gap-2 text-[13px]">
+                <span className="text-muted-foreground/70 w-20 shrink-0">Location</span>
+                <span className="font-medium">{draft.roleDetails.location}</span>
+              </div>
+            )}
+            {draft.basicInfo.department && (
+              <div className="flex items-center gap-2 text-[13px]">
+                <span className="text-muted-foreground/70 w-20 shrink-0">Department</span>
+                <span className="font-medium">{draft.basicInfo.department}</span>
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[12px] text-muted-foreground/70">Must-have skills</span>
+              <button
+                onClick={() => setStep(2)}
+                className="text-[12px] font-medium text-teal-600 hover:text-teal-700 hover:underline"
               >
-                {skill}
-              </Badge>
-            ))}
+                Edit
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {draft.roleDetails.skills.map((skill) => (
+                <Badge
+                  key={skill}
+                  variant="secondary"
+                  className="bg-teal-50 text-teal-700 text-[11px]"
+                >
+                  {skill}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -225,7 +254,7 @@ export function Step3Generate() {
                 Generating...
               </>
             ) : (
-              "Generate & Create"
+              "Confirm & Generate"
             )}
           </Button>
         </div>

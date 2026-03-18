@@ -12,14 +12,41 @@ import {
 import { cn } from "@/lib/utils";
 
 const chapters = [
-  { id: "discovery", name: "Discovery", icon: MagnifyingGlass, enabled: true },
-  { id: "process", name: "Process", icon: ListChecks, enabled: true },
-  { id: "alignment", name: "Alignment", icon: Target, enabled: true },
-  { id: "debrief", name: "Debrief", icon: ChatCircleDots, enabled: false },
+  { id: "discovery", name: "Discovery", icon: MagnifyingGlass },
+  { id: "process", name: "Process", icon: ListChecks },
+  { id: "alignment", name: "Alignment", icon: Target },
+  { id: "debrief", name: "Debrief", icon: ChatCircleDots },
 ];
 
-export function ChapterNav({ playbookId }: { playbookId: string }) {
+interface ChapterNavProps {
+  playbookId: string;
+  /** JD exists = Discovery is done */
+  discoveryComplete?: boolean;
+  /** Playbook status "active" = stages locked in */
+  processComplete?: boolean;
+}
+
+export function ChapterNav({
+  playbookId,
+  discoveryComplete = false,
+  processComplete = false,
+}: ChapterNavProps) {
   const pathname = usePathname();
+
+  function isEnabled(id: string): boolean {
+    switch (id) {
+      case "discovery":
+        return true;
+      case "process":
+        return discoveryComplete;
+      case "alignment":
+        return processComplete;
+      case "debrief":
+        return processComplete;
+      default:
+        return true;
+    }
+  }
 
   return (
     <nav className="flex shrink-0 items-center rounded-lg border border-border/60 bg-muted/40 p-1">
@@ -27,13 +54,14 @@ export function ChapterNav({ playbookId }: { playbookId: string }) {
         const href = `/playbooks/${playbookId}/${chapter.id}`;
         const isActive = pathname === href;
         const Icon = chapter.icon;
+        const enabled = isEnabled(chapter.id);
 
-        if (!chapter.enabled) {
+        if (!enabled) {
           return (
             <span
               key={chapter.id}
               className="flex cursor-not-allowed items-center gap-1.5 rounded-md px-4 py-2 text-sm font-medium text-muted-foreground/50"
-              title="Coming soon"
+              title="Complete the previous step first"
             >
               <Icon size={16} className="opacity-40" />
               {chapter.name}

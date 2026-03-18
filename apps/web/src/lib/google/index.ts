@@ -1,11 +1,38 @@
 // Google platform integration barrel export
-// See docs/plans/2026-02-26-step-10-1-google-platform-design.md
 
-export { getGoogleTokens, refreshGoogleTokens, getValidGoogleToken } from "./client";
-export { createMeetEvent } from "./calendar";
-export { getConferenceRecord, getTranscriptEntries } from "./meet";
-export { downloadDriveFile, getDriveFileMetadata } from "./drive";
+export {
+  getGoogleTokens,
+  refreshGoogleTokens,
+  getValidGoogleToken,
+} from "./client";
+export {
+  createMeetEvent,
+  getOrCreateInterviewCalendar,
+  updateCalendarEvent,
+  deleteCalendarEvent,
+} from "./calendar";
+export {
+  getConferenceRecord,
+  getTranscriptEntries,
+  getTranscriptDocId,
+  getParticipantName,
+} from "./meet";
+export { downloadDriveFile, getDriveFileMetadata, exportGoogleDoc, searchDriveForTranscript } from "./drive";
 export { parseVTT, parseSBV } from "./vtt-parser";
-export { googleClientId, googleClientSecret, googleRedirectUri, GOOGLE_SCOPES } from "./env";
+export {
+  googleClientId,
+  googleClientSecret,
+  googleRedirectUri,
+  GOOGLE_SCOPES,
+} from "./env";
+export {
+  tracePipeline,
+  traceError,
+  traceGoogleApi,
+} from "./pipeline-tracer";
+
+export type { CreateMeetEventParams, MeetEventResult } from "./calendar";
 export type { TranscriptEntry, TranscriptResult } from "./meet";
 export type { TranscriptSegment, ParsedTranscript } from "./vtt-parser";
+export type { PipelineEvent } from "./pipeline-tracer";
+export type { DriveFileMetadata } from "./drive";

@@ -19,7 +19,7 @@ describe("Google env", () => {
     expect(GOOGLE_SCOPES).toHaveLength(5);
     expect(GOOGLE_SCOPES[0]).toBe("openid");
     expect(GOOGLE_SCOPES[1]).toBe("email");
-    expect(GOOGLE_SCOPES[2]).toContain("calendar.events");
+    expect(GOOGLE_SCOPES[2]).toContain("calendar");
     expect(GOOGLE_SCOPES[3]).toContain("meetings.space.readonly");
     expect(GOOGLE_SCOPES[4]).toContain("drive.meet.readonly");
   });

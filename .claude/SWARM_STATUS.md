@@ -1,8 +1,8 @@
 # Swarm Status — Rec+onnect MVP
 
-**Last Updated:** 2026-03-05
-**Current Macro Step:** Alignment Chapter COMPLETE (Tier 1+2+3) — ready for Step 10.2
-**Active Micro Steps:** None — ready for Step 10.2 (recording pipeline)
+**Last Updated:** 2026-03-11
+**Current Macro Step:** Step 10.2 COMPLETE + REVIEWED + HARDENED — awaiting manual testing + commit
+**Active Micro Steps:** Manual testing of 10.2 → commit → 10.2b (notification system)
 
 ---
 
@@ -25,18 +25,14 @@
 
 | Micro Step | Owner | Branch | Status |
 |------------|-------|--------|--------|
-| All Step 1-8 micro steps | Various | master | COMPLETE |
-| Recording architecture redesign | Architect | master | COMPLETE (2026-02-20) — Shared platform Google account, migration #19, step 9+10 updated |
-| Step 9: Candidate Profile AI pipeline | AI Engineer | master | COMPLETE (2026-02-20) — schema, prompt, pipeline, 19 tests |
-| Step 9: Candidate Profile API route | Backend | master | COMPLETE (2026-02-20) — generate-candidate-profile route + 8 tests |
-| Step 9: Collaborator System API | Backend | master | COMPLETE (2026-02-20) — GET, POST invite, DELETE revoke + 13 tests |
-| Step 9: Share Links API | Backend | master | COMPLETE (2026-02-20) — GET, POST, DELETE (soft) + 12 tests |
-| Step 9: Feedback CRUD API | Backend | master | COMPLETE (2026-02-20) — blind rules, ratings 1-4, interviewer_id from auth + 18 tests |
-| Step 9: Transcription pipeline | Backend | master | COMPLETE (2026-02-20) — OpenAI client, service-role, route + 6 tests |
-| Step 9: Synthesis route wiring | Backend | master | COMPLETE (2026-02-20) — transcript fetch, DB persist + 8 tests |
-| Step 9: Alignment Page UI | UI Builder | master | COMPLETE (2026-02-20) — 6 components (server+client+4 sub) |
-| Step 9: Debrief Page UI | UI Builder | master | COMPLETE (2026-02-20) — 9 components (server+client+7 sub) |
-| Step 9: Email skeleton + public pages | Backend | master | COMPLETE (2026-02-20) — Resend client, templates, consent page, share page |
+| All Steps 1-9 | Various | master | COMPLETE + HARDENED |
+| Step 10.1: Platform Google Setup | Backend | master | COMPLETE (2026-03-10) — 2 Google Cloud projects, 3 APIs, tokens verified |
+| Step 10.2: Recording Pipeline (13 tasks) | Backend | master | COMPLETE (2026-03-10) — migration #30, scheduling API, cron pipeline, collaborator feedback, manual upload, UI components, pipeline tracer |
+| Step 10.2: Code Review | QA | master | COMPLETE (2026-03-11) — 3 agents, 19 findings fixed |
+| Step 10.2: Security Hardening | Security | master | COMPLETE (2026-03-11) — timing-safe cron auth, IDOR protection (PATCH/DELETE/no-consent), error log sanitization |
+| Step 10.2: Test Hardening | QA | master | COMPLETE (2026-03-11) — 58 new tests, 731 web tests total |
+| Step 10.2: Manual Testing | QA | — | NOT STARTED — checklist at `MANUAL_TESTING_10_2.md` (37 tests, 7 phases) |
+| Step 10.2b: Notification System | Backend | — | PLANNED — plan at `docs/plans/2026-03-11-notification-system.md` |
 
 ---
 
@@ -53,7 +49,7 @@
 | 7 | Playbook Creation Flow | [step-07](../steps/step-07-playbook-creation.md) | 6 | COMPLETE + QA REVIEWED |
 | 8 | Chapters: Discovery + Process | [step-08](../steps/step-08-chapters-discovery-process.md) | 8 | COMPLETE + HARDENED |
 | 9 | Chapters: Alignment + Debrief | [step-09](../steps/step-09-chapters-alignment-debrief.md) | 10 | COMPLETE + HARDENED |
-| 10 | Integrations + Hardening + Beta | [step-10](../steps/step-10-integrations-delivery.md) | 8 | NOT STARTED |
+| 10 | Integrations + Hardening + Beta | [step-10](../steps/step-10-integrations-delivery.md) | 8 | IN PROGRESS — 10.1 DONE, 10.2 DONE + reviewed + hardened |
 
 **Total Micro Steps:** 70
 
@@ -61,13 +57,14 @@
 
 ## Next Actions
 
-1. **NOW:** Step 10.1-10.2 (Platform Google setup + recording pipeline) — build incrementally, verify each API against real Google before connecting
-3. **Then:** Step 10.3 (bug fixes + rate limiting on AI endpoints)
-4. **Then:** Step 10.4-10.5 (security audit + production deploy)
-5. **Then:** Pre-Beta Checklist (see CLAUDE.md) — MUST pass before 10.6
-6. **Then:** Step 10.6-10.8 (beta + docs + handover)
-7. **Client:** External API keys needed. Google Workspace account needed.
-8. **Client decision needed:** Data retention cron (1-year auto-reachout) — build now or defer to post-MVP?
+1. **NOW:** Manual testing of 10.2 (see `MANUAL_TESTING_10_2.md`)
+2. **Then:** Commit 10.2
+3. **Then:** Step 10.2b (notification system — plan written, 11 tasks)
+4. **Then:** Enable Debrief tab in nav
+5. **Then:** Step 10.3 (bug fixes)
+6. **Then:** Step 10.4-10.5 (security audit + production deploy)
+7. **Then:** Pre-Beta Checklist (see CLAUDE.md) — MUST pass before 10.6
+8. **Then:** Step 10.6-10.8 (beta + docs + handover)
 
 ### Testing Coverage
 
@@ -75,11 +72,20 @@
 |-------|--------|-------|-------|
 | Database (SQL) | COMPLETE | 233/233 green | psql + custom framework |
 | AI package | COMPLETE | 316/316 green | Vitest (24 files) |
-| Web tests (all) | COMPLETE | 528/528 green | Vitest (39 files) |
+| Web tests (all) | COMPLETE | 731/731 green | Vitest (55 files) |
 | E2E (browser) | COMPLETE | 7/7 smoke pass | Playwright (port 3001) |
 | Mutation testing | COMPLETE | 15/15 killed | Manual + killers (11 tests) |
 | Components | PLANNED | 0 | React Testing Library |
 | Accessibility | PLANNED | 0 | Playwright a11y snapshots |
+
+### 10.2 Code Review Summary (2026-03-11)
+
+- **Agents used:** silent-failure-hunter, type-design-analyzer, coderabbit
+- **Raw findings:** 49 → **19 deduplicated** (6 Critical, 8 High, 5 Medium)
+- **All 19 fixed**, then 4 additional security hardening fixes
+- **Security fixes:** timing-safe CRON_SECRET, IDOR protection on 3 routes, error log sanitization in 3 Google API modules
+- **Tests added:** 58 new tests across 8 files (4 new test files + 4 expanded)
+- **Remaining security backlog (pre-beta):** collaborator token timing (DB-level), rate limiting on public feedback endpoint, token-in-URL, no token rotation, magic byte validation
 
 ---
 

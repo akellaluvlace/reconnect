@@ -7,14 +7,58 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** CMS + Platform + org approval + collaborator flow fixes done. Step 10 plan updated with missing features (feedback submission, notifications). Pending manual QA + deploy.
-**Status:** Steps 1-9 complete + hardened. Step 10.1 partial (OAuth done, API helpers pending). All 4 chapters functional. CMS Admin: 7 pages with full CRUD, seed defaults, wizard integration, question bank picker, email template interpolation. Platform Superadmin: org/user management, stats, env-var gated. Org approval flow: pending/active/suspended with dashboard blocking. Collaborator prep page: public, shows stages+questions+rating guide. CMS email templates integrated into prep/reminder modals (fetch + interpolate). 644 web + 316 AI + 233 DB tests green. Typecheck clean. 0 lint errors. NOT YET DEPLOYED — pending manual QA.
-**Next task:** Manual QA testing of all CMS + Platform pages. Add `PLATFORM_ADMIN_EMAILS` to Vercel. Deploy. Then Step 10.2 (recording pipeline + feedback submission + consent flow) when Google Workspace upgraded. Step 10.2b (notification system) after. A2 on hold pending pricing model.
-**Blockers:** Google Workspace upgrade to Business Plus (auto-recording). Without it: no recording pipeline, no feedback submission (needs interview records).
+**Step:** 10.2 + 10.2b DONE. Manual testing done. Code review done. Hardening done. Notification system built. Recording architecture researched.
+**Status:** Steps 1-9 complete + hardened. 10.1 DONE. 10.2 tested + hardened. 10.2b notification system DONE (10 tasks). Typecheck clean.
+**Next task:** Commit all session changes. Then Recall.ai integration (2-3 days, see `RECALL_AI_INTEGRATION.md`) — awaiting Robert's API key (signup instructions sent, EU region eu-central-1). Then Robert's remaining feedback items. Then 10.3-10.8.
+**Blockers:** None. Recall.ai APPROVED by Robert (2026-03-17). Pay-as-you-go, ~$0.49/interview. See `RECALL_AI_INTEGRATION.md` for full plan. Robert will sign up for Recall.ai account + provide API key.
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
-**Key gap:** FeedbackForm component exists but is never rendered — no page where collaborators submit feedback. Planned for 10.2 task D.
 
-**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → 10.2 (recording + feedback + consent) → 10.2b (notifications) → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → ~~10.2 (recording + feedback + consent)~~ → ~~10.2b (notifications)~~ → **Recall.ai integration** → **Robert's feedback items** → 10.3-10.8
+
+**Manual testing results (2026-03-17):**
+- Interview scheduling via UI → Google Calendar + Meet link: WORKING
+- Reschedule/cancel/no-consent: WORKING
+- Cron pipeline detect + transition (scheduled→pending): WORKING
+- Conference record detection via Meet API: WORKING
+- Transcript retrieval (Google Docs export 2630 chars + Meet API 11 entries): WORKING (with axil.ie user in call)
+- Transcript NOT generated without Workspace user in call: CONFIRMED LIMITATION
+- Add Candidate UI+API: BUILT + WORKING
+- Admin feedback form in Debrief Feedback tab: BUILT + WORKING
+- AI Synthesis with transcript: WORKING (Claude correctly analyzed transcript + feedback, flagged issues, generated discussion points)
+- AI Synthesis persistence + reload from DB: FIXED (was broken — wrong column name `created_at` → `generated_at`)
+- AI Synthesis now includes transcript: FIXED (was only checking `recording_status === "completed"`, now also checks `"transcribed"`)
+- Debrief tab enabled with sequential chapter gating: WORKING
+- Competitor listings 70% relevance cutoff: DONE
+- Discovery section confirm buttons + "Continue to Process" banner: DONE
+- Platform admin "Back to Dashboard" link: DONE
+- Hydration fix (date formatting en-IE): DONE
+- Google OAuth scopes updated: calendar (full), drive.readonly (broader). Re-authorized.
+- Drive search fallback for transcript docs: BUILT + WORKING
+
+**All tested flows (2026-03-17):**
+- Google Meet auto-transcription (rcoffey in call): 2630 chars, Google Docs + Meet API entries WORKING
+- Manual upload + Whisper: 14220 chars from 16-min MP3, 47s transcription WORKING
+- Collaborator feedback (token-based, incognito): correct focus areas, 1-4 ratings, submit + duplicate block WORKING
+- Admin feedback form in Debrief: WORKING
+- AI Synthesis with transcript (both paths): WORKING — correctly flags issues, cross-references ratings vs transcript
+- Interview scheduling → Calendar + Meet link: WORKING
+- Cron pipeline (detect → pending → transcript retrieval): WORKING
+- Add Candidate: WORKING
+- Sequential chapter gating (UI + server-side): WORKING
+
+**Bugs fixed during testing:**
+- `ai_synthesis.created_at` → `generated_at` (column name mismatch)
+- Synthesis not including transcript (wrong recording_status check)
+- Synthesis not loading from DB on page mount (no GET endpoint + no useEffect)
+- Google OAuth scope too narrow (`calendar.events` → `calendar`, `drive.meet.readonly` → `drive.readonly`)
+- Hydration mismatch on date formatting (toLocaleString → toLocaleString("en-IE"))
+- Debrief tab was hardcoded disabled
+- No Add Candidate UI (empty Debrief page with no way forward)
+- No admin feedback form (only collaborator token flow existed)
+- Role mismatch `hiring_manager` → `manager`
+- OpenAI project key out of credits — needs top-up before deploy
+
+**Client feedback (2026-03-17):** Competitor listings 70% cutoff DONE. Section confirm buttons DONE. Edit requirements: Option C DONE (review step), Option B declined for now. Recording: Robert aware of costs, needs to figure out pricing for Axil. Awaiting decisions: "Playbook" rename, coverage analysis removal, share link merge, bulk invite.
 
 > Update this section at end of every session.
 
@@ -74,6 +118,9 @@ Read files ONLY when the situation matches:
 | `docs/Reconnect_Setup_Guide.md` | During Step 1 service account setup |
 | `docs/Reconnect_Project_Context.md` | For commercial terms or timeline context |
 
+| `MANUAL_TESTING_10_2.md` | When manually testing Step 10.2 (37 tests across 7 phases) |
+| `RECALL_AI_INTEGRATION.md` | When building Recall.ai integration (full plan, API examples, what to build, costs) |
+| `RECORDING_ARCHITECTURE.md` | When reviewing recording architecture decisions and research |
 | `apps/web/.next/dev/logs/next-development.log` | When debugging AI pipeline flow — contains all `[TRACE:]` and `[AI:]` logs |
 | `packages/ai/src/tracer.ts` | Reference for trace format and `checkParams()` helper |
 | `packages/ai/src/logger.ts` | Reference for API call logging format and `pipelineLogger` stats |
@@ -243,9 +290,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
-- **2026-03-08:** CMS Admin Controls + Platform Superadmin (12 tasks). 7 admin pages with full CRUD, generic API, seed defaults, wizard integration, question bank picker, email template interpolation. Platform superadmin (org/user mgmt, stats, env-var gated). Code review: 5 fixes (org scoping, explicit columns, seed error check, email error sanitization, Link nav). 644 web tests green. Pending manual QA.
-- **2026-03-07 (b):** Debrief chapter unlocked + D2/D3/D4 built. Candidate comparison (side-by-side grid), bias detection (TDD, 12 tests), activity timeline. Review fixes: parallel fetches (Promise.allSettled), failure warnings, memoized refs, transcript leak fixed (select("*") → explicit columns), role error logged. 25 lint errors → 0. Rate limiting on all 10 AI routes (in-memory, 10 req/min). 575 web tests green.
-- **2026-03-07:** Alignment enhancements (A1,A3,A4,A5,A6). Process health warnings, competitive offer intelligence, interview prep email, feedback reminder email. Resend fixed (RESEND_FROM_EMAIL env var added to Vercel). Collaborator invite accept page built (/auth/collaborator?token=). 563 web tests green. Debrief features logged in memory. Client feedback round 3 processed.
-- **2026-03-05:** Alignment chapter Tier 1+2+3 complete. Editable candidate profile (inline edit, tag editor, AI refine per-section), stale detection amber banner, "How to Use" guide, nav grouping with progress dots, enriched profile prompt, interactive process overview with scorecard preview, collaborator stage assignment, readiness checklist, share link preview. Fixed input focus loss bug (inner components → plain render functions). Resend domain not verified — client emailed. Proposal doc created (docs/client-proposal-alignment-debrief.md).
-- **2026-03-04 (e):** AI package dead code cleanup. Deleted 11 files (8 source + 3 test): anchored-coverage, stage-refinements, merge-refinement-diff pipelines/prompts/schemas/tests. Removed barrel exports, config entries, ./merge subpath. 528 web + 316 AI tests green.
+- **2026-03-17:** Manual testing + hardening of 10.2. Full pipeline verified end-to-end (schedule→Meet→record→transcript→feedback→AI synthesis). Recording architecture limitation found + researched (Recall.ai recommended). Code review (3 agents, 21 findings) + hardening (12 fixes: role mismatch, InterviewData fields, feedback silent failures, synthesis persistence, candidates auth, feedback form filter, Drive error handling, cron error handling, UUID validation, loading states). Built: Add Candidate UI+API, admin feedback form, synthesis persistence+reload, sequential chapter gating, competitor 70% cutoff, Discovery confirm+continue banner, wizard review step, platform nav fix, hydration fix, Drive search fallback, OAuth scope upgrades. Created RECORDING_ARCHITECTURE.md. Robert feedback items: Option C (review step) built, Option B (duplicate) explained awaiting confirmation.
+- **2026-03-11:** 10.2 code review (3 agents, 19 findings) + security hardening (4 fixes: timing-safe cron auth, IDOR protection on PATCH/DELETE/no-consent via RLS ownership checks, error log sanitization in Google API calls). 58 new tests written across 8 files. 731 web tests green. Typecheck clean. Ready for manual testing.
+- **2026-03-10:** Step 10.2 recording pipeline (13 tasks). Migration #30 (interview_transcripts, pipeline columns). Scheduling API (POST/PATCH/DELETE + Calendar+Meet). 3-phase cron pipeline (detect→transcribe→retry). Collaborator feedback page (token-based, public). Manual upload + Whisper transcription. UI: ScheduleInterviewDialog, PipelineLogViewer, InterviewCard rewrite. Pipeline tracer. 670 web tests green.
+- **2026-03-09:** CMS email template integration fixes (modals fetch CMS templates, interpolate placeholders, fallback to defaults). Collaborator prep page enhanced (full stages/questions/rating guide). Multi-tenant fix on send-prep/send-reminder (org_id scoping). Middleware public paths fix (/auth/collaborator). Debrief tab disabled in nav. Questionnaire audit: 6 missing features added to Step 10 plan. Client update + test checklist sent. All committed + pushed (110 files, 10.5K additions).
+- **2026-03-08:** CMS Admin Controls + Platform Superadmin (12 tasks). 7 admin pages with full CRUD, generic API, seed defaults, wizard integration, question bank picker, email template interpolation. Platform superadmin (org/user mgmt, stats, env-var gated). Code review: 5 fixes (org scoping, explicit columns, seed error check, email error sanitization, Link nav). 644 web tests green.
 > Keep max 5 entries. Remove oldest when adding new.

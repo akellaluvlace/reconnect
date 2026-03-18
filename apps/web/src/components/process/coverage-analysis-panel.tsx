@@ -12,6 +12,10 @@ import {
   CircleNotch,
   CheckCircle,
   Sparkle,
+  Question,
+  ChartBar,
+  WarningCircle,
+  Lightbulb,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
@@ -51,6 +55,7 @@ export function CoverageAnalysisPanel({
   onAnalysisChange,
   stagesChanged,
 }: CoverageAnalysisPanelProps) {
+  const [showGuide, setShowGuide] = useState(false);
   const [analysis, setAnalysis] = useState<CoverageAnalysis | null>(initialAnalysis);
 
   const opKey = `coverage-${playbookId}`;
@@ -173,6 +178,37 @@ export function CoverageAnalysisPanel({
 
   return (
     <div className="space-y-4">
+      {/* How to Use guide */}
+      <div>
+        <button
+          onClick={() => setShowGuide(!showGuide)}
+          className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/30 px-3 py-1.5 text-[13px] font-medium text-foreground/70 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors"
+        >
+          <Question size={15} weight="bold" className="text-teal-600" />
+          {showGuide ? "Hide guide" : "How to use this page"}
+        </button>
+
+        {showGuide && (
+          <div className="mt-3 rounded-xl border border-border/30 bg-muted/20 px-6 py-5 space-y-4 text-[13px] text-foreground/80 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-start gap-3">
+              <ChartBar size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Coverage Score</span> — Shows how well your interview stages cover the job requirements. Higher is better.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <WarningCircle size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Gap Analysis</span> — Identifies requirements not adequately covered by any stage.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Lightbulb size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Recommendations</span> — Suggestions to improve coverage by adjusting stages or focus areas.</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/20">
+              <span className="font-medium">Tip:</span> If you edit stages in the Interview Stages tab, come back here and re-analyse to see updated coverage.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Stages changed banner */}
       {stagesChanged && (
         <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">

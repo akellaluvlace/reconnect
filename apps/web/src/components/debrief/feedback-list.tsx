@@ -2,33 +2,10 @@
 
 import { useState, useEffect } from "react";
 import type { Json } from "@reconnect/database";
+import type { InterviewData, StageInfo } from "./types";
+import { FeedbackForm } from "./feedback-form";
 import { ClipboardText, Clock } from "@phosphor-icons/react";
 import { toast } from "sonner";
-
-interface StageInfo {
-  id: string;
-  name: string;
-  type: string | null;
-  order_index: number;
-}
-
-interface InterviewData {
-  id: string;
-  candidate_id: string | null;
-  stage_id: string | null;
-  interviewer_id: string | null;
-  status: string | null;
-  scheduled_at: string | null;
-  completed_at: string | null;
-  meet_link: string | null;
-  recording_status: string | null;
-  recording_consent_at: string | null;
-  recording_url: string | null;
-  drive_file_id: string | null;
-  meet_conference_id: string | null;
-  transcript_metadata: Json | null;
-  created_at: string | null;
-}
 
 interface FeedbackEntry {
   id: string;
@@ -69,20 +46,30 @@ export function FeedbackList({
     async function loadFeedback() {
       setIsLoading(true);
       try {
-        // Load feedback for ALL interviews (not just the first)
+        const results = await Promise.allSettled(
+          interviews.map((interview) =>
+            fetch(`/api/feedback?interview_id=${interview.id}`)
+              .then(async (res) => {
+                if (!res.ok) throw new Error(`${res.status}`);
+                const { data } = await res.json();
+                return { interviewId: interview.id, data: Array.isArray(data) ? data : [] };
+              })
+          )
+        );
+
         const allFeedback: FeedbackEntry[] = [];
+        const failedIds: string[] = [];
 
-        for (const interview of interviews) {
-          const res = await fetch(
-            `/api/feedback?interview_id=${interview.id}`,
-          );
-
-          if (!res.ok) continue;
-
-          const { data } = await res.json();
-          if (Array.isArray(data)) {
-            allFeedback.push(...data);
+        for (const [i, result] of results.entries()) {
+          if (result.status === "fulfilled") {
+            allFeedback.push(...result.value.data);
+          } else {
+            failedIds.push(interviews[i].id);
           }
+        }
+
+        if (failedIds.length > 0) {
+          toast.error(`Failed to load feedback for ${failedIds.length} interview(s)`);
         }
 
         setFeedback(allFeedback);
@@ -137,7 +124,44 @@ export function FeedbackList({
     );
   }
 
-  if (feedback.length === 0) {
+  // Find interviews where current user hasn't submitted feedback yet
+  // Only show form if user is the assigned interviewer OR is a manager/admin
+  const interviewsWithoutMyFeedback = interviews.filter(
+    (i) =>
+      (isManagerOrAdmin || i.interviewer_id === currentUserId) &&
+      !feedback.some((f) => f.interview_id === i.id && f.interviewer_id === currentUserId),
+  );
+
+  function handleFeedbackSubmitted() {
+    if (interviews.length === 0) return;
+    (async () => {
+      try {
+        const results = await Promise.allSettled(
+          interviews.map((interview) =>
+            fetch(`/api/feedback?interview_id=${interview.id}`)
+              .then(async (res) => {
+                if (!res.ok) throw new Error(`${res.status}`);
+                const { data } = await res.json();
+                return Array.isArray(data) ? data as FeedbackEntry[] : [];
+              })
+          )
+        );
+
+        const allFeedback: FeedbackEntry[] = [];
+        for (const result of results) {
+          if (result.status === "fulfilled") {
+            allFeedback.push(...result.value);
+          }
+        }
+        setFeedback(allFeedback);
+      } catch (err) {
+        console.error("[feedback-list] Reload after submit failed:", err);
+        toast.error("Failed to reload feedback after submission");
+      }
+    })();
+  }
+
+  if (feedback.length === 0 && interviewsWithoutMyFeedback.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
         <ClipboardText size={24} weight="duotone" className="text-muted-foreground/40" />
@@ -152,6 +176,25 @@ export function FeedbackList({
 
   return (
     <div className="space-y-4">
+      {/* Submit feedback form for interviews without feedback from current user */}
+      {interviewsWithoutMyFeedback.map((interview) => {
+        const stage = stages.find((s) => s.id === interview.stage_id);
+        return (
+          <div key={`form-${interview.id}`}>
+            {stage && (
+              <p className="mb-2 text-[12px] font-medium text-muted-foreground">
+                {stage.name}
+              </p>
+            )}
+            <FeedbackForm
+              interviewId={interview.id}
+              focusAreas={["Overall Assessment", "Technical Skills", "Communication", "Culture Fit"]}
+              onSubmit={handleFeedbackSubmitted}
+            />
+          </div>
+        );
+      })}
+
       {/* Waiting badge */}
       {waitingFor > 0 && (
         <div className="flex items-center justify-end">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { notifyCollaborator } from "@/lib/notifications";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -150,6 +151,39 @@ export async function PATCH(
         { error: "Failed to update collaborator" },
         { status: 500 },
       );
+    }
+
+    // Fire-and-forget: notify collaborator about stage assignment
+    if (
+      parsed.data.assigned_stages &&
+      parsed.data.assigned_stages.length > 0
+    ) {
+      // Resolve stage names and collaborator details for the notification
+      const { data: stages } = await supabase
+        .from("interview_stages")
+        .select("name")
+        .in("id", parsed.data.assigned_stages);
+
+      const { data: collaborator } = await supabase
+        .from("collaborators")
+        .select("name, invite_token")
+        .eq("id", id)
+        .single();
+
+      const stageNames =
+        stages?.map((s) => s.name).join(", ") ?? "Interview stages";
+      const appUrl =
+        process.env.NEXT_PUBLIC_APP_URL ?? "https://app.axil.ie";
+
+      notifyCollaborator({
+        collaboratorId: id,
+        type: "stage_assigned",
+        data: {
+          collaboratorName: collaborator?.name ?? "",
+          stageNames,
+          prepLink: `${appUrl}/auth/collaborator/accept?token=${collaborator?.invite_token ?? ""}`,
+        },
+      }).catch(() => {});
     }
 
     return NextResponse.json({ success: true });

@@ -230,3 +230,130 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+/* ---------- Notification email templates ---------- */
+
+export function feedbackSubmittedHtml(params: {
+  interviewerName: string;
+  stageName: string;
+  candidateName: string;
+  ratingSummary: string;
+  debriefLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Feedback Submitted</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      <strong>${escapeHtml(params.interviewerName)}</strong> submitted feedback for the
+      <strong>${escapeHtml(params.stageName)}</strong> stage with
+      <strong>${escapeHtml(params.candidateName)}</strong>${params.ratingSummary ? ` &mdash; average rating: <strong>${escapeHtml(params.ratingSummary)}/4</strong>` : ""}.
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      You can review the feedback on the Debrief page.
+    </p>
+    ${
+      params.debriefLink
+        ? `<a href="${escapeHtml(params.debriefLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      View Debrief
+    </a>`
+        : ""
+    }
+  `);
+}
+
+export function allFeedbackCollectedHtml(params: {
+  candidateName: string;
+  feedbackCount: string;
+  synthesisLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">All Feedback Collected</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      All <strong>${escapeHtml(params.feedbackCount)}</strong> feedback submissions have been collected
+      for <strong>${escapeHtml(params.candidateName)}</strong>.
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      You can now trigger the AI synthesis to generate a comprehensive candidate analysis.
+    </p>
+    ${
+      params.synthesisLink
+        ? `<a href="${escapeHtml(params.synthesisLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      Go to Synthesis
+    </a>`
+        : ""
+    }
+  `);
+}
+
+export function synthesisReadyHtml(params: {
+  candidateName: string;
+  debriefLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">AI Synthesis Ready</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      The AI synthesis for <strong>${escapeHtml(params.candidateName)}</strong> is now ready for review.
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      The analysis includes a summary of all interview feedback and key highlights. As always, the final hiring decision rests with your team.
+    </p>
+    ${
+      params.debriefLink
+        ? `<a href="${escapeHtml(params.debriefLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      View Synthesis
+    </a>`
+        : ""
+    }
+  `);
+}
+
+export function stageAssignedHtml(params: {
+  collaboratorName: string;
+  stageNames: string;
+  prepLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Interview Stages Assigned</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Hi ${escapeHtml(params.collaboratorName)}, you've been assigned to the following interview stages:
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6;font-weight:600">
+      ${escapeHtml(params.stageNames)}
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Please review the preparation materials before the interview.
+    </p>
+    ${
+      params.prepLink
+        ? `<a href="${escapeHtml(params.prepLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      View Prep Materials
+    </a>`
+        : ""
+    }
+  `);
+}
+
+export function feedbackReminderHtml(params: {
+  collaboratorName: string;
+  stageName: string;
+  candidateName: string;
+  feedbackLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Feedback Reminder</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Hi ${escapeHtml(params.collaboratorName)}, this is a friendly reminder to submit your feedback
+      for the <strong>${escapeHtml(params.stageName)}</strong> stage with
+      <strong>${escapeHtml(params.candidateName)}</strong>.
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Timely feedback helps the hiring team make better decisions. Please submit your ratings, pros, and cons at your earliest convenience.
+    </p>
+    ${
+      params.feedbackLink
+        ? `<a href="${escapeHtml(params.feedbackLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      Submit Feedback
+    </a>`
+        : ""
+    }
+  `);
+}

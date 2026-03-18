@@ -129,3 +129,77 @@ export async function sendCustomBodyEmail(params: {
     html: customBodyHtml(params.body),
   });
 }
+
+/* ---------- Notification email senders ---------- */
+
+export async function sendFeedbackSubmittedEmail(params: {
+  to: string;
+  interviewerName: string;
+  stageName: string;
+  candidateName: string;
+  ratingSummary: string;
+  debriefLink: string;
+}): Promise<SendResult> {
+  const { feedbackSubmittedHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `Feedback submitted: ${params.stageName} — ${params.candidateName}`,
+    html: feedbackSubmittedHtml(params),
+  });
+}
+
+export async function sendAllFeedbackCollectedEmail(params: {
+  to: string;
+  candidateName: string;
+  feedbackCount: string;
+  synthesisLink: string;
+}): Promise<SendResult> {
+  const { allFeedbackCollectedHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `All feedback collected for ${params.candidateName}`,
+    html: allFeedbackCollectedHtml(params),
+  });
+}
+
+export async function sendSynthesisReadyEmail(params: {
+  to: string;
+  candidateName: string;
+  debriefLink: string;
+}): Promise<SendResult> {
+  const { synthesisReadyHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `AI synthesis ready for ${params.candidateName}`,
+    html: synthesisReadyHtml(params),
+  });
+}
+
+export async function sendStageAssignedEmail(params: {
+  to: string;
+  collaboratorName: string;
+  stageNames: string;
+  prepLink: string;
+}): Promise<SendResult> {
+  const { stageAssignedHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `You've been assigned to interview stages`,
+    html: stageAssignedHtml(params),
+  });
+}
+
+export async function sendFeedbackReminderEmail(params: {
+  to: string;
+  collaboratorName: string;
+  stageName: string;
+  candidateName: string;
+  feedbackLink: string;
+}): Promise<SendResult> {
+  const { feedbackReminderHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `Reminder: submit feedback for ${params.stageName} — ${params.candidateName}`,
+    html: feedbackReminderHtml(params),
+  });
+}

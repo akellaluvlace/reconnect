@@ -1,35 +1,51 @@
-# Axil CMS — Admin Guide
-
-## What is it?
-
-The CMS is your company's control panel inside Axil. It lets you customise the data that powers the platform — skills, interview stages, questions, email templates — without needing a developer.
-
-**Access:** Settings > Admin (visible to admins only, one admin per org).
+# Axil Update — What's New + How to Test
 
 ---
 
-## The 7 Sections
+## 1. Alignment Chapter — Email System
 
-### 1. Skills
-Your org's skill taxonomy. When hiring managers create playbooks, these appear as autocomplete suggestions — keeping naming consistent ("JavaScript" not "JS").
+**What changed:**
+The email system now uses your CMS templates. When you send a prep brief or feedback reminder to an interviewer, the system:
 
-### 2. Industries
-Industries your org recruits for. Used in the playbook wizard and feeds into AI market research.
+1. Checks if you've set up a custom email template in **Settings > Admin > Email Templates**
+2. If you have one, it loads it into the send modal — already filled in with the real data (interviewer name, role title, stage names, access link)
+3. If you haven't created a template yet, it falls back to a sensible default
+4. Either way, you can edit the email before hitting send — it's never locked
 
-### 3. Levels
-Your seniority levels (e.g., Graduate, Mid, Senior, Director). Define what each means at your company. Used in the playbook wizard.
+**The placeholders work like this:**
+When you write `Hi {{interviewer_name}}`, the system replaces it with the actual interviewer's name. Same for `{{role_title}}`, `{{candidate_name}}`, `{{stage_name}}`, and `{{playbook_link}}`.
 
-### 4. Stage Templates
-Pre-built interview stages with focus areas and questions. Save time by templating your standard process (e.g., "HR Screen — 30min — Culture Fit + Motivation") and reusing across roles.
+**The access link (`{{playbook_link}}`):**
+This is a magic link — the interviewer clicks it, no login needed. It takes them straight to their interview prep page showing:
+- Which role they're interviewing for
+- Their assigned stages
+- Focus areas and weights for each stage
+- Suggested questions with purpose notes
+- The 1-4 rating guide
 
-### 5. Question Bank
-Your org's curated question library. When editing a stage in the Process chapter, click **"Browse Bank"** to pull from this library alongside AI-generated questions.
+They don't see salary, other people's feedback, AI analysis, or anything beyond their assignment.
 
-### 6. JD Templates
-Reusable job description structures (summary, responsibilities, qualifications, benefits). The AI uses these as a starting point when generating JDs.
+---
 
-### 7. Email Templates
-Customise the emails sent to interviewers (prep briefs and feedback reminders). Use placeholders that auto-fill with real data:
+## 2. CMS Admin (Settings > Admin)
+
+This is your org's control panel. Seven sections, all work the same way — add, edit, deactivate.
+
+| Section | What It Does | Where It Shows Up |
+|---|---|---|
+| **Skills** | Your skill taxonomy ("JavaScript" not "JS") | Playbook wizard — autocomplete suggestions |
+| **Industries** | Industries you recruit for | Playbook wizard — dropdown |
+| **Levels** | Seniority levels (Graduate -> Director) | Playbook wizard — dropdown |
+| **Stage Templates** | Pre-built interview stages | Process chapter — stage creation |
+| **Question Bank** | Curated question library | Process chapter — "Browse Bank" button |
+| **JD Templates** | Job description structures | Discovery chapter — JD generation |
+| **Email Templates** | Prep brief + reminder emails | Alignment chapter — send modals |
+
+**Seed data:** There's a "Load starter data" button at the top of the Admin page. It gives you 5 levels, 6 industries, 3 stage templates, and common questions to start with. You can modify or deactivate any of them.
+
+**Everything is org-scoped** — your templates are private to your org. Other companies on the platform can't see or use them.
+
+### Email Template Placeholders
 
 | Placeholder | Replaced with |
 |---|---|
@@ -39,38 +55,7 @@ Customise the emails sent to interviewers (prep briefs and feedback reminders). 
 | `{{stage_name}}` | Assigned stage names |
 | `{{playbook_link}}` | Interviewer's access link (no login needed) |
 
----
-
-## Seed Data
-
-Click **"Load starter data"** (top of Admin page) to populate defaults:
-- 5 levels, 6 industries, 3 stage templates, common questions
-
-You can modify or deactivate any of these. Skills, JD templates, and email templates start empty.
-
----
-
-## How It Flows Into the Platform
-
-| CMS Section | Where it appears |
-|---|---|
-| Skills | Playbook wizard — skill autocomplete |
-| Industries | Playbook wizard — industry dropdown |
-| Levels | Playbook wizard — level dropdown |
-| Stage Templates | Process chapter — stage creation |
-| Question Bank | Process chapter — "Browse Bank" in stage editor |
-| JD Templates | Discovery chapter — JD generation |
-| Email Templates | Alignment chapter — prep & reminder emails |
-
----
-
-## Org-Level Isolation
-
-Each organisation has its own CMS data. Templates and settings are private to your org — other companies on the platform cannot see or use them.
-
----
-
-## Quick Tips
+### Quick Tips
 
 - **Start with skills and levels** — used most in the wizard
 - **Build the question bank over time** — add questions that worked well after each hire
@@ -79,4 +64,37 @@ Each organisation has its own CMS data. Templates and settings are private to yo
 
 ---
 
-**Feedback welcome.** If you'd like any changes to how the CMS works, sections added/removed, or different defaults — let us know.
+## 3. What to Test
+
+**CMS Admin (Settings > Admin):**
+- [ ] Click "Load starter data" — does it populate the sections?
+- [ ] Add a custom skill, edit it, deactivate it
+- [ ] Add a level — does it appear in the playbook wizard dropdown?
+- [ ] Add an industry — does it appear in the wizard?
+- [ ] Create a stage template — does it show when creating stages in Process?
+- [ ] Add a question to the bank — can you find it via "Browse Bank" in a stage?
+- [ ] Create an email template (type: prep) with `{{interviewer_name}}` and `{{playbook_link}}` — does it load correctly when you send a prep email from Alignment?
+
+**Alignment Chapter (on any playbook):**
+- [ ] Add a collaborator (interviewer), assign them stages
+- [ ] Click "Send Prep" — does the modal show your CMS template (or a sensible default)?
+- [ ] Are the placeholders replaced with real data in the preview?
+- [ ] Send the email — does the interviewer receive it?
+- [ ] Click the magic link from the email in an incognito window — does it open the prep page without requiring login?
+- [ ] Does the prep page show the right stages, focus areas, questions, and rating guide?
+
+**General:**
+- [ ] Settings page — does it show the Admin section link? (only visible to admins)
+- [ ] Does the playbook wizard pull your CMS skills/levels/industries?
+
+---
+
+## 4. What's Not Live Yet
+
+- **Debrief chapter** — built but disabled in the nav (shows a lock icon). Waiting on the Google Workspace upgrade for the recording pipeline before enabling it.
+- **Feedback submission** — interviewers can see their prep, but can't submit feedback yet. That's the next build once we have the recording pipeline.
+- **Notification system** — planned but not built yet (e.g. "feedback submitted" alerts, daily reminders).
+
+---
+
+**Feedback welcome.** Let us know what works, what doesn't, and anything you'd change.

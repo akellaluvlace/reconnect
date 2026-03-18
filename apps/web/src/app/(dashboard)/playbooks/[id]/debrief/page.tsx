@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DebriefPageClient } from "@/components/debrief/debrief-page-client";
 
@@ -31,9 +31,14 @@ export default async function DebriefPage({
     notFound();
   }
 
+  // Server-side chapter gating: Debrief requires playbook to be active
+  if (playbook.status !== "active") {
+    redirect(`/playbooks/${id}/process`);
+  }
+
   const { data: stages, error: stagesError } = await supabase
     .from("interview_stages")
-    .select("id, name, type, order_index")
+    .select("id, name, type, order_index, duration_minutes")
     .eq("playbook_id", id)
     .order("order_index", { ascending: true });
 
@@ -58,7 +63,7 @@ export default async function DebriefPage({
     candidateIds.length > 0
       ? await supabase
           .from("interviews")
-          .select("id, candidate_id, stage_id, interviewer_id, status, scheduled_at, completed_at, meet_link, recording_status, recording_consent_at, recording_url, drive_file_id, meet_conference_id, transcript_metadata, created_at")
+          .select("id, candidate_id, stage_id, interviewer_id, status, scheduled_at, completed_at, meet_link, recording_status, recording_consent_at, recording_url, drive_file_id, meet_conference_id, transcript_metadata, pipeline_log, retry_count, created_at")
           .in("candidate_id", candidateIds)
           .order("scheduled_at", { ascending: true })
       : { data: null, error: null };
@@ -66,6 +71,12 @@ export default async function DebriefPage({
   if (interviewsError) {
     console.error("[debrief] Interviews query failed:", interviewsError.message);
   }
+
+  // Fetch collaborators for interview scheduling
+  const { data: collaborators } = await supabase
+    .from("collaborators")
+    .select("id, email, name")
+    .eq("playbook_id", id);
 
   // Fetch user's role for blind feedback logic
   const {
@@ -102,6 +113,11 @@ export default async function DebriefPage({
       interviews={interviews ?? []}
       currentUserId={user?.id ?? ""}
       currentUserRole={userRole}
+      collaborators={(collaborators ?? []).map((c) => ({
+        id: c.id,
+        email: c.email ?? "",
+        name: c.name ?? c.email ?? "Unknown",
+      }))}
     />
   );
 }

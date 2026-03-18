@@ -5,6 +5,7 @@ import {
   UserCircle,
   PlugsConnected,
   ShieldCheck,
+  Bell,
 } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth/require-auth";
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
   const sections = [
     { name: "Organization", description: "Company details and preferences", href: "/settings/organization", icon: Buildings },
     { name: "Profile", description: "Your personal settings", href: "/settings/profile", icon: UserCircle },
+    { name: "Notifications", description: "Email notification preferences", href: "/settings/notifications", icon: Bell },
     { name: "Integrations", description: "Connected services", href: "/settings/integrations", icon: PlugsConnected },
     ...(role === "admin"
       ? [{ name: "Admin", description: "CMS controls (admin only)", href: "/settings/admin", icon: ShieldCheck }]

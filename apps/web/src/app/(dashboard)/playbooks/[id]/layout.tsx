@@ -22,7 +22,7 @@ export default async function PlaybookLayout({
   const supabase = await createClient();
   const { data: playbook, error } = await supabase
     .from("playbooks")
-    .select("id, title, status, department")
+    .select("id, title, status, department, job_description")
     .eq("id", id)
     .single();
 
@@ -47,7 +47,11 @@ export default async function PlaybookLayout({
           </h1>
           <StatusBadge status={playbook.status} />
         </div>
-        <ChapterNav playbookId={id} />
+        <ChapterNav
+          playbookId={id}
+          discoveryComplete={playbook.job_description !== null}
+          processComplete={playbook.status === "active"}
+        />
       </div>
 
       {/* Divider */}

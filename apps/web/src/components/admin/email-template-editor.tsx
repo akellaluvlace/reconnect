@@ -45,18 +45,37 @@ interface EmailTemplate {
   is_active: boolean;
 }
 
-const TEMPLATE_TYPES = ["prep", "reminder", "invite"] as const;
+const TEMPLATE_TYPES = [
+  "prep",
+  "reminder",
+  "invite",
+  "feedback_submitted",
+  "all_feedback_collected",
+  "synthesis_ready",
+  "stage_assigned",
+  "feedback_reminder",
+] as const;
 
 const TEMPLATE_TYPE_LABELS: Record<string, string> = {
   prep: "Prep",
   reminder: "Reminder",
   invite: "Invite",
+  feedback_submitted: "Feedback Submitted",
+  all_feedback_collected: "All Feedback Collected",
+  synthesis_ready: "Synthesis Ready",
+  stage_assigned: "Stage Assigned",
+  feedback_reminder: "Feedback Reminder",
 };
 
 const TEMPLATE_TYPE_DESCRIPTIONS: Record<string, string> = {
   prep: "Sent to interviewers before an interview with focus areas and questions",
   reminder: "Sent to interviewers who haven't submitted feedback yet",
-  invite: "Sent to collaborators when they're invited to a playbook",
+  invite: "Sent to collaborators when they are invited to a playbook",
+  feedback_submitted: "Sent to the manager when a collaborator submits interview feedback",
+  all_feedback_collected: "Sent to the manager when all collaborators have submitted feedback for an interview",
+  synthesis_ready: "Sent to the manager when AI synthesis is complete for a candidate",
+  stage_assigned: "Sent to a collaborator when they are assigned to new interview stages",
+  feedback_reminder: "Daily reminder sent to collaborators who have not yet submitted feedback",
 };
 
 const VARIABLES = [
@@ -93,6 +112,11 @@ const TYPE_COLORS: Record<string, { bg: string; text: string }> = {
   prep: { bg: "bg-teal-50", text: "text-teal-700" },
   reminder: { bg: "bg-amber-50", text: "text-amber-700" },
   invite: { bg: "bg-blue-50", text: "text-blue-700" },
+  feedback_submitted: { bg: "bg-green-50", text: "text-green-700" },
+  all_feedback_collected: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  synthesis_ready: { bg: "bg-purple-50", text: "text-purple-700" },
+  stage_assigned: { bg: "bg-indigo-50", text: "text-indigo-700" },
+  feedback_reminder: { bg: "bg-orange-50", text: "text-orange-700" },
 };
 
 function typeBadge(type: string) {

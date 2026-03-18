@@ -1,38 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Json } from "@reconnect/database";
+import type { InterviewData, StageInfo } from "./types";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkle, CircleNotch, FileText } from "@phosphor-icons/react";
 import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
-
-interface StageInfo {
-  id: string;
-  name: string;
-  type: string | null;
-  order_index: number;
-}
-
-interface InterviewData {
-  id: string;
-  candidate_id: string | null;
-  stage_id: string | null;
-  interviewer_id: string | null;
-  status: string | null;
-  scheduled_at: string | null;
-  completed_at: string | null;
-  meet_link: string | null;
-  recording_status: string | null;
-  recording_consent_at: string | null;
-  recording_url: string | null;
-  drive_file_id: string | null;
-  meet_conference_id: string | null;
-  transcript_metadata: Json | null;
-  created_at: string | null;
-}
 
 interface SynthesisData {
   summary: string;
@@ -76,12 +51,48 @@ export function AISynthesisPanel({
 }: AISynthesisPanelProps) {
   const [synthesis, setSynthesis] = useState<SynthesisData | null>(null);
   const [metadata, setMetadata] = useState<SynthesisMetadata | null>(null);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true);
 
   const opKey = `synthesis-${candidateId}`;
   const { status } = useAIGenerationStore(
     (s) => s.operations[opKey] ?? IDLE_OP,
   );
   const isGenerating = status === "loading";
+
+  // Load existing synthesis from DB on mount / candidate change
+  useEffect(() => {
+    setSynthesis(null);
+    setMetadata(null);
+    setIsLoadingExisting(true);
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/ai/synthesize-feedback?candidate_id=${candidateId}`);
+        if (handleSessionExpired(res)) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.synthesis) {
+            setSynthesis(data.synthesis.content as SynthesisData);
+            setMetadata({
+              model_used: data.synthesis.model_used ?? "",
+              prompt_version: data.synthesis.prompt_version ?? "",
+              generated_at: data.synthesis.generated_at ?? "",
+              transcript_included: false,
+              transcript_truncated: false,
+            });
+          }
+        } else {
+          console.error("[synthesis] Load existing failed:", res.status);
+          toast.error("Failed to load existing synthesis");
+        }
+      } catch (err) {
+        console.error("[synthesis] Load existing failed:", err);
+        toast.error("Failed to load existing synthesis");
+      } finally {
+        setIsLoadingExisting(false);
+      }
+    })();
+  }, [candidateId]);
 
   // Subscribe to store changes to apply results (avoids setState in useEffect body)
   const handleStoreChange = useCallback((op: { status: string; result: unknown; error: string | null }) => {
@@ -109,17 +120,17 @@ export function AISynthesisPanel({
 
   // Check if any interview has a transcript
   const hasTranscript = interviews.some(
-    (i) => i.recording_status === "completed",
+    (i) => i.recording_status === "transcribed" || i.recording_status === "completed",
   );
 
   function handleGenerate() {
-    // Pre-validate synchronously before starting the async operation
-    const completedInterviews = interviews.filter(
-      (i) => i.status === "completed",
+    // Pre-validate: need at least one interview with a transcript or completed status
+    const readyInterviews = interviews.filter(
+      (i) => i.recording_status === "transcribed" || i.recording_status === "completed" || i.status === "completed",
     );
 
-    if (completedInterviews.length === 0) {
-      toast.error("No completed interviews to synthesize");
+    if (readyInterviews.length === 0) {
+      toast.error("No transcribed interviews to synthesize. Record or upload a transcript first.");
       return;
     }
 
@@ -132,8 +143,8 @@ export function AISynthesisPanel({
         notes?: string;
       }> = [];
 
-      // Fetch feedback for each completed interview
-      for (const interview of completedInterviews) {
+      // Fetch feedback for each ready interview
+      for (const interview of readyInterviews) {
         const fbRes = await fetch(
           `/api/feedback?interview_id=${interview.id}`,
         );
@@ -178,9 +189,9 @@ export function AISynthesisPanel({
         throw new Error("No feedback submitted yet — cannot generate synthesis");
       }
 
-      // Pick the first completed interview with a transcript
-      const transcriptInterview = interviews.find(
-        (i) => i.recording_status === "completed",
+      // Pick the first interview with a transcript
+      const transcriptInterview = readyInterviews.find(
+        (i) => i.recording_status === "transcribed" || i.recording_status === "completed",
       );
 
       const res = await fetch("/api/ai/synthesize-feedback", {
@@ -205,6 +216,17 @@ export function AISynthesisPanel({
       const apiResult = await res.json();
       return { data: apiResult.data, metadata: apiResult.metadata };
     });
+  }
+
+  if (isLoadingExisting) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+        <CircleNotch size={24} weight="bold" className="animate-spin text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          Loading existing synthesis...
+        </p>
+      </div>
+    );
   }
 
   if (!synthesis) {

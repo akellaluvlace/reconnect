@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import type { Json } from "@reconnect/database";
+import { useState, useMemo, useCallback } from "react";
+import type { InterviewData, StageInfo, CollaboratorInfo } from "./types";
 import { InterviewList } from "./interview-list";
 import { FeedbackList } from "./feedback-list";
 import { AISynthesisPanel } from "./ai-synthesis-panel";
 import { ActivityTimeline } from "./activity-timeline";
 import { CandidateComparison } from "./candidate-comparison";
 import { BiasDetection } from "./bias-detection";
+import { AddCandidateDialog } from "./add-candidate-dialog";
 import {
   Select,
   SelectContent,
@@ -23,15 +24,10 @@ import {
   UsersThree,
   Scales,
   Clock,
+  UserPlus,
+  Question,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-
-interface StageInfo {
-  id: string;
-  name: string;
-  type: string | null;
-  order_index: number;
-}
 
 interface CandidateData {
   id: string;
@@ -40,24 +36,6 @@ interface CandidateData {
   status: string | null;
   current_stage_id: string | null;
   playbook_id: string | null;
-  created_at: string | null;
-}
-
-interface InterviewData {
-  id: string;
-  candidate_id: string | null;
-  stage_id: string | null;
-  interviewer_id: string | null;
-  status: string | null;
-  scheduled_at: string | null;
-  completed_at: string | null;
-  meet_link: string | null;
-  recording_status: string | null;
-  recording_consent_at: string | null;
-  recording_url: string | null;
-  drive_file_id: string | null;
-  meet_conference_id: string | null;
-  transcript_metadata: Json | null;
   created_at: string | null;
 }
 
@@ -72,6 +50,7 @@ interface DebriefPageClientProps {
   interviews: InterviewData[];
   currentUserId: string;
   currentUserRole: string;
+  collaborators?: CollaboratorInfo[];
 }
 
 type NavItemId = "interviews" | "feedback" | "synthesis" | "comparison" | "bias" | "timeline";
@@ -96,13 +75,21 @@ export function DebriefPageClient({
   interviews,
   currentUserId,
   currentUserRole,
+  collaborators = [],
 }: DebriefPageClientProps) {
+  const [showGuide, setShowGuide] = useState(false);
+  const [candidateList, setCandidateList] = useState(candidates);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>(
     candidates[0]?.id ?? "",
   );
   const [activeItem, setActiveItem] = useState<NavItemId>("interviews");
 
-  const selectedCandidate = candidates.find(
+  const handleCandidateAdded = useCallback((candidate: CandidateData) => {
+    setCandidateList((prev) => [candidate, ...prev]);
+    setSelectedCandidateId(candidate.id);
+  }, []);
+
+  const selectedCandidate = candidateList.find(
     (c) => c.id === selectedCandidateId,
   );
 
@@ -113,7 +100,7 @@ export function DebriefPageClient({
   const isManagerOrAdmin =
     currentUserRole === "admin" || currentUserRole === "manager";
 
-  const hasMultipleCandidates = candidates.length >= 2;
+  const hasMultipleCandidates = candidateList.length >= 2;
 
   // Memoize mapped props to avoid unstable refs triggering child useEffect re-runs
   const comparisonInterviews = useMemo(
@@ -127,8 +114,8 @@ export function DebriefPageClient({
   );
 
   const comparisonCandidates = useMemo(
-    () => candidates.map((c) => ({ id: c.id, name: c.name })),
-    [candidates],
+    () => candidateList.map((c) => ({ id: c.id, name: c.name })),
+    [candidateList],
   );
 
   const comparisonStages = useMemo(
@@ -142,8 +129,8 @@ export function DebriefPageClient({
   );
 
   const timelineCandidates = useMemo(
-    () => candidates.map((c) => ({ id: c.id, name: c.name, created_at: c.created_at })),
-    [candidates],
+    () => candidateList.map((c) => ({ id: c.id, name: c.name, created_at: c.created_at })),
+    [candidateList],
   );
 
   const timelineInterviews = useMemo(
@@ -206,12 +193,16 @@ export function DebriefPageClient({
     },
   ];
 
-  if (candidates.length === 0) {
+  if (candidateList.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
-        <p className="text-[14px] text-muted-foreground">
-          No candidates added yet. Add candidates to begin the debrief process.
+        <UserPlus size={24} weight="duotone" className="text-muted-foreground/40" />
+        <p className="mt-3 text-[14px] text-muted-foreground">
+          No candidates added yet. Add a candidate to begin the debrief process.
         </p>
+        <div className="mt-4">
+          <AddCandidateDialog playbookId={playbookId} onAdded={handleCandidateAdded} />
+        </div>
       </div>
     );
   }
@@ -260,9 +251,13 @@ export function DebriefPageClient({
           <InterviewList
             playbookId={playbookId}
             candidateId={selectedCandidateId}
+            candidateName={selectedCandidate?.name}
+            candidateEmail={selectedCandidate?.email}
             interviews={candidateInterviews}
             stages={stages}
             currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+            collaborators={collaborators}
           />
         );
 
@@ -336,6 +331,49 @@ export function DebriefPageClient({
 
   return (
     <div>
+      {/* How to Use guide */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowGuide(!showGuide)}
+          className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/30 px-3 py-1.5 text-[13px] font-medium text-foreground/70 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors"
+        >
+          <Question size={15} weight="bold" className="text-teal-600" />
+          {showGuide ? "Hide guide" : "How to use this page"}
+        </button>
+
+        {showGuide && (
+          <div className="mt-3 rounded-xl border border-border/30 bg-muted/20 px-6 py-5 space-y-4 text-[13px] text-foreground/80 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-start gap-3">
+              <CalendarBlank size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Interviews</span> — Schedule, reschedule, or cancel interviews. View Meet links, recording status, and pipeline logs.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <ClipboardText size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Feedback</span> — Submit and view interviewer feedback. Ratings use a 1-4 scale. Managers can see all feedback; interviewers see only their own.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Brain size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">AI Synthesis</span> — Generate an AI analysis combining transcript and feedback. Available to managers and admins after feedback is submitted.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <UsersThree size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Comparison</span> — Compare candidates side by side. Requires at least 2 candidates.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Scales size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Bias Flags</span> — AI flags potential bias patterns across feedback.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Clock size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Timeline</span> — Activity timeline showing all events for this playbook.</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/20">
+              <span className="font-medium">Tip:</span> Add a candidate, schedule interviews, collect feedback, then generate AI synthesis for a complete debrief.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Candidate selector -- always visible above nav */}
       <div className="mb-5 flex items-center gap-3">
         <span className="text-[13px] font-medium text-muted-foreground">
@@ -349,7 +387,7 @@ export function DebriefPageClient({
             <SelectValue placeholder="Select a candidate" />
           </SelectTrigger>
           <SelectContent>
-            {candidates.map((c) => (
+            {candidateList.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
                 {c.status && c.status !== "active" ? ` (${c.status})` : ""}
@@ -357,6 +395,7 @@ export function DebriefPageClient({
             ))}
           </SelectContent>
         </Select>
+        <AddCandidateDialog playbookId={playbookId} onAdded={handleCandidateAdded} />
       </div>
 
       {selectedCandidate && (

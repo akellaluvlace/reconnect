@@ -21,6 +21,8 @@ interface FeedbackFormProps {
   interviewId: string;
   focusAreas: string[];
   onSubmit: () => void;
+  apiEndpoint?: string;
+  extraBody?: Record<string, unknown>;
 }
 
 const SCORE_LABELS: Record<number, string> = {
@@ -34,6 +36,8 @@ export function FeedbackForm({
   interviewId,
   focusAreas,
   onSubmit,
+  apiEndpoint,
+  extraBody,
 }: FeedbackFormProps) {
   const [ratings, setRatings] = useState<RatingEntry[]>(
     focusAreas.map((area) => ({ category: area, score: 3 })),
@@ -87,10 +91,11 @@ export function FeedbackForm({
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/feedback", {
+      const res = await fetch(apiEndpoint ?? "/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...extraBody,
           interview_id: interviewId,
           ratings,
           pros: filteredPros,

@@ -17,6 +17,14 @@ vi.mock("crypto", () => ({
   randomUUID: mockRandomUUID,
 }));
 
+vi.mock("@/lib/google/pipeline-tracer", () => ({
+  traceGoogleApi: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase/service-role", () => ({
+  createServiceRoleClient: vi.fn(),
+}));
+
 import { createMeetEvent } from "@/lib/google/calendar";
 
 // ---------------------------------------------------------------------------
@@ -99,7 +107,8 @@ describe("Google Calendar — createMeetEvent", () => {
       .calls[0];
     const body = JSON.parse(fetchCall[1].body as string);
     expect(body.summary).toBe("Engineering Interview");
-    expect(body.description).toBe("Technical round");
+    expect(body.description).toContain("Technical round");
+    expect(body.description).toContain("recorded and transcribed");
     expect(body.start.dateTime).toBe("2026-03-01T10:00:00Z");
     expect(body.end.dateTime).toBe("2026-03-01T11:00:00Z");
     expect(body.attendees).toEqual([

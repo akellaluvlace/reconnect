@@ -5,10 +5,11 @@ import type { MarketInsights, JobDescription, HiringStrategy } from "@reconnect/
 import { MarketIntelligencePanel } from "./market-intelligence-panel";
 import { StrategyPanel } from "./strategy-panel";
 import { JDStructuredEditor } from "./jd-structured-editor";
-import { Lock, Sparkle } from "@phosphor-icons/react";
+import { Lock, Sparkle, CheckCircle, ArrowRight, Question, MagnifyingGlass, Target, FileText, Buildings } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
+import Link from "next/link";
 
 /** Market research items that require deep research to be complete */
 const DEEP_GATED_MARKET_ITEMS = new Set(["listings"]);
@@ -87,6 +88,7 @@ const itemsBySection: Record<SectionId, ReadonlyArray<{ id: string; name: string
 };
 
 export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
+  const [showGuide, setShowGuide] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("market-research");
   const [activeItems, setActiveItems] = useState<Record<SectionId, string>>({
     "market-research": "overview",
@@ -210,6 +212,14 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
   const strategyEnabled = isDeepResearchDone || strategy !== null;
   const jdEnabled = strategy !== null || jobDescription !== null;
 
+  // Section completion tracking
+  const sectionComplete: Record<SectionId, boolean> = {
+    "market-research": isDeepResearchDone ?? false,
+    "hiring-strategy": strategy !== null,
+    "job-description": jobDescription !== null,
+  };
+  const allSectionsComplete = Object.values(sectionComplete).every(Boolean);
+
   function isSectionEnabled(id: SectionId) {
     if (id === "market-research") return true;
     if (id === "hiring-strategy") return strategyEnabled;
@@ -232,6 +242,41 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
 
   return (
     <div>
+      {/* How to Use guide */}
+      <div className="mb-4">
+        <button
+          onClick={() => setShowGuide(!showGuide)}
+          className="flex items-center gap-1.5 rounded-lg border border-border/40 bg-muted/30 px-3 py-1.5 text-[13px] font-medium text-foreground/70 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-colors"
+        >
+          <Question size={15} weight="bold" className="text-teal-600" />
+          {showGuide ? "Hide guide" : "How to use this page"}
+        </button>
+
+        {showGuide && (
+          <div className="mt-3 rounded-xl border border-border/30 bg-muted/20 px-6 py-5 space-y-4 text-[13px] text-foreground/80 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-start gap-3">
+              <MagnifyingGlass size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Market Research</span> — AI analyses your market with verified web sources. Deep research runs in the background and unlocks the full pipeline.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Target size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Hiring Strategy</span> — AI generates salary positioning, process speed recommendations, and differentiators based on market data.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <FileText size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Job Description</span> — AI creates a complete JD. Edit any section inline — changes are saved automatically.</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <Buildings size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Competitor Listings</span> — Search job boards for similar roles. Results above 70% relevance are shown.</p>
+            </div>
+            <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/20">
+              <span className="font-medium">Tip:</span> Work through tabs left to right. Each section unlocks the next.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Sub-tabs — left-aligned */}
       <div className="flex">
         <div className="flex items-center gap-5">
@@ -255,6 +300,9 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
                 <span className="flex items-center gap-1.5">
                   {!enabled && <Lock size={12} weight="duotone" />}
                   {section.name}
+                  {enabled && sectionComplete[section.id] && (
+                    <CheckCircle size={14} weight="fill" className="text-green-500" />
+                  )}
                 </span>
                 {active && (
                   <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-foreground" />
@@ -357,6 +405,32 @@ export function DiscoveryPageClient({ playbook }: DiscoveryPageClientProps) {
               onUpdate={setJobDescription}
               activeItem={currentActiveItem}
             />
+          )}
+
+          {/* Discovery complete banner */}
+          {allSectionsComplete && (
+            <div className="mt-8 rounded-xl border border-green-200 bg-green-50/50 px-5 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={18} weight="fill" className="text-green-600" />
+                  <div>
+                    <p className="text-[13px] font-semibold text-green-800">
+                      Discovery complete
+                    </p>
+                    <p className="text-[12px] text-green-700/80">
+                      Market research, strategy, and job description are ready. Continue to design your interview process.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/playbooks/${playbook.id}/process`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-teal-700"
+                >
+                  Continue to Process
+                  <ArrowRight size={14} weight="bold" />
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       </div>

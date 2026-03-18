@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const steps = [
   { number: 1, label: "Basic Info" },
   { number: 2, label: "Role Details" },
-  { number: 3, label: "Generate" },
+  { number: 3, label: "Review & Generate" },
 ];
 
 export function WizardProgress({

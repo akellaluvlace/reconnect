@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { AlignmentPageClient } from "@/components/alignment/alignment-page-client";
@@ -43,6 +43,11 @@ export default async function AlignmentPage({
       console.error("[alignment] Playbook query failed:", pbError.message);
     }
     notFound();
+  }
+
+  // Server-side chapter gating: Alignment requires playbook to be active
+  if (playbook.status !== "active") {
+    redirect(`/playbooks/${id}/process`);
   }
 
   const { data: stages } = await supabase

@@ -559,6 +559,7 @@ export type Database = {
       }
       feedback: {
         Row: {
+          collaborator_id: string | null
           cons: Json | null
           focus_areas_confirmed: boolean
           id: string
@@ -570,6 +571,7 @@ export type Database = {
           submitted_at: string | null
         }
         Insert: {
+          collaborator_id?: string | null
           cons?: Json | null
           focus_areas_confirmed?: boolean
           id?: string
@@ -581,6 +583,7 @@ export type Database = {
           submitted_at?: string | null
         }
         Update: {
+          collaborator_id?: string | null
           cons?: Json | null
           focus_areas_confirmed?: boolean
           id?: string
@@ -592,6 +595,13 @@ export type Database = {
           submitted_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "feedback_collaborator_id_fkey"
+            columns: ["collaborator_id"]
+            isOneToOne: false
+            referencedRelation: "collaborators"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "feedback_interview_id_fkey"
             columns: ["interview_id"]
@@ -699,6 +709,7 @@ export type Database = {
       }
       interviews: {
         Row: {
+          calendar_event_id: string | null
           candidate_id: string | null
           completed_at: string | null
           created_at: string | null
@@ -716,9 +727,11 @@ export type Database = {
           stage_id: string | null
           status: string | null
           transcript: string | null
+          transcript_doc_id: string | null
           transcript_metadata: Json | null
         }
         Insert: {
+          calendar_event_id?: string | null
           candidate_id?: string | null
           completed_at?: string | null
           created_at?: string | null
@@ -736,9 +749,11 @@ export type Database = {
           stage_id?: string | null
           status?: string | null
           transcript?: string | null
+          transcript_doc_id?: string | null
           transcript_metadata?: Json | null
         }
         Update: {
+          calendar_event_id?: string | null
           candidate_id?: string | null
           completed_at?: string | null
           created_at?: string | null
@@ -756,6 +771,7 @@ export type Database = {
           stage_id?: string | null
           status?: string | null
           transcript?: string | null
+          transcript_doc_id?: string | null
           transcript_metadata?: Json | null
         }
         Relationships: [
@@ -876,6 +892,7 @@ export type Database = {
           created_at: string | null
           google_email: string
           id: string
+          interview_calendar_id: string | null
           refresh_token: string
           scopes: string[] | null
           token_expiry: string
@@ -888,6 +905,7 @@ export type Database = {
           created_at?: string | null
           google_email: string
           id?: string
+          interview_calendar_id?: string | null
           refresh_token: string
           scopes?: string[] | null
           token_expiry: string
@@ -900,6 +918,7 @@ export type Database = {
           created_at?: string | null
           google_email?: string
           id?: string
+          interview_calendar_id?: string | null
           refresh_token?: string
           scopes?: string[] | null
           token_expiry?: string
@@ -912,6 +931,7 @@ export type Database = {
         Row: {
           candidate_profile: Json | null
           competitor_listings: Json | null
+          coverage_analysis: Json | null
           created_at: string | null
           created_by: string | null
           department: string | null
@@ -925,6 +945,7 @@ export type Database = {
           organization_id: string
           settings: Json | null
           skills: Json | null
+          stage_refinements: Json | null
           status: string | null
           title: string
           updated_at: string | null
@@ -932,6 +953,7 @@ export type Database = {
         Insert: {
           candidate_profile?: Json | null
           competitor_listings?: Json | null
+          coverage_analysis?: Json | null
           created_at?: string | null
           created_by?: string | null
           department?: string | null
@@ -945,6 +967,7 @@ export type Database = {
           organization_id: string
           settings?: Json | null
           skills?: Json | null
+          stage_refinements?: Json | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -952,6 +975,7 @@ export type Database = {
         Update: {
           candidate_profile?: Json | null
           competitor_listings?: Json | null
+          coverage_analysis?: Json | null
           created_at?: string | null
           created_by?: string | null
           department?: string | null
@@ -965,6 +989,7 @@ export type Database = {
           organization_id?: string
           settings?: Json | null
           skills?: Json | null
+          stage_refinements?: Json | null
           status?: string | null
           title?: string
           updated_at?: string | null

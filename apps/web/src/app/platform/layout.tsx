@@ -43,6 +43,15 @@ export default async function PlatformLayout({
             Users
           </Link>
         </nav>
+
+        <div className="mt-auto pt-4 border-t border-border/40">
+          <Link
+            href="/playbooks"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] font-medium text-teal-600 hover:bg-teal-50 hover:text-teal-700 transition-colors"
+          >
+            &larr; Back to Dashboard
+          </Link>
+        </div>
       </aside>
 
       {/* Main content */}
