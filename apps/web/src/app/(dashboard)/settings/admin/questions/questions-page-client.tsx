@@ -43,7 +43,7 @@ export function QuestionsPageClient() {
               "Use the category and stage type filters to quickly find relevant questions when building interview stages.",
           },
         ]}
-        tip="Questions with a stage type will be suggested when that type of stage is added to a playbook process."
+        tip="Questions with a stage type will be suggested when that type of stage is added to a hiring plan process."
       />
       <QuestionEditor />
     </div>

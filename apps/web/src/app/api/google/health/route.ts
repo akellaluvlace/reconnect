@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getGoogleTokens } from "@/lib/google/client";
+import { timingSafeEqual } from "crypto";
+
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 /**
  * GET /api/google/health
@@ -12,8 +18,10 @@ export async function GET(req: NextRequest) {
   try {
     // Auth: CRON_SECRET (for Vercel cron) or admin session
     const cronSecret = process.env.CRON_SECRET;
-    const authHeader = req.headers.get("authorization");
-    const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
+    const authHeader = req.headers.get("authorization") ?? "";
+    const hasCronAuth =
+      cronSecret && authHeader.startsWith("Bearer ") &&
+      timingSafeCompare(authHeader.slice(7), cronSecret);
 
     if (!hasCronAuth) {
       const supabase = await createClient();

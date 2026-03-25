@@ -25,12 +25,12 @@ function buildBreadcrumbs(pathname: string): Crumb[] {
   const crumbs: Crumb[] = [];
 
   if (pathname.startsWith("/playbooks")) {
-    crumbs.push({ label: "Playbooks", href: "/playbooks" });
+    crumbs.push({ label: "Hiring Plans", href: "/playbooks" });
 
     if (pathname === "/playbooks/new") {
-      crumbs.push({ label: "New Playbook" });
+      crumbs.push({ label: "New Hiring Plan" });
     } else if (pathname.match(/^\/playbooks\/[^/]+/)) {
-      // Playbook detail — chapter pages
+      // Hiring plan detail — chapter pages
       const parts = pathname.split("/");
       const chapter = parts[3];
       if (chapter) {

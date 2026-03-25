@@ -36,7 +36,7 @@ export function LevelsPageClient() {
         columns={COLUMNS}
         addLabel="Add Level"
         guideItems={LEVELS_GUIDE_ITEMS}
-        guideTip="Levels determine seniority options in the playbook creation wizard. Order them from most junior (top) to most senior (bottom)."
+        guideTip="Levels determine seniority options in the hiring plan creation wizard. Order them from most junior (top) to most senior (bottom)."
         showReorder
         noun="levels"
       />

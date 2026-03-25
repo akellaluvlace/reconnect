@@ -10,7 +10,7 @@ export function TemplatesPageClient() {
     <div className="space-y-6">
       <PageHeader
         title="Stage Templates"
-        description="Manage reusable interview stage templates. Templates provide default structure when building playbook interview processes."
+        description="Manage reusable interview stage templates. Templates provide default structure when building hiring plan interview processes."
       />
       <CmsHowToUse
         items={[

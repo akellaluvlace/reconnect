@@ -20,15 +20,15 @@ export default async function PlaybooksPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold tracking-tight">Playbooks</h1>
+          <h1 className="font-display text-2xl font-bold tracking-tight">Hiring Plans</h1>
           <p className="mt-1 text-[14px] text-muted-foreground">
-            Manage your recruitment playbooks
+            Manage your hiring plans
           </p>
         </div>
         <Button asChild size="sm">
           <Link href="/playbooks/new">
             <Plus size={14} weight="bold" className="mr-1.5" />
-            New Playbook
+            New Hiring Plan
           </Link>
         </Button>
       </div>
@@ -37,7 +37,7 @@ export default async function PlaybooksPage() {
         <Alert variant="destructive">
           <WarningCircle size={16} weight="duotone" />
           <AlertDescription>
-            Failed to load playbooks. Please refresh the page.
+            Failed to load hiring plans. Please refresh the page.
           </AlertDescription>
         </Alert>
       ) : (

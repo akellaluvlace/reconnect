@@ -1,2 +1,8 @@
 esbuild@*:
   approve: true
+msw@*:
+  approve: true
+sharp@*:
+  approve: true
+unrs-resolver@*:
+  approve: true

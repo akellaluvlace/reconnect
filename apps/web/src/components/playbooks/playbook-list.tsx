@@ -20,14 +20,14 @@ export function PlaybookList({ playbooks }: { playbooks: PlaybookListItem[] }) {
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
         <FolderPlus size={24} weight="duotone" className="text-muted-foreground/40" />
         <p className="mt-3 text-[14px] text-muted-foreground">
-          No playbooks yet. Create your first one to get started.
+          No hiring plans yet. Create your first one to get started.
         </p>
         <Link
           href="/playbooks/new"
           className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-[13px] font-medium text-white transition-colors hover:bg-teal-700"
         >
           <Plus size={14} weight="bold" />
-          Create Playbook
+          Create Hiring Plan
         </Link>
       </div>
     );

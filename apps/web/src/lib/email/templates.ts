@@ -53,10 +53,10 @@ export function collaboratorInviteHtml(params: {
     <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">You've been invited to collaborate</h2>
     <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
       <strong>${escapeHtml(params.inviterName)}</strong> has invited you to collaborate on
-      the hiring playbook <strong>"${escapeHtml(params.playbookTitle)}"</strong>.
+      the hiring plan <strong>"${escapeHtml(params.playbookTitle)}"</strong>.
     </p>
     <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
-      Click the button below to accept the invitation and access the playbook.
+      Click the button below to accept the invitation and access the hiring plan.
     </p>
     <a href="${escapeHtml(params.magicLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
       Accept Invitation

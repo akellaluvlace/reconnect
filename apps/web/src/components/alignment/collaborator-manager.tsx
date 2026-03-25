@@ -29,6 +29,7 @@ import {
   Check,
   X,
   PaperPlaneTilt,
+  UserPlus,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { handleSessionExpired } from "@/lib/fetch-utils";
@@ -60,6 +61,13 @@ export function CollaboratorManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStages, setEditStages] = useState<string[]>([]);
   const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+
+  // Bulk invite
+  const [showBulkInvite, setShowBulkInvite] = useState(false);
+  const [bulkEmails, setBulkEmails] = useState("");
+  const [bulkRole, setBulkRole] = useState<string>("interviewer");
+  const [bulkStages, setBulkStages] = useState<string[]>([]);
+  const [isBulkInviting, setIsBulkInviting] = useState(false);
 
   // Email modals
   const [prepModal, setPrepModal] = useState<CollaboratorData | null>(null);
@@ -118,6 +126,83 @@ export function CollaboratorManager({
     } finally {
       setIsInviting(false);
     }
+  }
+
+  function parseBulkEmails(text: string): string[] {
+    return text
+      .split(/[,;\n]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  }
+
+  async function handleBulkInvite() {
+    const emails = parseBulkEmails(bulkEmails);
+    if (emails.length === 0) {
+      toast.error("No valid email addresses found");
+      return;
+    }
+
+    // Deduplicate against existing collaborators
+    const existingEmails = new Set(collaborators.map((c) => c.email.toLowerCase()));
+    const newEmails = emails.filter((e) => !existingEmails.has(e));
+    const skipped = emails.length - newEmails.length;
+
+    if (newEmails.length === 0) {
+      toast.error("All emails are already invited");
+      return;
+    }
+
+    setIsBulkInviting(true);
+    const results = await Promise.allSettled(
+      newEmails.map(async (emailAddr) => {
+        const res = await fetch("/api/collaborators/invite", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            playbook_id: playbookId,
+            email: emailAddr,
+            role: bulkRole,
+            assigned_stages: bulkStages.length > 0 ? bulkStages : undefined,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Failed for ${emailAddr}`);
+        }
+        const { collaborator } = await res.json();
+        return collaborator as CollaboratorData;
+      }),
+    );
+
+    const succeeded: CollaboratorData[] = [];
+    let failed = 0;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        succeeded.push(result.value);
+      } else {
+        failed++;
+      }
+    }
+
+    if (succeeded.length > 0) {
+      onUpdate([...succeeded, ...collaborators]);
+    }
+
+    const parts: string[] = [];
+    if (succeeded.length > 0) parts.push(`${succeeded.length} invited`);
+    if (failed > 0) parts.push(`${failed} failed`);
+    if (skipped > 0) parts.push(`${skipped} already invited`);
+
+    if (failed > 0) {
+      toast.warning(parts.join(", "));
+    } else {
+      toast.success(parts.join(", "));
+    }
+
+    setShowBulkInvite(false);
+    setBulkEmails("");
+    setBulkStages([]);
+    setIsBulkInviting(false);
   }
 
   async function handleRevoke(id: string) {
@@ -443,19 +528,28 @@ export function CollaboratorManager({
           </div>
         )}
 
-        <Button
-          size="sm"
-          className="mt-4"
-          onClick={handleInvite}
-          disabled={isInviting || !email.trim()}
-        >
-          {isInviting ? (
-            <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
-          ) : (
-            <EnvelopeSimple size={16} weight="duotone" className="mr-2" />
-          )}
-          Send Invite
-        </Button>
+        <div className="mt-4 flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={handleInvite}
+            disabled={isInviting || !email.trim()}
+          >
+            {isInviting ? (
+              <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
+            ) : (
+              <EnvelopeSimple size={16} weight="duotone" className="mr-2" />
+            )}
+            Send Invite
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowBulkInvite(true)}
+          >
+            <UserPlus size={16} weight="duotone" className="mr-2" />
+            Bulk Invite
+          </Button>
+        </div>
       </div>
 
       {/* Collaborator list */}
@@ -646,6 +740,80 @@ export function CollaboratorManager({
                 <PaperPlaneTilt size={16} weight="duotone" className="mr-2" />
               )}
               Send Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk invite dialog */}
+      <Dialog open={showBulkInvite} onOpenChange={(open) => { if (!open) setShowBulkInvite(false); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <UserPlus size={20} weight="duotone" className="text-teal-600" />
+              Bulk Invite Collaborators
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="bulk-emails" className="text-[13px] font-medium text-foreground mb-2 block">
+                Email addresses — one per line, or separated by commas
+              </Label>
+              <textarea
+                id="bulk-emails"
+                value={bulkEmails}
+                onChange={(e) => setBulkEmails(e.target.value)}
+                placeholder={"jane@company.com\njohn@company.com\nkate@company.com"}
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 text-[13px] leading-relaxed font-mono placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-300 resize-y"
+                rows={6}
+              />
+              {bulkEmails.trim() && (
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  {parseBulkEmails(bulkEmails).length} valid email{parseBulkEmails(bulkEmails).length !== 1 ? "s" : ""} found
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="bulk-role" className="text-[12px] font-medium text-muted-foreground">
+                Role for all
+              </Label>
+              <Select value={bulkRole} onValueChange={setBulkRole}>
+                <SelectTrigger id="bulk-role" className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="interviewer">Interviewer</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {stages.length > 0 && (
+              <div>
+                <Label className="text-[12px] font-medium text-muted-foreground mb-2 block">
+                  Assign all to stages {bulkStages.length === 0 && <span className="text-muted-foreground/60">(all stages if none selected)</span>}
+                </Label>
+                <StageCheckboxes
+                  selected={bulkStages}
+                  onChange={(id) => toggleStage(id, bulkStages, setBulkStages)}
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button variant="ghost" onClick={() => setShowBulkInvite(false)} disabled={isBulkInviting}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkInvite} disabled={isBulkInviting || !bulkEmails.trim()}>
+              {isBulkInviting ? (
+                <CircleNotch size={16} weight="bold" className="mr-2 animate-spin" />
+              ) : (
+                <UserPlus size={16} weight="duotone" className="mr-2" />
+              )}
+              Invite All
             </Button>
           </DialogFooter>
         </DialogContent>

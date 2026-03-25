@@ -57,7 +57,7 @@ export const SKILLS_GUIDE_ITEMS: GuideItem[] = [
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Add skills",
     description:
-      "Define the skills your organisation uses across playbooks. Skills appear in the wizard and AI-generated strategies.",
+      "Define the skills your organisation uses across hiring plans. Skills appear in the wizard and AI-generated strategies.",
   },
   {
     icon: <Sparkle size={16} weight="duotone" />,
@@ -69,7 +69,7 @@ export const SKILLS_GUIDE_ITEMS: GuideItem[] = [
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Deactivate",
     description:
-      "Toggle a skill inactive to hide it from new playbooks without losing historical data.",
+      "Toggle a skill inactive to hide it from new hiring plans without losing historical data.",
   },
 ];
 
@@ -78,13 +78,13 @@ export const INDUSTRIES_GUIDE_ITEMS: GuideItem[] = [
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Add industries",
     description:
-      "Define industry categories for your playbooks. Industries help the AI tailor market research and strategies.",
+      "Define industry categories for your hiring plans. Industries help the AI tailor market research and strategies.",
   },
   {
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Deactivate",
     description:
-      "Toggle an industry inactive to hide it from new playbooks without losing historical data.",
+      "Toggle an industry inactive to hide it from new hiring plans without losing historical data.",
   },
 ];
 
@@ -93,7 +93,7 @@ export const LEVELS_GUIDE_ITEMS: GuideItem[] = [
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Add levels",
     description:
-      "Define seniority levels (e.g. Graduate, Mid, Senior, Director) used when creating playbooks.",
+      "Define seniority levels (e.g. Graduate, Mid, Senior, Director) used when creating hiring plans.",
   },
   {
     icon: <Sparkle size={16} weight="duotone" />,
@@ -105,6 +105,6 @@ export const LEVELS_GUIDE_ITEMS: GuideItem[] = [
     icon: <Sparkle size={16} weight="duotone" />,
     title: "Deactivate",
     description:
-      "Toggle a level inactive to hide it from new playbooks without losing historical data.",
+      "Toggle a level inactive to hide it from new hiring plans without losing historical data.",
   },
 ];

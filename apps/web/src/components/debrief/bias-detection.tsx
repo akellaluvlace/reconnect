@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Json } from "@reconnect/database";
 import {
   WarningCircle,
   Info,
   CheckCircle,
   Scales,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
-import { handleSessionExpired } from "@/lib/fetch-utils";
 import { cn } from "@/lib/utils";
 import { AIDisclaimer } from "@/components/ai/ai-disclaimer";
 import {
@@ -17,6 +14,8 @@ import {
   type BiasFlag,
   type FeedbackForAnalysis,
 } from "@/lib/debrief/bias-analysis";
+import { parseRatings } from "@/lib/debrief/feedback-parsers";
+import { loadFeedbackForInterviews } from "@/lib/debrief/feedback-loader";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -31,36 +30,6 @@ interface BiasDetectionProps {
     status: string | null;
   }>;
   stages: Array<{ id: string; name: string }>;
-}
-
-interface FeedbackEntry {
-  id: string;
-  interview_id: string | null;
-  interviewer_id: string | null;
-  ratings: Json;
-  pros: Json | null;
-  cons: Json | null;
-  notes: string | null;
-  focus_areas_confirmed: boolean;
-  submitted_at: string | null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function parseRatings(
-  ratingsJson: Json,
-): Array<{ category: string; score: number }> {
-  if (!Array.isArray(ratingsJson)) return [];
-  return ratingsJson.filter(
-    (r): r is { category: string; score: number } =>
-      typeof r === "object" &&
-      r !== null &&
-      "category" in r &&
-      "score" in r &&
-      typeof (r as Record<string, unknown>).score === "number",
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -82,75 +51,35 @@ export function BiasDetection({
 
     async function loadAndAnalyze() {
       setIsLoading(true);
-      const allFeedback: FeedbackForAnalysis[] = [];
 
       try {
-        const validInterviews = interviews.filter(
-          (i) => i.candidate_id && i.stage_id,
-        );
+        const { results, cancelled: sessionExpired } =
+          await loadFeedbackForInterviews(interviews);
+        if (sessionExpired) { cancelled = true; return; }
 
-        const results = await Promise.allSettled(
-          validInterviews.map(async (interview) => {
-            const res = await fetch(
-              `/api/feedback?interview_id=${interview.id}`,
-            );
-            if (handleSessionExpired(res)) {
-              cancelled = true;
-              throw new Error("session_expired");
-            }
-            if (!res.ok) {
-              throw new Error(`${res.status} ${res.statusText}`);
-            }
-            return { json: await res.json() };
-          }),
-        );
-
-        let failedCount = 0;
-        for (const result of results) {
-          if (result.status === "rejected") {
-            if (result.reason?.message !== "session_expired") {
-              failedCount++;
-            }
-            continue;
-          }
-
-          const { data } = result.value.json;
-          if (!Array.isArray(data)) continue;
-
-          for (const entry of data as FeedbackEntry[]) {
+        const allFeedback: FeedbackForAnalysis[] = [];
+        for (const { data } of results) {
+          for (const entry of data) {
             if (!entry.interviewer_id) continue;
-
             const ratings = parseRatings(entry.ratings);
             if (ratings.length === 0) continue;
-
-            allFeedback.push({
-              interviewer_id: entry.interviewer_id,
-              ratings,
-            });
+            allFeedback.push({ interviewer_id: entry.interviewer_id, ratings });
           }
         }
 
         if (!cancelled) {
-          if (failedCount > 0) {
-            toast.warning(
-              `Some feedback could not be loaded (${failedCount} interview${failedCount > 1 ? "s" : ""} failed). Data may be incomplete.`,
-            );
-          }
           setHasFeedback(allFeedback.length > 0);
           setFlags(analyzeBias(allFeedback));
         }
       } catch (err) {
         console.error("[bias-detection] Load failed:", err);
-        if (!cancelled) toast.error("Failed to load bias analysis data");
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     }
 
     loadAndAnalyze();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [interviews]);
 
   /* ---- Loading state ---- */

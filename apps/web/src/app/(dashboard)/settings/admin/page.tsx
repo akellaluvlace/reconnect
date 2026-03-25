@@ -39,7 +39,7 @@ const CMS_SECTIONS = [
   },
   {
     name: "Industries",
-    description: "Industry categories for playbooks",
+    description: "Industry categories for hiring plans",
     href: "/settings/admin/industries",
     icon: Factory,
   },
@@ -142,7 +142,7 @@ export default function AdminPage() {
     <div className="space-y-6">
       <PageHeader
         title="Admin CMS"
-        description="Manage content that powers playbook wizards, AI generation, and interview processes across your organisation."
+        description="Manage content that powers hiring plan wizards, AI generation, and interview processes across your organisation."
       />
 
       {/* Seed banner — shown when tables might be empty */}

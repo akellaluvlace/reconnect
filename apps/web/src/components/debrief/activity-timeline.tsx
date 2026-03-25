@@ -67,7 +67,7 @@ export function ActivityTimeline({
   if (playbookCreatedAt) {
     events.push({
       date: playbookCreatedAt,
-      label: "Playbook created",
+      label: "Hiring plan created",
       type: "milestone",
     });
   }

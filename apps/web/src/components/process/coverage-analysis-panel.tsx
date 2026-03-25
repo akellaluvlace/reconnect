@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import type { CoverageAnalysis, JobDescription } from "@reconnect/database";
 import { useAIGenerationStore, IDLE_OP } from "@/stores/ai-generation-store";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   ShieldCheck,
   Warning,
@@ -13,7 +12,6 @@ import {
   CheckCircle,
   Sparkle,
   Question,
-  ChartBar,
   WarningCircle,
   Lightbulb,
 } from "@phosphor-icons/react";
@@ -187,12 +185,12 @@ export function CoverageAnalysisPanel({
         {showGuide && (
           <div className="mt-3 rounded-xl border border-border/30 bg-muted/20 px-6 py-5 space-y-4 text-[13px] text-foreground/80 leading-relaxed animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-start gap-3">
-              <ChartBar size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
-              <p><span className="font-semibold text-foreground">Coverage Score</span> — Shows how well your interview stages cover the job requirements. Higher is better.</p>
+              <CheckCircle size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
+              <p><span className="font-semibold text-foreground">Requirements Covered</span> — Shows which job requirements your interview stages assess and how directly.</p>
             </div>
             <div className="flex items-start gap-3">
               <WarningCircle size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
-              <p><span className="font-semibold text-foreground">Gap Analysis</span> — Identifies requirements not adequately covered by any stage.</p>
+              <p><span className="font-semibold text-foreground">Suggestions</span> — Areas where you might want to add or adjust stages to strengthen your process.</p>
             </div>
             <div className="flex items-start gap-3">
               <Lightbulb size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
@@ -248,18 +246,19 @@ export function CoverageAnalysisPanel({
         </Button>
       </div>
 
-      {/* Overall Score */}
+      {/* Summary */}
       <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-medium text-muted-foreground">Overall Coverage</span>
-          <span className="text-[28px] font-bold tabular-nums tracking-tight">
-            {analysis.overall_coverage_score}%
-          </span>
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck size={18} weight="duotone" className="text-teal-600 shrink-0" />
+          <h3 className="text-[15px] font-semibold tracking-tight">Process Review</h3>
         </div>
-        <Progress
-          value={analysis.overall_coverage_score}
-          className="mt-3 h-2.5"
-        />
+        <p className="text-[13px] leading-relaxed text-muted-foreground">
+          {analysis.requirements_covered.length > 0 && analysis.gaps.length === 0
+            ? `Your interview stages cover all ${analysis.requirements_covered.length} requirements from the job description.`
+            : analysis.requirements_covered.length > 0 && analysis.gaps.length > 0
+              ? `Your stages cover ${analysis.requirements_covered.length} of ${analysis.requirements_covered.length + analysis.gaps.length} requirements well. See below for suggestions on the remaining areas.`
+              : "Review the suggestions below to strengthen your interview process."}
+        </p>
       </div>
 
       {/* Requirements Covered */}
@@ -300,9 +299,9 @@ export function CoverageAnalysisPanel({
       {analysis.gaps.length > 0 && (
         <div className="rounded-xl border border-border/40 bg-card p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Warning size={16} weight="duotone" className="text-amber-600" />
+            <Lightbulb size={16} weight="duotone" className="text-amber-600" />
             <h3 className="text-[15px] font-semibold tracking-tight">
-              Gaps ({analysis.gaps.length})
+              Suggestions ({analysis.gaps.length})
             </h3>
           </div>
           <div className="space-y-3">

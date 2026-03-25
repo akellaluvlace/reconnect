@@ -1,23 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Json } from "@reconnect/database";
 import type { InterviewData, StageInfo } from "./types";
 import { FeedbackForm } from "./feedback-form";
 import { ClipboardText, Clock } from "@phosphor-icons/react";
 import { toast } from "sonner";
-
-interface FeedbackEntry {
-  id: string;
-  interview_id: string | null;
-  interviewer_id: string | null;
-  ratings: Json;
-  pros: Json | null;
-  cons: Json | null;
-  notes: string | null;
-  focus_areas_confirmed: boolean;
-  submitted_at: string | null;
-}
+import {
+  parseRatings,
+  parseStringArray,
+  type FeedbackEntry,
+} from "@/lib/debrief/feedback-parsers";
+import { loadFeedbackForInterviews } from "@/lib/debrief/feedback-loader";
 
 interface FeedbackListProps {
   candidateId: string;
@@ -46,32 +39,13 @@ export function FeedbackList({
     async function loadFeedback() {
       setIsLoading(true);
       try {
-        const results = await Promise.allSettled(
-          interviews.map((interview) =>
-            fetch(`/api/feedback?interview_id=${interview.id}`)
-              .then(async (res) => {
-                if (!res.ok) throw new Error(`${res.status}`);
-                const { data } = await res.json();
-                return { interviewId: interview.id, data: Array.isArray(data) ? data : [] };
-              })
-          )
-        );
-
+        const { results } = await loadFeedbackForInterviews(interviews, {
+          filterValid: false,
+        });
         const allFeedback: FeedbackEntry[] = [];
-        const failedIds: string[] = [];
-
-        for (const [i, result] of results.entries()) {
-          if (result.status === "fulfilled") {
-            allFeedback.push(...result.value.data);
-          } else {
-            failedIds.push(interviews[i].id);
-          }
+        for (const { data } of results) {
+          allFeedback.push(...data);
         }
-
-        if (failedIds.length > 0) {
-          toast.error(`Failed to load feedback for ${failedIds.length} interview(s)`);
-        }
-
         setFeedback(allFeedback);
       } catch (err) {
         console.error("[feedback-list] Load failed:", err);
@@ -98,24 +72,6 @@ export function FeedbackList({
     return stages.find((s) => s.id === interview.stage_id)?.name ?? "Unknown";
   }
 
-  function parseRatings(
-    ratingsJson: Json,
-  ): Array<{ category: string; score: number }> {
-    if (!Array.isArray(ratingsJson)) return [];
-    return ratingsJson.filter(
-      (r): r is { category: string; score: number } =>
-        typeof r === "object" &&
-        r !== null &&
-        "category" in r &&
-        "score" in r,
-    );
-  }
-
-  function parseStringArray(json: Json | null): string[] {
-    if (!Array.isArray(json)) return [];
-    return json.filter((item): item is string => typeof item === "string");
-  }
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
@@ -136,22 +92,12 @@ export function FeedbackList({
     if (interviews.length === 0) return;
     (async () => {
       try {
-        const results = await Promise.allSettled(
-          interviews.map((interview) =>
-            fetch(`/api/feedback?interview_id=${interview.id}`)
-              .then(async (res) => {
-                if (!res.ok) throw new Error(`${res.status}`);
-                const { data } = await res.json();
-                return Array.isArray(data) ? data as FeedbackEntry[] : [];
-              })
-          )
-        );
-
+        const { results } = await loadFeedbackForInterviews(interviews, {
+          filterValid: false,
+        });
         const allFeedback: FeedbackEntry[] = [];
-        for (const result of results) {
-          if (result.status === "fulfilled") {
-            allFeedback.push(...result.value);
-          }
+        for (const { data } of results) {
+          allFeedback.push(...data);
         }
         setFeedback(allFeedback);
       } catch (err) {

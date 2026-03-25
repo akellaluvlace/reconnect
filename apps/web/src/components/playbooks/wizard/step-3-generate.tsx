@@ -78,7 +78,7 @@ export function Step3Generate() {
         marketInsights: insightsData.data,
       });
 
-      setStatusMessage("Saving playbook...");
+      setStatusMessage("Saving hiring plan...");
 
       const saveResponse = await fetch("/api/playbooks", {
         method: "POST",
@@ -98,14 +98,14 @@ export function Step3Generate() {
       if (!saveResponse.ok) {
         const saveError = await saveResponse.json().catch(() => ({}));
         throw new Error(
-          saveError.error || `Failed to save playbook (${saveResponse.status})`,
+          saveError.error || `Failed to save hiring plan (${saveResponse.status})`,
         );
       }
 
       const playbook = await saveResponse.json();
 
       if (!playbook?.id) {
-        throw new Error("Playbook was created but returned no ID.");
+        throw new Error("Hiring plan was created but returned no ID.");
       }
 
       // Trigger deep research in background (fire-and-forget with failure flag)

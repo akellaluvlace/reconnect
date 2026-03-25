@@ -70,7 +70,7 @@ const TEMPLATE_TYPE_LABELS: Record<string, string> = {
 const TEMPLATE_TYPE_DESCRIPTIONS: Record<string, string> = {
   prep: "Sent to interviewers before an interview with focus areas and questions",
   reminder: "Sent to interviewers who haven't submitted feedback yet",
-  invite: "Sent to collaborators when they are invited to a playbook",
+  invite: "Sent to collaborators when they are invited to a hiring plan",
   feedback_submitted: "Sent to the manager when a collaborator submits interview feedback",
   all_feedback_collected: "Sent to the manager when all collaborators have submitted feedback for an interview",
   synthesis_ready: "Sent to the manager when AI synthesis is complete for a candidate",
@@ -80,10 +80,10 @@ const TEMPLATE_TYPE_DESCRIPTIONS: Record<string, string> = {
 
 const VARIABLES = [
   { key: "candidate_name", description: "Candidate's first name", example: "Jane" },
-  { key: "role_title", description: "Playbook/role title", example: "Software Engineer" },
+  { key: "role_title", description: "Hiring plan/role title", example: "Software Engineer" },
   { key: "stage_name", description: "Interview stage name", example: "Technical Interview" },
   { key: "interviewer_name", description: "Interviewer's name", example: "Alice" },
-  { key: "playbook_link", description: "Link to the playbook", example: "https://app.axil.ie/playbooks/..." },
+  { key: "playbook_link", description: "Link to the hiring plan", example: "https://app.axil.ie/playbooks/..." },
 ] as const;
 
 const SAMPLE_DATA: Record<string, string> = Object.fromEntries(
@@ -549,7 +549,7 @@ export function EmailTemplateEditor() {
                 onChange={(e) =>
                   setForm((prev) => ({ ...prev, body_html: e.target.value }))
                 }
-                placeholder={"Hi {{interviewer_name}},\n\nYou have an upcoming {{stage_name}} for the {{role_title}} role with {{candidate_name}}.\n\nView the playbook: {{playbook_link}}"}
+                placeholder={"Hi {{interviewer_name}},\n\nYou have an upcoming {{stage_name}} for the {{role_title}} role with {{candidate_name}}.\n\nView the hiring plan: {{playbook_link}}"}
                 rows={7}
                 className="mt-1.5 font-mono text-[13px]"
               />

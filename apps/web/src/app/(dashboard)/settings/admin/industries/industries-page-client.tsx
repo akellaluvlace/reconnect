@@ -28,7 +28,7 @@ export function IndustriesPageClient() {
         columns={COLUMNS}
         addLabel="Add Industry"
         guideItems={INDUSTRIES_GUIDE_ITEMS}
-        guideTip="Industries you define here will appear in playbook creation dropdowns."
+        guideTip="Industries you define here will appear in hiring plan creation dropdowns."
         noun="industries"
       />
     </div>

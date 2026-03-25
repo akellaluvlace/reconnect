@@ -7,14 +7,16 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 
 ## Current State
 
-**Step:** 10.2 + 10.2b + Recall.ai + 10.3/10.4 partial DONE. All committed (not pushed).
-**Status:** Steps 1-9 complete + hardened. 10.1 DONE. 10.2 tested + hardened. 10.2b DONE. Recall.ai integration BUILT + HARDENED (16 fixes). 10.3 production build verified + client console.log cleanup. 10.4 security audit partial (XSS, EU AI Act, share link scope all clean). 32 migrations total. 753 tests green. Typecheck clean.
-**Next task:** Deploy 3 pending migrations (#30 recording pipeline, #31 notifications, #32 recall_bot_id). Robert's remaining feedback items (awaiting decisions). Push when ready to go live. Then 10.5-10.8.
-**Blockers:** Recall.ai API key from Robert (signup instructions sent 2026-03-17). OpenAI project key needs top-up for Whisper. Robert's decisions pending on 4 feedback items.
+**Step:** 10.3 IN PROGRESS. All prior steps committed (not pushed).
+**Status:** Steps 1-9 complete + hardened. 10.1 DONE. 10.2 tested + hardened. 10.2b DONE. Recall.ai integration BUILT + HARDENED (16 fixes). 10.3 partial: production build verified, console.log cleanup, dead code removal, debrief feedback-loader + rating-helpers extracted (2026-03-24). 10.4 security audit done (2026-03-20). 32 migrations total. 753 tests green. Typecheck clean.
+**Next task:** Finish 10.3 (bundle analysis, code splitting, cross-browser). Deploy 3 pending migrations. Add Recall env vars to Vercel. Then 10.5-10.8.
+**Blockers:** OpenAI credits (asked Robert, no reply yet). Add Recall env vars to Vercel before deploy.
+**Cleared blockers:** `RECALL_WEBHOOK_SECRET` received + verified (2026-03-24). `RECALL_API_KEY` verified. All 4 Robert decisions resolved + implemented (2026-03-24).
+**Implemented (2026-03-24):** Rename "Playbook" → "Hiring Plan" (30+ strings, 18 files). Coverage reframed (no percentage, advice-based). Bulk invite dialog (paste emails, parallel sends, dedup). Dead code cleanup (feedback-loader, rating-helpers, stripAIMetadata).
 **Pending migrations (3):** `20260310000001_recording_pipeline_columns.sql`, `20260317000001_notification_reminder_columns.sql`, `20260318000001_recall_bot_id.sql`. Everything before these is deployed.
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked.
 
-**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → ~~10.2 (recording + feedback + consent)~~ → ~~10.2b (notifications)~~ → ~~Recall.ai integration~~ → **Robert's feedback items** → 10.3-10.8
+**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → ~~10.2 (recording + feedback + consent)~~ → ~~10.2b (notifications)~~ → ~~Recall.ai integration~~ → **10.3 (in progress)** → Robert's feedback items → 10.4-10.8
 
 **Manual testing results (2026-03-17):**
 - Interview scheduling via UI → Google Calendar + Meet link: WORKING
@@ -291,9 +293,9 @@ Before ending a session, ALWAYS do these:
 
 ## Recent Sessions
 
+- **2026-03-24:** All 4 Robert feedback items resolved + implemented. Rename "Playbook" → "Hiring Plan" (30+ strings, 18 files). Coverage analysis reframed (percentage removed, advice-based summary + "Suggestions"). Bulk invite dialog (paste emails, parallel sends, dedup). 10.3 cleanup: dead code, shared feedback-loader + rating-helpers. Recall.ai keys verified. 753 tests green.
+- **2026-03-20:** Device migration + deep review. New machine setup (deps, env, memory, settings, docs/plans). 5-agent deep dive: API audit, type drift, dead code, security, UI/UX. 7 fixes: timing-safe cron in google/health, req.json crash protection (2 routes), RatingEntry strict 1-4 type, shared feedback-parsers.ts (deduplicated from 3 components), Playwright timeout bump. Production build clean. 753 tests green.
 - **2026-03-18:** Recall.ai integration built + hardened (16 fixes from 3 review agents). 10.3/10.4: production build verified, 7 client console.logs removed, security audit (no XSS, EU AI Act compliant, share links clean), empty states audit (9/10 pages covered). 3 commits (not pushed). 753 tests green.
 - **2026-03-17:** Manual testing + hardening of 10.2. Full pipeline verified end-to-end (schedule→Meet→record→transcript→feedback→AI synthesis). Recording architecture limitation found + researched (Recall.ai recommended). Code review (3 agents, 21 findings) + hardening (12 fixes). Built: Add Candidate UI+API, admin feedback form, synthesis persistence+reload, sequential chapter gating, competitor 70% cutoff, Discovery confirm+continue banner, wizard review step, platform nav fix, hydration fix, Drive search fallback, OAuth scope upgrades.
 - **2026-03-11:** 10.2 code review (3 agents, 19 findings) + security hardening (4 fixes: timing-safe cron auth, IDOR protection, error log sanitization). 58 new tests. 731 green.
-- **2026-03-10:** Step 10.2 recording pipeline (13 tasks). Migration #30. Scheduling API. 3-phase cron. Collaborator feedback. Manual upload + Whisper. Pipeline tracer. 670 green.
-- **2026-03-09:** CMS email integration fixes. Collaborator prep page. Multi-tenant fix. Questionnaire audit: 6 missing features added to Step 10 plan.
 > Keep max 5 entries. Remove oldest when adding new.

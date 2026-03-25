@@ -46,8 +46,8 @@ export default async function DashboardPage() {
         </h1>
         <p className="mt-1 text-[15px] text-muted-foreground">
           {playbooks.length === 0
-            ? "Create your first playbook to get started."
-            : `You have ${activePlaybooks} active ${activePlaybooks === 1 ? "playbook" : "playbooks"} and ${candidateCount} ${candidateCount === 1 ? "candidate" : "candidates"} in your pipeline.`}
+            ? "Create your first hiring plan to get started."
+            : `You have ${activePlaybooks} active ${activePlaybooks === 1 ? "hiring plan" : "hiring plans"} and ${candidateCount} ${candidateCount === 1 ? "candidate" : "candidates"} in your pipeline.`}
         </p>
       </div>
 
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
       <div className="card-surface flex items-center gap-8 px-6 py-4">
         <StatItem
           icon={<BookOpenText size={18} weight="duotone" />}
-          label="Playbooks"
+          label="Hiring Plans"
           value={playbooks.length}
           href="/playbooks"
         />
@@ -77,17 +77,17 @@ export default async function DashboardPage() {
           <Button asChild size="sm">
             <Link href="/playbooks/new">
               <Plus size={14} weight="bold" className="mr-1.5" />
-              New Playbook
+              New Hiring Plan
             </Link>
           </Button>
         </div>
       </div>
 
-      {/* Active playbooks */}
+      {/* Active hiring plans */}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-[15px] font-semibold text-foreground">
-            Recent Playbooks
+            Recent Hiring Plans
           </h2>
           {playbooks.length > 0 && (
             <Link
@@ -105,15 +105,15 @@ export default async function DashboardPage() {
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50">
               <Sparkle size={24} weight="duotone" className="text-teal-500" />
             </div>
-            <h3 className="text-[15px] font-semibold">No playbooks yet</h3>
+            <h3 className="text-[15px] font-semibold">No hiring plans yet</h3>
             <p className="mt-1 max-w-sm text-center text-[13px] text-muted-foreground">
-              Create your first recruitment playbook. Our AI will help you build
+              Create your first hiring plan. Our AI will help you build
               a complete hiring strategy.
             </p>
             <Button asChild className="mt-4" size="sm">
               <Link href="/playbooks/new">
                 <Plus size={14} weight="bold" className="mr-1.5" />
-                Create Playbook
+                Create Hiring Plan
               </Link>
             </Button>
           </div>

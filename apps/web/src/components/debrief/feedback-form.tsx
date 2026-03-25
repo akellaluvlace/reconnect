@@ -14,7 +14,7 @@ import { handleSessionExpired } from "@/lib/fetch-utils";
 
 interface RatingEntry {
   category: string;
-  score: number;
+  score: 1 | 2 | 3 | 4;
 }
 
 interface FeedbackFormProps {
@@ -48,7 +48,7 @@ export function FeedbackForm({
   const [focusAreasConfirmed, setFocusAreasConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function updateRating(index: number, score: number) {
+  function updateRating(index: number, score: 1 | 2 | 3 | 4) {
     setRatings((prev) =>
       prev.map((r, i) => (i === index ? { ...r, score } : r)),
     );
@@ -139,7 +139,7 @@ export function FeedbackForm({
             <div key={i} className="space-y-1">
               <p className="text-sm">{rating.category}</p>
               <div className="flex items-center gap-1">
-                {[1, 2, 3, 4].map((score) => (
+                {([1, 2, 3, 4] as const).map((score) => (
                   <Button
                     key={score}
                     variant={rating.score === score ? "default" : "outline"}

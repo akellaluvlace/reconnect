@@ -43,8 +43,8 @@ function confidenceLabel(val: number): string {
   return "low";
 }
 
-/** Strip metadata + disclaimer from end of text (backwards-compatible) */
-export function stripAIMetadata(text: string): string {
+/** Strip metadata + disclaimer from end of text */
+function stripAIMetadata(text: string): string {
   const cleaned = text
     .replace(METADATA_PATTERN, "")
     .replace(DISCLAIMER_TAIL_PATTERN, "")

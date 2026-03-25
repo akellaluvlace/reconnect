@@ -29,14 +29,14 @@ export function SkillsPageClient() {
     <div className="space-y-6">
       <PageHeader
         title="Skills"
-        description="Manage your organisation's skills taxonomy. Skills appear in playbook wizards and AI-generated strategies."
+        description="Manage your organisation's skills taxonomy. Skills appear in hiring plan wizards and AI-generated strategies."
       />
       <CmsSimpleList
         tableName="skills"
         columns={COLUMNS}
         addLabel="Add Skill"
         guideItems={SKILLS_GUIDE_ITEMS}
-        guideTip="Skills you add here will be available across all playbooks in your organisation."
+        guideTip="Skills you add here will be available across all hiring plans in your organisation."
         noun="skills"
       />
     </div>

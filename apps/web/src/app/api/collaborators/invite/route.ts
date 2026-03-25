@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       await sendCollaboratorInvite({
         to: parsed.data.email,
         inviterName: user.email ?? "A team member",
-        playbookTitle: playbook?.title ?? "Hiring Playbook",
+        playbookTitle: playbook?.title ?? "Hiring Plan",
         magicLink,
       });
     } catch (emailErr) {

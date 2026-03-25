@@ -16,7 +16,7 @@ export function StatsCards({
   const cards = [
     { label: "Organisations", count: totalOrgs, icon: Buildings },
     { label: "Users", count: totalUsers, icon: Users },
-    { label: "Playbooks", count: totalPlaybooks, icon: Briefcase },
+    { label: "Hiring Plans", count: totalPlaybooks, icon: Briefcase },
   ];
 
   return (

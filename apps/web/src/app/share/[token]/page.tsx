@@ -65,7 +65,7 @@ export default async function SharePage({
         <CardHeader>
           <div className="flex items-center gap-2">
             <ArrowSquareOut size={20} weight="duotone" className="text-muted-foreground" />
-            <CardTitle>Shared Playbook</CardTitle>
+            <CardTitle>Shared Hiring Plan</CardTitle>
           </div>
           {playbook && (
             <p className="text-sm text-muted-foreground">

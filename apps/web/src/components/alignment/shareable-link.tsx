@@ -124,7 +124,7 @@ export function ShareableLink({
           <LinkSimple size={20} weight="duotone" className="text-muted-foreground/40" />
           <p className="mt-2 text-[14px] text-muted-foreground">
             No share links created yet. Generate a link to share limited
-            playbook information with external collaborators.
+            hiring plan information with external collaborators.
           </p>
         </div>
       ) : (
@@ -237,7 +237,7 @@ export function ShareableLink({
 
                         <div className="pt-2 border-t border-border/20 text-[12px] text-muted-foreground space-y-1">
                           <p className="font-medium text-foreground">Not visible to recipient:</p>
-                          <p>Other feedback, salary data, CV, AI synthesis, full playbook, or scores</p>
+                          <p>Other feedback, salary data, CV, AI synthesis, full hiring plan, or scores</p>
                         </div>
                       </div>
                     </div>

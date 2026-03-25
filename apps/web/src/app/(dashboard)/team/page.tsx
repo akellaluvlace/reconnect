@@ -14,7 +14,7 @@ export default function TeamPage() {
       <EmptyState
         icon={<UserPlus size={24} weight="duotone" className="text-teal-500" />}
         title="No team members yet"
-        description="Invite colleagues to collaborate on recruitment playbooks."
+        description="Invite colleagues to collaborate on hiring plans."
       />
     </div>
   );

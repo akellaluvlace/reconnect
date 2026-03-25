@@ -17,7 +17,7 @@ import {
 
 const navItems = [
   { name: "Dashboard", href: "/", enabled: true },
-  { name: "Playbooks", href: "/playbooks", enabled: true },
+  { name: "Hiring Plans", href: "/playbooks", enabled: true },
   { name: "Candidates", href: "/candidates", enabled: false },
   { name: "Team", href: "/team", enabled: false },
 ];

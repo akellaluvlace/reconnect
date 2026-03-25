@@ -7,12 +7,12 @@ export default function CandidatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Candidates"
-        description="View all candidates across playbooks"
+        description="View all candidates across hiring plans"
       />
       <EmptyState
         icon={<UsersThree size={24} weight="duotone" className="text-teal-500" />}
         title="No candidates yet"
-        description="Candidates will appear here once you add them to a playbook."
+        description="Candidates will appear here once you add them to a hiring plan."
       />
     </div>
   );

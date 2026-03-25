@@ -365,7 +365,7 @@ export function DebriefPageClient({
             </div>
             <div className="flex items-start gap-3">
               <Clock size={16} weight="duotone" className="mt-0.5 shrink-0 text-teal-600" />
-              <p><span className="font-semibold text-foreground">Timeline</span> — Activity timeline showing all events for this playbook.</p>
+              <p><span className="font-semibold text-foreground">Timeline</span> — Activity timeline showing all events for this hiring plan.</p>
             </div>
             <p className="text-[12px] text-muted-foreground pt-1 border-t border-border/20">
               <span className="font-medium">Tip:</span> Add a candidate, schedule interviews, collect feedback, then generate AI synthesis for a complete debrief.

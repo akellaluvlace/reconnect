@@ -10,7 +10,7 @@ export function JdTemplatesPageClient() {
     <div className="space-y-6">
       <PageHeader
         title="JD Templates"
-        description="Manage job description templates. Templates provide reusable structures the AI uses when generating job descriptions for new playbooks."
+        description="Manage job description templates. Templates provide reusable structures the AI uses when generating job descriptions for new hiring plans."
       />
       <CmsHowToUse
         items={[
@@ -36,10 +36,10 @@ export function JdTemplatesPageClient() {
             ),
             title: "Deactivate",
             description:
-              "Delete a template to hide it from future playbooks without losing historical data.",
+              "Delete a template to hide it from future hiring plans without losing historical data.",
           },
         ]}
-        tip="Templates are starting points. The AI will adapt content based on the specific role, market context, and strategy for each playbook."
+        tip="Templates are starting points. The AI will adapt content based on the specific role, market context, and strategy for each hiring plan."
       />
       <JdTemplateEditor />
     </div>

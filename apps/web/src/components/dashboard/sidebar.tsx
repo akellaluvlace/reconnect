@@ -20,7 +20,7 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 
 const primaryNav: { name: string; href: string; icon: PhosphorIcon; enabled: boolean }[] = [
   { name: "Dashboard", href: "/", icon: House, enabled: true },
-  { name: "Playbooks", href: "/playbooks", icon: BookOpenText, enabled: true },
+  { name: "Hiring Plans", href: "/playbooks", icon: BookOpenText, enabled: true },
   { name: "Candidates", href: "/candidates", icon: UsersThree, enabled: false },
   { name: "Team", href: "/team", icon: UserPlus, enabled: false },
 ];
