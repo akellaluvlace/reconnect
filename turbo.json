@@ -12,7 +12,15 @@
         "ANTHROPIC_API_KEY",
         "TAVILY_API_KEY",
         "OPENAI_API_KEY",
-        "RESEND_API_KEY"
+        "RESEND_API_KEY",
+        "RESEND_FROM_EMAIL",
+        "PLATFORM_ADMIN_EMAILS",
+        "GOOGLE_RECORDING_CLIENT_ID",
+        "GOOGLE_RECORDING_CLIENT_SECRET",
+        "GOOGLE_RECORDING_REDIRECT_URI",
+        "CRON_SECRET",
+        "RECALL_API_KEY",
+        "RECALL_WEBHOOK_SECRET"
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
