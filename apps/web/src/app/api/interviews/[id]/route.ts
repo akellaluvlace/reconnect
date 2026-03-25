@@ -236,7 +236,7 @@ export async function DELETE(
     const serviceClient = createServiceRoleClient();
     const { data: interview } = await serviceClient
       .from("interviews")
-      .select("id, calendar_event_id, recall_bot_id")
+      .select("id, status, calendar_event_id, recall_bot_id")
       .eq("id", id)
       .single();
 
@@ -247,7 +247,15 @@ export async function DELETE(
       );
     }
 
-    // Cancel Recall.ai bot
+    // Only allow deleting scheduled or cancelled interviews
+    if (!["scheduled", "cancelled"].includes(interview.status ?? "")) {
+      return NextResponse.json(
+        { error: "Can only delete scheduled or cancelled interviews" },
+        { status: 400 },
+      );
+    }
+
+    // Cancel Recall.ai bot (if still scheduled)
     if (interview.recall_bot_id && isRecallConfigured()) {
       try {
         await cancelBot(interview.recall_bot_id);
@@ -259,43 +267,38 @@ export async function DELETE(
       }
     }
 
-    // Delete Calendar event
-    if (interview.calendar_event_id) {
+    // Delete Calendar event (if not already cancelled)
+    if (interview.calendar_event_id && interview.status === "scheduled") {
       const { data: config } = await serviceClient
         .from("platform_google_config")
         .select("interview_calendar_id")
         .limit(1)
         .single();
       const calId = config?.interview_calendar_id;
-      if (!calId) {
-        console.error("[interviews/DELETE] No interview_calendar_id configured");
-        return NextResponse.json(
-          { error: "Google Calendar integration not configured" },
-          { status: 503 },
-        );
+      if (calId) {
+        try {
+          await deleteCalendarEvent(calId, interview.calendar_event_id);
+        } catch (calErr) {
+          console.warn("[interviews/DELETE] Calendar delete failed (may already be deleted):", calErr);
+        }
       }
-      await deleteCalendarEvent(calId, interview.calendar_event_id);
     }
 
-    // Mark cancelled (don't hard delete — preserve audit trail)
-    const { error: cancelError } = await serviceClient
+    // Hard delete the interview
+    const { error: deleteError } = await serviceClient
       .from("interviews")
-      .update({ status: "cancelled" })
+      .delete()
       .eq("id", id);
 
-    if (cancelError) {
-      console.error("[interviews/DELETE] cancel update error:", cancelError);
+    if (deleteError) {
+      console.error("[interviews/DELETE] delete error:", deleteError);
       return NextResponse.json(
-        { error: "Calendar event deleted but failed to update interview status" },
+        { error: "Failed to delete interview" },
         { status: 500 },
       );
     }
 
-    await tracePipeline(id, {
-      from: interview.calendar_event_id ? "scheduled" : null,
-      to: "cancelled",
-      detail: "Interview cancelled by manager",
-    });
+    console.log(`[interviews/DELETE] interviewId=${id} hard-deleted`);
 
     return NextResponse.json({ success: true });
   } catch (err) {

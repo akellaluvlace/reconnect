@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   VideoCamera,
   ShieldCheck,
-  ProhibitInset,
   ArrowClockwise,
   UploadSimple,
   Trash,
@@ -55,10 +54,6 @@ export function InterviewCard({
   const statusInfo =
     STATUS_STYLES[interview.status ?? ""] ?? STATUS_STYLES.scheduled;
 
-  const canMarkNoConsent =
-    isManagerOrAdmin &&
-    ["scheduled", "pending"].includes(interview.recording_status ?? "");
-
   const canRetry =
     isManagerOrAdmin &&
     ["failed_transcription", "failed_download"].includes(
@@ -72,31 +67,12 @@ export function InterviewCard({
       interview.recording_status ?? "",
     );
 
-  const canCancel =
-    isManagerOrAdmin && interview.status === "scheduled";
+  const canDelete =
+    isManagerOrAdmin &&
+    ["scheduled", "cancelled"].includes(interview.status ?? "");
 
-  async function handleNoConsent() {
-    try {
-      const res = await fetch(
-        `/api/interviews/${interview.id}/no-consent`,
-        { method: "POST" },
-      );
-      if (handleSessionExpired(res)) return;
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed");
-      }
-      toast.success("Marked as no-consent");
-      router.refresh();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed",
-      );
-    }
-  }
-
-  async function handleCancel() {
-    if (!window.confirm("Cancel this interview? The calendar event will be removed and attendees will be notified.")) return;
+  async function handleDelete() {
+    if (!window.confirm("Delete this interview? The calendar event will be removed and attendees will be notified.")) return;
     try {
       const res = await fetch(`/api/interviews/${interview.id}`, {
         method: "DELETE",
@@ -106,7 +82,7 @@ export function InterviewCard({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Failed");
       }
-      toast.success("Interview cancelled");
+      toast.success("Interview deleted");
       router.refresh();
     } catch (err) {
       toast.error(
@@ -187,17 +163,6 @@ export function InterviewCard({
       {/* Action buttons */}
       {isManagerOrAdmin && (
         <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-          {canMarkNoConsent && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-[11px]"
-              onClick={handleNoConsent}
-            >
-              <ProhibitInset size={12} className="mr-1" />
-              No Consent
-            </Button>
-          )}
           {canRetry && (
             <Button
               variant="outline"
@@ -224,15 +189,15 @@ export function InterviewCard({
               Upload Recording
             </Button>
           )}
-          {canCancel && (
+          {canDelete && (
             <Button
               variant="outline"
               size="sm"
               className="h-7 text-[11px] text-red-600 hover:text-red-700"
-              onClick={handleCancel}
+              onClick={handleDelete}
             >
               <Trash size={12} className="mr-1" />
-              Cancel
+              Delete
             </Button>
           )}
         </div>

@@ -10,6 +10,11 @@ import { sanitizeErrorBody } from "@/lib/google/utils";
 const RECALL_REGION = "eu-central-1";
 const RECALL_BASE = `https://${RECALL_REGION}.recall.ai/api/v1`;
 const RECALL_DOMAIN = `${RECALL_REGION}.recall.ai`;
+/** Allowed domains for transcript download URLs (Recall.ai direct + pre-signed S3) */
+const ALLOWED_DOWNLOAD_DOMAINS = [
+  `${RECALL_REGION}.recall.ai`,
+  `${RECALL_REGION}-recallai-production-bot-data.s3.amazonaws.com`,
+];
 
 /** Timeout for scheduling/cancel calls (in user request path) */
 const API_TIMEOUT_MS = 10_000;
@@ -151,6 +156,7 @@ export async function getBot(botId: string): Promise<{
   id: string;
   metadata: Record<string, string>;
   transcriptDownloadUrl: string | null;
+  status_changes: Array<{ code: string; created_at: string }>;
 }> {
   const { signal, clear } = withTimeout(DOWNLOAD_TIMEOUT_MS);
   try {
@@ -191,6 +197,7 @@ export async function getBot(botId: string): Promise<{
       id: data.id,
       metadata: data.metadata ?? {},
       transcriptDownloadUrl: downloadUrl,
+      status_changes: data.status_changes ?? [],
     };
   } finally {
     clear();
@@ -205,17 +212,26 @@ export async function getBot(botId: string): Promise<{
 export async function fetchTranscript(
   downloadUrl: string,
 ): Promise<RecallTranscriptEntry[]> {
-  // Validate URL domain before sending API key (#11)
-  if (!downloadUrl.startsWith(`https://${RECALL_DOMAIN}/`)) {
+  // Validate URL domain before fetching (#11)
+  const isAllowedDomain = ALLOWED_DOWNLOAD_DOMAINS.some((d) =>
+    downloadUrl.startsWith(`https://${d}/`),
+  );
+  if (!isAllowedDomain) {
     throw new Error(
       `Unexpected transcript download URL domain: ${downloadUrl.slice(0, 60)}`,
     );
   }
 
+  // Pre-signed S3 URLs have auth in query params — don't send API key header
+  const isPreSignedS3 = downloadUrl.includes(".s3.amazonaws.com/");
+  const headers: Record<string, string> = isPreSignedS3
+    ? {}
+    : { Authorization: `Token ${getApiKey()}` };
+
   const { signal, clear } = withTimeout(DOWNLOAD_TIMEOUT_MS);
   try {
     const res = await fetch(downloadUrl, {
-      headers: { Authorization: `Token ${getApiKey()}` },
+      headers,
       signal,
     });
 

@@ -335,10 +335,9 @@ describe("DELETE /api/interviews/[id]", () => {
     expect(mockServiceFrom).not.toHaveBeenCalled();
   });
 
-  it("cancels interview and deletes Calendar event", async () => {
+  it("deletes scheduled interview and removes Calendar event", async () => {
     setupAdminAuth();
     mockDeleteCalendarEvent.mockResolvedValue(undefined);
-    mockTracePipeline.mockResolvedValue(undefined);
 
     let callCount = 0;
     mockServiceFrom.mockImplementation((table: string) => {
@@ -346,11 +345,11 @@ describe("DELETE /api/interviews/[id]", () => {
         callCount++;
         if (callCount === 1) {
           return chainBuilder({
-            data: { id: VALID_ID, calendar_event_id: "evt_abc" },
+            data: { id: VALID_ID, status: "scheduled", calendar_event_id: "evt_abc", recall_bot_id: null },
             error: null,
           });
         }
-        // update call
+        // delete call
         return chainBuilder({ data: null, error: null });
       }
       if (table === "platform_google_config") {
@@ -370,37 +369,70 @@ describe("DELETE /api/interviews/[id]", () => {
     const body = await res.json();
     expect(body.success).toBe(true);
     expect(mockDeleteCalendarEvent).toHaveBeenCalled();
-    expect(mockTracePipeline).toHaveBeenCalledWith(
-      VALID_ID,
-      expect.objectContaining({ to: "cancelled" }),
-    );
   });
 
-  it("returns 500 when cancellation DB update fails (Calendar already deleted)", async () => {
+  it("deletes cancelled interview without touching Calendar", async () => {
     setupAdminAuth();
-    mockDeleteCalendarEvent.mockResolvedValue(undefined);
 
     let callCount = 0;
     mockServiceFrom.mockImplementation((table: string) => {
       if (table === "interviews") {
         callCount++;
         if (callCount === 1) {
-          // select existing
           return chainBuilder({
-            data: { id: VALID_ID, calendar_event_id: "evt_abc" },
+            data: { id: VALID_ID, status: "cancelled", calendar_event_id: "evt_abc", recall_bot_id: null },
             error: null,
           });
         }
-        // update call — fails
+        // delete call
+        return chainBuilder({ data: null, error: null });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
+
+    const res = await DELETE(makeDelete(VALID_ID), {
+      params: Promise.resolve({ id: VALID_ID }),
+    });
+    expect(res.status).toBe(200);
+    expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when trying to delete completed interview", async () => {
+    setupAdminAuth();
+
+    mockServiceFrom.mockImplementation((table: string) => {
+      if (table === "interviews") {
+        return chainBuilder({
+          data: { id: VALID_ID, status: "completed", calendar_event_id: null, recall_bot_id: null },
+          error: null,
+        });
+      }
+      return chainBuilder({ data: null, error: null });
+    });
+
+    const res = await DELETE(makeDelete(VALID_ID), {
+      params: Promise.resolve({ id: VALID_ID }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 500 when hard delete fails", async () => {
+    setupAdminAuth();
+
+    let callCount = 0;
+    mockServiceFrom.mockImplementation((table: string) => {
+      if (table === "interviews") {
+        callCount++;
+        if (callCount === 1) {
+          return chainBuilder({
+            data: { id: VALID_ID, status: "scheduled", calendar_event_id: null, recall_bot_id: null },
+            error: null,
+          });
+        }
+        // delete call — fails
         return chainBuilder({
           data: null,
           error: { message: "connection timeout" },
-        });
-      }
-      if (table === "platform_google_config") {
-        return chainBuilder({
-          data: { interview_calendar_id: "cal-123" },
-          error: null,
         });
       }
       return chainBuilder({ data: null, error: null });
@@ -410,41 +442,5 @@ describe("DELETE /api/interviews/[id]", () => {
       params: Promise.resolve({ id: VALID_ID }),
     });
     expect(res.status).toBe(500);
-    const body = await res.json();
-    expect(body.error).toContain("Calendar event deleted but");
-    // Calendar event should still have been deleted
-    expect(mockDeleteCalendarEvent).toHaveBeenCalled();
-  });
-
-  it("returns 503 when interview_calendar_id is not configured for DELETE", async () => {
-    setupAdminAuth();
-
-    let callCount = 0;
-    mockServiceFrom.mockImplementation((table: string) => {
-      if (table === "interviews") {
-        callCount++;
-        if (callCount === 1) {
-          return chainBuilder({
-            data: { id: VALID_ID, calendar_event_id: "evt_abc" },
-            error: null,
-          });
-        }
-        return chainBuilder({ data: {}, error: null });
-      }
-      if (table === "platform_google_config") {
-        return chainBuilder({
-          data: { interview_calendar_id: null },
-          error: null,
-        });
-      }
-      return chainBuilder({ data: null, error: null });
-    });
-
-    const res = await DELETE(makeDelete(VALID_ID), {
-      params: Promise.resolve({ id: VALID_ID }),
-    });
-    expect(res.status).toBe(503);
-    const body = await res.json();
-    expect(body.error).toContain("Calendar integration not configured");
   });
 });

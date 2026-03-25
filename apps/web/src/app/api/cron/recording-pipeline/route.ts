@@ -9,6 +9,12 @@ import {
 } from "@/lib/google";
 import { tracePipeline, traceError } from "@/lib/google/pipeline-tracer";
 import { requireGoogleEnv } from "@/lib/google/env";
+import {
+  getBot,
+  fetchTranscript,
+  transcriptToPlainText,
+  isRecallConfigured,
+} from "@/lib/recall/client";
 import { timingSafeEqual } from "crypto";
 
 export const maxDuration = 300;
@@ -85,6 +91,131 @@ export async function GET(req: NextRequest) {
     console.log(
       `[TRACE:cron:phase1] found=${scheduledInterviews?.length ?? 0} transitioned=${stats.phase1}`,
     );
+
+    // ─── Phase 1b: Poll Recall.ai bots (scheduled → transcribed) ───
+    if (isRecallConfigured()) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+      const { data: recallInterviews, error: recallError } = await supabase
+        .from("interviews")
+        .select("id, recall_bot_id, recording_status")
+        .eq("recording_status", "scheduled")
+        .not("recall_bot_id", "is", null)
+        .lt("scheduled_at", fiveMinAgo)
+        .neq("status", "cancelled");
+
+      if (recallError) {
+        console.error("[cron:recall] Query failed:", recallError.message);
+        stats.errors++;
+      }
+
+      if (recallInterviews && recallInterviews.length > 0) {
+        for (const interview of recallInterviews) {
+          try {
+            const bot = await getBot(interview.recall_bot_id!);
+            const lastStatus =
+              bot.status_changes[bot.status_changes.length - 1]?.code;
+
+            if (lastStatus === "done") {
+              // Bot finished — fetch transcript
+              if (!bot.transcriptDownloadUrl) {
+                console.warn(
+                  `[cron:recall] Bot done but no transcript for ${interview.recall_bot_id}`,
+                );
+                await supabase
+                  .from("interviews")
+                  .update({ recording_status: "failed_transcription" })
+                  .eq("id", interview.id)
+                  .eq("recording_status", "scheduled");
+                continue;
+              }
+
+              const entries = await fetchTranscript(bot.transcriptDownloadUrl);
+              const plainText = transcriptToPlainText(entries);
+
+              if (!plainText.trim() || plainText.length < 50) {
+                console.warn(
+                  `[cron:recall] Transcript too short: ${plainText.length} chars`,
+                );
+                await supabase
+                  .from("interviews")
+                  .update({ recording_status: "failed_transcription" })
+                  .eq("id", interview.id)
+                  .eq("recording_status", "scheduled");
+                continue;
+              }
+
+              // Store transcript
+              const { error: insertError } = await supabase
+                .from("interview_transcripts")
+                .upsert(
+                  {
+                    interview_id: interview.id,
+                    transcript: plainText,
+                    metadata: {
+                      source: "recall_ai",
+                      recall_bot_id: interview.recall_bot_id,
+                      speakers: [
+                        ...new Set(entries.map((e) => e.participant.name)),
+                      ],
+                      entries_count: entries.length,
+                      char_count: plainText.length,
+                      retrieved_at: new Date().toISOString(),
+                    },
+                  },
+                  { onConflict: "interview_id" },
+                );
+
+              if (insertError) {
+                throw insertError;
+              }
+
+              await supabase
+                .from("interviews")
+                .update({ recording_status: "transcribed" })
+                .eq("id", interview.id)
+                .eq("recording_status", "scheduled");
+
+              stats.phase2++;
+              await tracePipeline(interview.id, {
+                from: "scheduled",
+                to: "transcribed",
+                detail: `Recall.ai poll: ${plainText.length} chars, ${entries.length} entries`,
+                metadata: {
+                  recall_bot_id: interview.recall_bot_id,
+                  source: "recall_ai_poll",
+                },
+              });
+
+              console.log(
+                `[TRACE:cron:recall] interviewId=${interview.id} transcribed via poll`,
+              );
+            } else if (lastStatus === "fatal") {
+              await supabase
+                .from("interviews")
+                .update({ recording_status: "failed_recording" })
+                .eq("id", interview.id)
+                .eq("recording_status", "scheduled");
+
+              await tracePipeline(interview.id, {
+                from: "scheduled",
+                to: "failed_recording",
+                detail: "Recall.ai bot fatal error (detected by poll)",
+                metadata: { recall_bot_id: interview.recall_bot_id },
+              });
+            }
+            // Other statuses (joining_call, in_call_recording, processing) — skip, check next run
+          } catch (err) {
+            stats.errors++;
+            traceError(interview.id, err, "cron:recall");
+          }
+        }
+      }
+
+      console.log(
+        `[TRACE:cron:recall] polled=${recallInterviews?.length ?? 0}`,
+      );
+    }
 
     // ─── Phase 2: Retrieve transcripts (pending → transcribed) ───
     const { data: pendingInterviews, error: phase2Error } = await supabase
