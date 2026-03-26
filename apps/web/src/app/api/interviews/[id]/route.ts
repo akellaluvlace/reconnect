@@ -248,9 +248,9 @@ export async function DELETE(
     }
 
     // Only allow deleting scheduled or cancelled interviews
-    if (!["scheduled", "cancelled"].includes(interview.status ?? "")) {
+    if (!["scheduled", "cancelled", "completed"].includes(interview.status ?? "")) {
       return NextResponse.json(
-        { error: "Can only delete scheduled or cancelled interviews" },
+        { error: "Cannot delete this interview" },
         { status: 400 },
       );
     }

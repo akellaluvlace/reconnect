@@ -5,7 +5,8 @@ type NotificationType =
   | "all_feedback_collected"
   | "synthesis_ready"
   | "stage_assigned"
-  | "feedback_reminder";
+  | "feedback_reminder"
+  | "feedback_request";
 
 /**
  * Notify the playbook manager. Fire-and-forget — never throws.
@@ -177,6 +178,102 @@ export async function checkAllFeedbackCollected(
   }
 }
 
+/**
+ * Notify all collaborators assigned to an interview's stage that feedback is ready.
+ * Called when an interview transitions to "transcribed".
+ * Fire-and-forget — never throws.
+ */
+export async function notifyCollaboratorsFeedbackReady(
+  interviewId: string,
+): Promise<void> {
+  try {
+    console.log(`[notifications] notifyCollaboratorsFeedbackReady called for interview ${interviewId}`);
+    const supabase = createServiceRoleClient();
+
+    // Get interview + stage + candidate info
+    const { data: interview, error: intErr } = await supabase
+      .from("interviews")
+      .select("stage_id, candidate_id")
+      .eq("id", interviewId)
+      .single();
+
+    if (intErr || !interview?.stage_id) {
+      console.warn(`[notifications] Interview lookup failed: ${intErr?.message ?? 'no stage_id'}`);
+      return;
+    }
+
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("name")
+      .eq("id", interview.candidate_id!)
+      .single();
+
+    const { data: stageRow, error: stageErr } = await supabase
+      .from("interview_stages")
+      .select("*")
+      .eq("id", interview.stage_id)
+      .single();
+
+    const stageName = (stageRow as unknown as Record<string, unknown>)?.name as string | undefined;
+    const playbookId = (stageRow as unknown as Record<string, unknown>)?.playbook_id as string | undefined;
+
+    console.log(`[notifications] stage lookup: name=${stageName} playbookId=${playbookId} error=${stageErr?.message ?? 'none'}`);
+
+    if (!playbookId) return;
+
+    // Find collaborators assigned to this stage (null = all stages)
+    const { data: allCollaborators } = await supabase
+      .from("collaborators")
+      .select("id, email, name, invite_token, assigned_stages")
+      .eq("playbook_id", playbookId);
+
+    const collaborators = (allCollaborators ?? []).filter((c) => {
+      const stages = c.assigned_stages as string[] | null;
+      return !stages || stages.length === 0 || stages.includes(interview.stage_id!);
+    });
+
+    console.log(`[notifications] Found ${allCollaborators?.length ?? 0} collaborators, ${collaborators.length} matched stage`);
+    if (collaborators.length === 0) return;
+
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? "https://app.axil.ie";
+
+    // Check which collaborators have already submitted feedback
+    const { data: existingFeedback } = await supabase
+      .from("feedback")
+      .select("collaborator_id")
+      .eq("interview_id", interviewId);
+
+    const submittedIds = new Set(
+      (existingFeedback ?? []).map((f) => f.collaborator_id),
+    );
+
+    for (const collab of collaborators) {
+      // Skip if they already submitted feedback
+      if (submittedIds.has(collab.id)) continue;
+
+      const feedbackLink = `${appUrl}/auth/collaborator/feedback?token=${collab.invite_token}&interview_id=${interviewId}`;
+
+      const candidateName = (candidate as Record<string, unknown>)?.name as string | undefined;
+      await sendBuiltInNotification(collab.email, "feedback_request", {
+        collaboratorName: (collab.name as string) ?? collab.email,
+        stageName: stageName ?? "Interview",
+        candidateName: candidateName ?? "Candidate",
+        feedbackLink,
+      });
+
+      console.log(
+        `[notifications] Feedback request sent to ${collab.email} for interview ${interviewId}`,
+      );
+    }
+  } catch (err) {
+    console.error(
+      "[notifications] notifyCollaboratorsFeedbackReady failed:",
+      err,
+    );
+  }
+}
+
 async function sendBuiltInNotification(
   to: string,
   type: NotificationType,
@@ -220,6 +317,15 @@ async function sendBuiltInNotification(
       break;
     case "feedback_reminder":
       await client.sendFeedbackReminderEmail({
+        to,
+        collaboratorName: data.collaboratorName ?? "",
+        stageName: data.stageName ?? "Interview",
+        candidateName: data.candidateName ?? "Candidate",
+        feedbackLink: data.feedbackLink ?? "",
+      });
+      break;
+    case "feedback_request":
+      await client.sendFeedbackRequestEmail({
         to,
         collaboratorName: data.collaboratorName ?? "",
         stageName: data.stageName ?? "Interview",

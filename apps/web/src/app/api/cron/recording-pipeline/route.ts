@@ -9,6 +9,7 @@ import {
 } from "@/lib/google";
 import { tracePipeline, traceError } from "@/lib/google/pipeline-tracer";
 import { requireGoogleEnv } from "@/lib/google/env";
+import { notifyCollaboratorsFeedbackReady } from "@/lib/notifications";
 import {
   getBot,
   fetchTranscript,
@@ -172,7 +173,7 @@ export async function GET(req: NextRequest) {
 
               await supabase
                 .from("interviews")
-                .update({ recording_status: "transcribed" })
+                .update({ recording_status: "transcribed", status: "completed" })
                 .eq("id", interview.id)
                 .eq("recording_status", "scheduled");
 
@@ -186,6 +187,9 @@ export async function GET(req: NextRequest) {
                   source: "recall_ai_poll",
                 },
               });
+
+              // Notify collaborators that feedback is ready
+              await notifyCollaboratorsFeedbackReady(interview.id);
 
               console.log(
                 `[TRACE:cron:recall] interviewId=${interview.id} transcribed via poll`,
@@ -387,6 +391,7 @@ export async function GET(req: NextRequest) {
             .from("interviews")
             .update({
               recording_status: "transcribed",
+              status: "completed",
               transcript_doc_id: docId,
             })
             .eq("id", interview.id)
@@ -398,6 +403,9 @@ export async function GET(req: NextRequest) {
             to: "transcribed",
             detail: `Transcript retrieved: ${transcript.length} chars, source=${docText ? "docs" : "meet_api"}${docId ? `, docId=${docId}` : ""}`,
           });
+
+          // Notify collaborators that feedback is ready
+          await notifyCollaboratorsFeedbackReady(interview.id);
 
           console.log(
             `[TRACE:cron:transcribed] interviewId=${interview.id}`,

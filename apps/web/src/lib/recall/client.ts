@@ -81,6 +81,7 @@ export async function scheduleBot(params: {
               meeting_captions: {},
             },
           },
+          video_mixed_mp4: null,
         },
       }),
       signal,

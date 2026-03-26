@@ -7,6 +7,7 @@ import {
   transcriptToPlainText,
 } from "@/lib/recall/client";
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
+import { notifyCollaboratorsFeedbackReady } from "@/lib/notifications";
 
 export const maxDuration = 60;
 
@@ -35,13 +36,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate Svix headers are present before attempting verification (#9)
-    const svixId = req.headers.get("svix-id");
-    const svixTimestamp = req.headers.get("svix-timestamp");
-    const svixSignature = req.headers.get("svix-signature");
+    // Recall.ai sends webhook-* headers (not svix-* headers)
+    const webhookId = req.headers.get("webhook-id") ?? req.headers.get("svix-id");
+    const webhookTimestamp = req.headers.get("webhook-timestamp") ?? req.headers.get("svix-timestamp");
+    const webhookSignature = req.headers.get("webhook-signature") ?? req.headers.get("svix-signature");
 
-    if (!svixId || !svixTimestamp || !svixSignature) {
-      console.warn("[webhooks/recall] Missing Svix headers");
+    if (!webhookId || !webhookTimestamp || !webhookSignature) {
+      console.warn("[webhooks/recall] Missing webhook signature headers");
       return NextResponse.json(
         { error: "Missing signature headers" },
         { status: 400 },
@@ -50,9 +51,9 @@ export async function POST(req: NextRequest) {
 
     const rawBody = await req.text();
     const headers = {
-      "svix-id": svixId,
-      "svix-timestamp": svixTimestamp,
-      "svix-signature": svixSignature,
+      "svix-id": webhookId,
+      "svix-timestamp": webhookTimestamp,
+      "svix-signature": webhookSignature,
     };
 
     let payload: WebhookPayload;
@@ -247,7 +248,7 @@ async function handleBotDone(
   // Transition to transcribed (atomic) — check result (#3)
   const { error: statusError } = await serviceClient
     .from("interviews")
-    .update({ recording_status: "transcribed" })
+    .update({ recording_status: "transcribed", status: "completed" })
     .eq("id", interview.id)
     .eq("recording_status", interview.recording_status);
 
@@ -265,6 +266,9 @@ async function handleBotDone(
     detail: `Recall.ai transcript received: ${plainText.length} chars, ${entries.length} speakers`,
     metadata: { recall_bot_id: botId, source: "recall_ai" },
   });
+
+  // Notify collaborators that feedback is ready
+  await notifyCollaboratorsFeedbackReady(interview.id);
 
   console.log(
     `[RECALL:done] interviewId=${interview.id} transcribed via Recall.ai`,

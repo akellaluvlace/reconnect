@@ -332,6 +332,32 @@ export function stageAssignedHtml(params: {
   `);
 }
 
+export function feedbackRequestHtml(params: {
+  collaboratorName: string;
+  stageName: string;
+  candidateName: string;
+  feedbackLink: string;
+}): string {
+  return baseWrapper(`
+    <h2 style="margin:0 0 16px;font-size:18px;color:#18181b">Feedback Ready to Submit</h2>
+    <p style="margin:0 0 8px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Hi ${escapeHtml(params.collaboratorName)}, the interview for the
+      <strong>${escapeHtml(params.stageName)}</strong> stage with
+      <strong>${escapeHtml(params.candidateName)}</strong> has been completed and transcribed.
+    </p>
+    <p style="margin:0 0 24px;color:#3f3f46;font-size:14px;line-height:1.6">
+      Please submit your feedback at your earliest convenience.
+    </p>
+    ${
+      params.feedbackLink
+        ? `<a href="${escapeHtml(params.feedbackLink)}" style="display:inline-block;padding:12px 24px;background:#14b8a6;color:#ffffff;text-decoration:none;border-radius:6px;font-size:14px;font-weight:600">
+      Submit Feedback
+    </a>`
+        : ""
+    }
+  `);
+}
+
 export function feedbackReminderHtml(params: {
   collaboratorName: string;
   stageName: string;

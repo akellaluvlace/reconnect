@@ -69,7 +69,7 @@ export function InterviewCard({
 
   const canDelete =
     isManagerOrAdmin &&
-    ["scheduled", "cancelled"].includes(interview.status ?? "");
+    ["scheduled", "cancelled", "completed"].includes(interview.status ?? "");
 
   async function handleDelete() {
     if (!window.confirm("Delete this interview? The calendar event will be removed and attendees will be notified.")) return;

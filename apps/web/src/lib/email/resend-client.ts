@@ -189,6 +189,21 @@ export async function sendStageAssignedEmail(params: {
   });
 }
 
+export async function sendFeedbackRequestEmail(params: {
+  to: string;
+  collaboratorName: string;
+  stageName: string;
+  candidateName: string;
+  feedbackLink: string;
+}): Promise<SendResult> {
+  const { feedbackRequestHtml } = await import("./templates");
+  return sendEmail({
+    to: params.to,
+    subject: `Feedback ready: ${params.stageName} — ${params.candidateName}`,
+    html: feedbackRequestHtml(params),
+  });
+}
+
 export async function sendFeedbackReminderEmail(params: {
   to: string;
   collaboratorName: string;
