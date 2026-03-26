@@ -5,6 +5,7 @@ import {
   notifyManager,
   checkAllFeedbackCollected,
 } from "@/lib/notifications";
+import { audit } from "@/lib/audit";
 
 const CollaboratorFeedbackSchema = z.object({
   token: z.string().min(1).max(200),
@@ -193,6 +194,15 @@ export async function POST(req: NextRequest) {
         () => {},
       );
     }
+
+    await audit({
+      userId: null,
+      userEmail: collaborator.email,
+      action: "create",
+      table: "feedback",
+      recordId: feedback.id,
+      metadata: { interview_id: input.interview_id, collaborator_id: collaborator.id },
+    });
 
     return NextResponse.json({ data: feedback }, { status: 201 });
   } catch (err) {

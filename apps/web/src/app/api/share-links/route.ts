@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
 const CreateShareLinkSchema = z.object({
   playbook_id: z.string().uuid(),
@@ -156,6 +157,15 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "share_links",
+      recordId: data.id,
+      metadata: { playbook_id: parsed.data.playbook_id },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

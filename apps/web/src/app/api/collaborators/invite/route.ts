@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
 const InviteSchema = z.object({
   playbook_id: z.string().uuid(),
@@ -123,6 +124,15 @@ export async function POST(req: NextRequest) {
       console.error("[collaborators/invite] Email send failed:", emailErr);
       // Non-fatal: invite was created, email just didn't send
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "collaborators",
+      recordId: data.id,
+      metadata: { playbook_id: parsed.data.playbook_id, invitee_email: parsed.data.email },
+    });
 
     return NextResponse.json({ collaborator: data }, { status: 201 });
   } catch (error) {

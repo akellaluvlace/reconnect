@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { audit } from "@/lib/audit";
 
 const createCandidateSchema = z.object({
   name: z.string().min(1).max(200),
@@ -63,6 +64,15 @@ export async function POST(req: NextRequest) {
       console.error("[candidates] Insert failed:", insertError.message);
       return NextResponse.json({ error: "Failed to create candidate" }, { status: 500 });
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "candidates",
+      recordId: candidate.id,
+      metadata: { playbook_id },
+    });
 
     return NextResponse.json({ data: candidate }, { status: 201 });
   } catch (err) {

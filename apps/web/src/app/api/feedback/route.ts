@@ -6,6 +6,7 @@ import {
   notifyManager,
   checkAllFeedbackCollected,
 } from "@/lib/notifications";
+import { audit } from "@/lib/audit";
 
 const CreateFeedbackSchema = z.object({
   interview_id: z.string().uuid(),
@@ -199,6 +200,15 @@ export async function POST(req: NextRequest) {
         ).catch(() => {});
       }
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "feedback",
+      recordId: data.id,
+      metadata: { interview_id: parsed.data.interview_id },
+    });
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { notifyCollaborator } from "@/lib/notifications";
+import { audit } from "@/lib/audit";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -68,6 +69,14 @@ export async function DELETE(
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "delete",
+      table: "collaborators",
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -152,6 +161,15 @@ export async function PATCH(
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "update",
+      table: "collaborators",
+      recordId: id,
+      metadata: { assigned_stages: parsed.data.assigned_stages },
+    });
 
     // Fire-and-forget: notify collaborator about stage assignment
     if (

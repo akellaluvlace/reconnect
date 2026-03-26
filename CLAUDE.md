@@ -16,7 +16,9 @@ Stack: Next.js App Router + Tailwind + shadcn/ui + Supabase (RLS) + Claude AI (O
 **Implemented (2026-03-24):** Rename "Playbook" → "Hiring Plan" (30+ strings, 18 files). Coverage reframed (no percentage, advice-based). Bulk invite dialog (paste emails, parallel sends, dedup). Dead code cleanup (feedback-loader, rating-helpers, stripAIMetadata).
 **Deployments:** axil.ie (landing) LIVE + SSL. app.axil.ie (web app) LIVE + SSL. All OAuth redirect URIs verified. Vercel linked. All env vars verified.
 
-**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → ~~10.2 (recording + feedback + consent)~~ → ~~10.2b (notifications)~~ → ~~Recall.ai integration~~ → **10.3 (in progress)** → Robert's feedback items → 10.4-10.8
+**Safe point:** `fa78660` (2026-03-26) — full E2E pipeline verified. Revert here if beta prep breaks anything.
+
+**Build order:** ~~10.1~~ → ~~all hardening~~ → ~~Option A~~ → ~~prefetch fix~~ → ~~production audit~~ → ~~Alignment chapter~~ → ~~Alignment enhancements~~ → ~~Debrief chapter (D2-D4)~~ → ~~CMS Admin Controls~~ → ~~Platform Superadmin~~ → ~~Org approval~~ → ~~Collaborator prep page~~ → ~~CMS email integration~~ → ~~10.2 (recording + feedback + consent)~~ → ~~10.2b (notifications)~~ → ~~Recall.ai integration~~ → ~~Robert's feedback items~~ → **Beta prep (in progress)**: Sentry, audit logging, bundle analysis, cross-browser
 
 **Manual testing results (2026-03-17):**
 - Interview scheduling via UI → Google Calendar + Meet link: WORKING

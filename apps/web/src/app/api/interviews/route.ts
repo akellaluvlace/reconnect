@@ -10,6 +10,7 @@ import {
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
 import { requireGoogleEnv } from "@/lib/google/env";
 import { scheduleBot, isRecallConfigured } from "@/lib/recall/client";
+import { audit } from "@/lib/audit";
 
 const CreateInterviewSchema = z.object({
   candidate_id: z.string().uuid(),
@@ -197,6 +198,15 @@ export async function POST(req: NextRequest) {
     console.log(
       `[TRACE:interview:schedule] interviewId=${interview.id} meetLink=${meetResult.meetLink} calendarEventId=${meetResult.calendarEventId}${recallBotId ? ` recallBotId=${recallBotId}` : ""}`,
     );
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "interviews",
+      recordId: interview.id,
+      metadata: { candidate_id: input.candidate_id, stage_id: input.stage_id },
+    });
 
     return NextResponse.json(
       { data: interview, meetLink: meetResult.meetLink },

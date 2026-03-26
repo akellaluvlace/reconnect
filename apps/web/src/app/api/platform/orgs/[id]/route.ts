@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { isPlatformAdmin } from "@/lib/admin/platform-admin";
 import { updateOrgSchema } from "@/lib/admin/platform-schemas";
+import { audit } from "@/lib/audit";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -83,6 +84,15 @@ export async function PATCH(
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "update",
+      table: "organizations",
+      recordId: id,
+      metadata: parsed.data as Record<string, unknown>,
+    });
 
     return NextResponse.json(data);
   } catch (err) {

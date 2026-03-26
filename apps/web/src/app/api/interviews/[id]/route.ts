@@ -8,6 +8,7 @@ import {
 } from "@/lib/google";
 import { tracePipeline } from "@/lib/google/pipeline-tracer";
 import { scheduleBot, cancelBot, isRecallConfigured } from "@/lib/recall/client";
+import { audit } from "@/lib/audit";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -182,6 +183,15 @@ export async function PATCH(
       detail: `Rescheduled to ${parsed.data.scheduled_at ?? "same time"}`,
     });
 
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "update",
+      table: "interviews",
+      recordId: id,
+      metadata: { scheduled_at: parsed.data.scheduled_at, duration_minutes: parsed.data.duration_minutes },
+    });
+
     return NextResponse.json({ data: updated });
   } catch (err) {
     console.error("[interviews/PATCH] error:", err);
@@ -299,6 +309,14 @@ export async function DELETE(
     }
 
     console.log(`[interviews/DELETE] interviewId=${id} hard-deleted`);
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "delete",
+      table: "interviews",
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

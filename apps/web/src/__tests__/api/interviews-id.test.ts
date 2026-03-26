@@ -397,15 +397,20 @@ describe("DELETE /api/interviews/[id]", () => {
     expect(mockDeleteCalendarEvent).not.toHaveBeenCalled();
   });
 
-  it("returns 400 when trying to delete completed interview", async () => {
+  it("deletes completed interview", async () => {
     setupAdminAuth();
 
+    let callCount = 0;
     mockServiceFrom.mockImplementation((table: string) => {
       if (table === "interviews") {
-        return chainBuilder({
-          data: { id: VALID_ID, status: "completed", calendar_event_id: null, recall_bot_id: null },
-          error: null,
-        });
+        callCount++;
+        if (callCount === 1) {
+          return chainBuilder({
+            data: { id: VALID_ID, status: "completed", calendar_event_id: null, recall_bot_id: null },
+            error: null,
+          });
+        }
+        return chainBuilder({ data: null, error: null });
       }
       return chainBuilder({ data: null, error: null });
     });
@@ -413,7 +418,7 @@ describe("DELETE /api/interviews/[id]", () => {
     const res = await DELETE(makeDelete(VALID_ID), {
       params: Promise.resolve({ id: VALID_ID }),
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
   });
 
   it("returns 500 when hard delete fails", async () => {

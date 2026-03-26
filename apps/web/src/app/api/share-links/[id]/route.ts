@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { audit } from "@/lib/audit";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -77,6 +78,14 @@ export async function DELETE(
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "delete",
+      table: "share_links",
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

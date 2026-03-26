@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@reconnect/database";
+import { audit } from "@/lib/audit";
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -227,6 +228,16 @@ export async function PATCH(
     }
 
     console.log(`[playbooks/PATCH] OK { fields=[${updateKeys.join(",")}] }`);
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "update",
+      table: "playbooks",
+      recordId: id,
+      metadata: { fields: updateKeys },
+    });
+
     return NextResponse.json(data);
   } catch (err) {
     console.error("[playbooks/PATCH] Unexpected error:", err);
@@ -309,6 +320,14 @@ export async function DELETE(
         { status: 404 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "delete",
+      table: "playbooks",
+      recordId: id,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

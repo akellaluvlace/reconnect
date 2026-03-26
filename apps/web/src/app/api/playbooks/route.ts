@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@reconnect/database";
+import { audit } from "@/lib/audit";
 
 const MAX_JSONB_SIZE = 100_000; // ~100KB
 
@@ -156,6 +157,15 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
+
+    await audit({
+      userId: user.id,
+      userEmail: user.email,
+      action: "create",
+      table: "playbooks",
+      recordId: data.id,
+      metadata: { title: parsed.data.title },
+    });
 
     return NextResponse.json(data);
   } catch (err) {
