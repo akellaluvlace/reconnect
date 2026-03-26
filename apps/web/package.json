@@ -20,6 +20,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@reconnect/ai": "workspace:*",
     "@reconnect/database": "workspace:*",
+    "@sentry/nextjs": "^10.46.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "class-variance-authority": "^0.7.1",

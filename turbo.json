@@ -20,7 +20,9 @@
         "GOOGLE_RECORDING_REDIRECT_URI",
         "CRON_SECRET",
         "RECALL_API_KEY",
-        "RECALL_WEBHOOK_SECRET"
+        "RECALL_WEBHOOK_SECRET",
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "SENTRY_DSN"
       ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
